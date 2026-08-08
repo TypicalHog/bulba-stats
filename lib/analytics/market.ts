@@ -292,21 +292,33 @@ export function activityHeatmap(legs: TradeLeg[]): number[][] {
 /**
  * Do traders round? Buckets fill prices by their fractional part to expose
  * clustering on whole and half diamonds.
+ *
+ * Classification works on the true fractional part with a small tolerance.
+ * Rounding the fraction to two decimals first would file 2.001 as a whole
+ * diamond and invent the very clustering this is meant to measure.
  */
-export function priceClustering(legs: TradeLeg[]): { bucket: string; count: number }[] {
-  const buckets = new Map<string, number>();
+export function priceClustering(
+  legs: TradeLeg[],
+): { bucket: string; count: number }[] {
+  const EPS = 1e-9;
+  const near = (value: number, target: number) => Math.abs(value - target) < EPS;
+
   const label = (p: number): string => {
-    const frac = Math.round((p % 1) * 100) / 100;
-    if (frac === 0) return "whole";
-    if (frac === 0.5) return "half";
-    if (Math.abs(frac * 10 - Math.round(frac * 10)) < 1e-9) return "tenth";
+    const frac = Math.abs(p) % 1;
+    if (near(frac, 0) || near(frac, 1)) return "whole";
+    if (near(frac, 0.5)) return "half";
+    // A tenth: one decimal place and nothing beyond it.
+    if (near(frac * 10, Math.round(frac * 10))) return "tenth";
     return "other";
   };
+
+  const buckets = new Map<string, number>();
   for (const leg of legs) {
     if (leg.isMaker) continue;
     const k = label(leg.price);
     buckets.set(k, (buckets.get(k) ?? 0) + 1);
   }
+
   return ["whole", "half", "tenth", "other"].map((bucket) => ({
     bucket,
     count: buckets.get(bucket) ?? 0,
