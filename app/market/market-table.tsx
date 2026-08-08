@@ -6,12 +6,31 @@ import { Badge, ItemLink } from "@/components/ui/entity";
 import { Sparkline } from "@/components/charts/sparkline";
 import { dateOnly, diamonds, num, percent, price } from "@/lib/format";
 
+/**
+ * How many items a price is quoted for.
+ *
+ * Minecraft stack sizes vary by item — 64 for most blocks, 16 for eggs and
+ * ender pearls, 1 for tools and armour — so "per stack" is a per-row multiplier,
+ * not a constant. A shulker box holds 27 slots, hence 27 stacks.
+ */
+export type PriceUnit = "single" | "stack" | "shulker";
+
+const SHULKER_SLOTS = 27;
+
+export function unitMultiplier(unit: PriceUnit, stackAmount: number): number {
+  const stack = stackAmount > 0 ? stackAmount : 1;
+  if (unit === "single") return 1;
+  return unit === "stack" ? stack : stack * SHULKER_SLOTS;
+}
+
 export type MarketRow = {
   listingId: number;
   itemName: string | null;
   variantName: string | null;
   niche: boolean;
   lendingEnabled: boolean;
+  /** Units per Minecraft stack: 1, 16 or 64 depending on the item. */
+  stackAmount: number;
   mid: number | null;
   bestBid: number | null;
   bestAsk: number | null;
@@ -43,6 +62,12 @@ export function MarketTable({ rows }: { rows: MarketRow[] }) {
   const [showNiche, setShowNiche] = useState(false);
   const [onlyQuoted, setOnlyQuoted] = useState(false);
   const [onlyTraded, setOnlyTraded] = useState(false);
+  const [unit, setUnit] = useState<PriceUnit>("single");
+
+  /* Prices scale per row; ratios like spread% and totals like volume do not. */
+  const mul = (r: MarketRow) => unitMultiplier(unit, r.stackAmount);
+  const scaled = (r: MarketRow, v: number | null) =>
+    v == null ? null : v * mul(r);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -91,29 +116,49 @@ export function MarketTable({ rows }: { rows: MarketRow[] }) {
           <span className="text-ink-3">—</span>
         ),
     },
+    ...(unit === "single"
+      ? []
+      : ([
+          {
+            key: "per",
+            header: unit === "stack" ? "Stack" : "Shulker",
+            title:
+              "Items priced together. Stack sizes differ by item, so this varies per row.",
+            align: "right",
+            mono: true,
+            cell: (r) => (
+              <span className="text-ink-3">×{num(mul(r))}</span>
+            ),
+            sort: (r) => mul(r),
+          },
+        ] as Column<MarketRow>[])),
     {
       key: "mid",
       header: "Mid",
       align: "right",
       mono: true,
-      cell: (r) => <span className="text-ink">{price(r.mid)}</span>,
-      sort: (r) => r.mid,
+      cell: (r) => <span className="text-ink">{price(scaled(r, r.mid))}</span>,
+      sort: (r) => scaled(r, r.mid),
     },
     {
       key: "bid",
       header: "Bid",
       align: "right",
       mono: true,
-      cell: (r) => <span className="text-up">{price(r.bestBid)}</span>,
-      sort: (r) => r.bestBid,
+      cell: (r) => (
+        <span className="text-up">{price(scaled(r, r.bestBid))}</span>
+      ),
+      sort: (r) => scaled(r, r.bestBid),
     },
     {
       key: "ask",
       header: "Ask",
       align: "right",
       mono: true,
-      cell: (r) => <span className="text-down">{price(r.bestAsk)}</span>,
-      sort: (r) => r.bestAsk,
+      cell: (r) => (
+        <span className="text-down">{price(scaled(r, r.bestAsk))}</span>
+      ),
+      sort: (r) => scaled(r, r.bestAsk),
     },
     {
       key: "spread",
@@ -150,10 +195,10 @@ export function MarketTable({ rows }: { rows: MarketRow[] }) {
       mono: true,
       cell: (r) => (
         <span className="text-ink-2">
-          {r.vwap != null ? price(r.vwap) : "—"}
+          {r.vwap != null ? price(scaled(r, r.vwap)) : "—"}
         </span>
       ),
-      sort: (r) => r.vwap,
+      sort: (r) => scaled(r, r.vwap),
     },
     {
       key: "vsvwap",
@@ -253,6 +298,40 @@ export function MarketTable({ rows }: { rows: MarketRow[] }) {
           label={`Show niche (${nicheCount})`}
           hint="Low-demand variants, hidden by default upstream"
         />
+
+        {/*
+          Quote prices per item, per stack, or per shulker box. The multiplier
+          is per row because stack size is an item property — 64 for most
+          blocks, 16 for eggs and pearls, 1 for tools.
+        */}
+        <div
+          className="flex items-center gap-0.5 rounded border border-line p-0.5"
+          role="group"
+          aria-label="Price unit"
+        >
+          {(
+            [
+              ["single", "Single", "Price per item"],
+              ["stack", "Stack", "Price per stack (64, 16 or 1 items)"],
+              ["shulker", "Shulker", "Price per shulker box (27 stacks)"],
+            ] as [PriceUnit, string, string][]
+          ).map(([value, label, hint]) => (
+            <button
+              key={value}
+              type="button"
+              title={hint}
+              aria-pressed={unit === value}
+              onClick={() => setUnit(value)}
+              className={`cursor-pointer rounded px-2 py-1 text-[11px] transition-colors duration-150 ${
+                unit === value
+                  ? "bg-accent/15 text-accent"
+                  : "text-ink-3 hover:bg-panel-2 hover:text-ink-2"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
 
         <span className="ml-auto font-mono text-[11px] text-ink-3">
           {num(filtered.length)} / {num(rows.length)}

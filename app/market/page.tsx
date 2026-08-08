@@ -88,6 +88,7 @@ async function MarketBody() {
         variantName: listing.variantName,
         niche: listing.niche,
         lendingEnabled: Boolean(listing.lendingEnabled),
+        stackAmount: listing.stackAmount ?? 1,
         mid,
         bestBid: book?.bestBid ?? null,
         bestAsk: book?.bestAsk ?? null,
