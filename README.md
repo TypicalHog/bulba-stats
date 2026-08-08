@@ -1,36 +1,76 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# BulbaStats
 
-## Getting Started
+A deep, comprehensive statistics viewer for
+[**BulbaStore**](https://webstore.bulbastore.uk) — the Minecraft item exchange
+where players trade items on a real order book priced in diamonds.
 
-First, run the development server:
+BulbaStore publishes a rich API but no aggregate statistics. BulbaStats is the
+missing analytics layer: it reads every public endpoint, cross-joins them, and
+derives what the API doesn't compute — per-item liquidity, per-player P&L, market
+microstructure, treasury flows, and market-wide activity — behind a dark,
+data-dense trading-desk UI.
+
+**Read-only.** No API key, no auth, no writes. Every number comes from public
+endpoints.
+
+---
+
+## What's in it
+
+| Section | What you get |
+|---|---|
+| **Overview** | Market-wide volume, fees, breadth and concentration; movers; live trade ticker |
+| **Market** | All 184 listings — mid, spread, depth, turnover, sparklines; sortable and filterable |
+| **Item** | Candlesticks, order-book depth curve and ladder, VWAP, volatility, slippage curve, participants, fills |
+| **Players** | Leaderboards by volume, fees, maker share, inventory value, open-order capital |
+| **Player** | Realized P&L by cost basis, holdings at mid, open orders, counterparty graph, activity |
+| **Trades** | Full trade explorer — filter by item, player, venue, mechanism, side |
+| **Orders** | Resting-order analytics: depth ownership, fill and cancel rates, time-to-fill |
+| **Treasury** | Pool balances, daily fee revenue by source, distribution history, stock ownership |
+| **Insights** | Activity heatmaps, venue mix over time, price clustering, counterparty network |
+
+Statistics are computed over the **complete** dataset, not a sample — the market
+opened 2026-07-12, so full history still fits in a cached server-side aggregation.
+
+## Quick start
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open <http://localhost:3000>. No environment variables and no database are
+required; the upstream API is public.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+To point at a different upstream, set `BULBA_API_BASE` (defaults to
+`https://webstore.bulbastore.uk/upstream/api/v1`).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build    # production build
+npm run start    # serve the production build
+npm run lint     # eslint
+```
 
-## Learn More
+## How it works
 
-To learn more about Next.js, take a look at the following resources:
+Server Components fetch from the upstream API and run the aggregation in
+`lib/analytics/`; Client Components handle sorting, filtering, chart hover, and
+the Socket.IO live feed. Results are cached with Next.js `revalidate` tiers
+(15 s for live book data up to 15 min for the full open-order crawl), so a page
+view usually costs the upstream API nothing.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Charts are hand-rolled SVG — no charting dependency.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Documentation
 
-## Deploy on Vercel
+- **[SPEC.md](SPEC.md)** — full specification: endpoints consumed, measured data
+  volumes, caching tiers, every derived statistic, site map, design system, and
+  architecture.
+- **Methodology and caveats** — see [SPEC.md §4](SPEC.md#4-methodology--honesty)
+  and the `/about` page. Derived numbers like P&L and net worth rest on stated
+  assumptions, and the site says so wherever they appear.
+- **Upstream API** — <https://webstore.bulbastore.uk/docs/api>
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## License
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+See [LICENSE.md](LICENSE.md).
