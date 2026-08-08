@@ -60,6 +60,16 @@ export function padDomain(
 
 export const CHART_PAD = { top: 12, right: 12, bottom: 22, left: 46 } as const;
 
+/**
+ * Minimum on-screen width for a plotted chart.
+ *
+ * Charts are drawn in an 800-unit viewBox that scales to its container. On a
+ * 375px screen that scales axis text down to roughly 4px — present but
+ * unreadable. Below this width the chart scrolls horizontally inside its panel
+ * instead, the same way wide tables do, so labels stay at a legible size.
+ */
+export const CHART_MIN_WIDTH = 560;
+
 /** Convert a mouse event to a fractional position within an SVG element. */
 export function pointerFraction(
   event: { clientX: number },

@@ -91,6 +91,14 @@
     background: var(--panel);
     border: 1px solid var(--border);
     border-radius: 6px;
+    /*
+     * Grid and flex children size to their content by default
+     * (min-width: auto), so a panel wrapping a wide table pushes its track
+     * wider than the viewport and the whole page scrolls sideways. Panels are
+     * always layout children, so they always need to be allowed to shrink and
+     * let the .scroll-x inside them do the scrolling.
+     */
+    min-width: 0;
   }
 
   /* Minecraft item art is pixel art — never let the browser smooth it. */

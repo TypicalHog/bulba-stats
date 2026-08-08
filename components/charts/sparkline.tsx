@@ -21,7 +21,8 @@ export function Sparkline({
   strokeWidth?: number;
 }) {
   const clean = values.filter((v) => Number.isFinite(v));
-  if (clean.length < 2) return <svg width={width} height={height} aria-hidden />;
+  if (clean.length < 2)
+    return <svg width={width} height={height} aria-hidden />;
 
   const min = Math.min(...clean);
   const max = Math.max(...clean);
@@ -40,8 +41,7 @@ export function Sparkline({
     .join(" ");
 
   const direction = clean[clean.length - 1] - clean[0];
-  const stroke =
-    color ?? (direction >= 0 ? DIRECTION.up : DIRECTION.down);
+  const stroke = color ?? (direction >= 0 ? DIRECTION.up : DIRECTION.down);
   const [lastX, lastY] = points[points.length - 1];
 
   return (

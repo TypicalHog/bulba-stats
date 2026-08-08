@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { INK, SURFACE, seriesColor } from "@/lib/design";
 import { compact, diamondsCompact, num } from "@/lib/format";
-import { CHART_PAD, linearScale, niceTicks } from "./axis";
+import { CHART_MIN_WIDTH, CHART_PAD, linearScale, niceTicks } from "./axis";
 
 export type SeriesDef = {
   key: string;
@@ -84,147 +84,158 @@ export function StackedBars({
   const single = series.length === 1;
 
   return (
-    <div className="relative">
-      {/* A legend is always present for two or more series. */}
-      {!single && (
-        <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px]">
-          {series.map((s, i) => (
-            <span key={s.key} className="flex items-center gap-1.5 text-ink-3">
+    <div className="scroll-x">
+      <div className="relative" style={{ minWidth: CHART_MIN_WIDTH }}>
+        {/* A legend is always present for two or more series. */}
+        {!single && (
+          <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px]">
+            {series.map((s, i) => (
               <span
-                aria-hidden
-                className="inline-block h-2 w-2 rounded-[2px]"
-                style={{ background: s.color ?? seriesColor(i) }}
-              />
-              {s.label}
-            </span>
-          ))}
-        </div>
-      )}
+                key={s.key}
+                className="flex items-center gap-1.5 text-ink-3"
+              >
+                <span
+                  aria-hidden
+                  className="inline-block h-2 w-2 rounded-[2px]"
+                  style={{ background: s.color ?? seriesColor(i) }}
+                />
+                {s.label}
+              </span>
+            ))}
+          </div>
+        )}
 
-      <svg
-        ref={svgRef}
-        viewBox={`0 0 ${W} ${height}`}
-        width="100%"
-        height={height}
-        role="img"
-        aria-label={`${series.map((s) => s.label).join(" and ")} over ${points.length} periods`}
-        onMouseLeave={() => setHover(null)}
-        onMouseMove={(e) => {
-          const rect = svgRef.current?.getBoundingClientRect();
-          if (!rect || rect.width === 0) return;
-          const xInView = ((e.clientX - rect.left) / rect.width) * W;
-          const i = Math.floor((xInView - CHART_PAD.left) / geom.slot);
-          setHover(i >= 0 && i < points.length ? i : null);
-        }}
-      >
-        {ticks.map((t) => (
-          <g key={t}>
-            <line
-              x1={CHART_PAD.left}
-              x2={W - CHART_PAD.right}
-              y1={geom.y(t)}
-              y2={geom.y(t)}
-              stroke={SURFACE.grid}
-              strokeWidth={1}
-            />
-            <text
-              x={CHART_PAD.left - 6}
-              y={geom.y(t) + 3}
-              textAnchor="end"
-              fontSize={9}
-              fill={INK.muted}
-              fontFamily="var(--font-fira-code), monospace"
-            >
-              {valueFormat(t)}
-            </text>
-          </g>
-        ))}
-
-        {points.map((p, i) => {
-          const x = CHART_PAD.left + geom.slot * i + (geom.slot - geom.barW) / 2;
-          let cursor = baseline;
-          const dim = hover != null && hover !== i;
-
-          return (
-            <g key={p.label} opacity={dim ? 0.5 : 1}>
-              {series.map((s, si) => {
-                const v = p.values[s.key] ?? 0;
-                if (v <= 0) return null;
-                const h = baseline - geom.y(v);
-                // 2px surface gap between touching segments.
-                const drawH = Math.max(h - (cursor === baseline ? 0 : 2), 0.5);
-                const top = cursor - drawH;
-                cursor = top - (cursor === baseline ? 0 : 0);
-                const isTop = si === lastNonZero(p, series);
-                return (
-                  <rect
-                    key={s.key}
-                    x={x}
-                    y={top}
-                    width={geom.barW}
-                    height={drawH}
-                    fill={s.color ?? seriesColor(si)}
-                    /* 4px rounded data-end, square at the baseline. */
-                    rx={isTop ? Math.min(4, geom.barW / 2) : 0}
-                  />
-                );
-              })}
-            </g>
-          );
-        })}
-
-        <line
-          x1={CHART_PAD.left}
-          x2={W - CHART_PAD.right}
-          y1={baseline}
-          y2={baseline}
-          stroke={SURFACE.border}
-          strokeWidth={1}
-        />
-
-        {[0, points.length - 1]
-          .filter((i, idx, arr) => arr.indexOf(i) === idx && i >= 0)
-          .map((i) => (
-            <text
-              key={`x${i}`}
-              x={CHART_PAD.left + geom.slot * i + geom.slot / 2}
-              y={height - 6}
-              textAnchor={i === 0 ? "start" : "end"}
-              fontSize={9}
-              fill={INK.muted}
-              fontFamily="var(--font-fira-code), monospace"
-            >
-              {points[i].label}
-            </text>
-          ))}
-      </svg>
-
-      {hover != null && (
-        <div
-          className="pointer-events-none absolute z-10 rounded border border-line bg-panel-2 px-2 py-1.5 text-[10px] shadow-lg"
-          style={{
-            top: 8,
-            left: `${((CHART_PAD.left + geom.slot * hover + geom.slot / 2) / W) * 100}%`,
-            transform:
-              hover > points.length / 2 ? "translateX(-105%)" : "translateX(5%)",
+        <svg
+          ref={svgRef}
+          viewBox={`0 0 ${W} ${height}`}
+          width="100%"
+          height={height}
+          role="img"
+          aria-label={`${series.map((s) => s.label).join(" and ")} over ${points.length} periods`}
+          onMouseLeave={() => setHover(null)}
+          onMouseMove={(e) => {
+            const rect = svgRef.current?.getBoundingClientRect();
+            if (!rect || rect.width === 0) return;
+            const xInView = ((e.clientX - rect.left) / rect.width) * W;
+            const i = Math.floor((xInView - CHART_PAD.left) / geom.slot);
+            setHover(i >= 0 && i < points.length ? i : null);
           }}
         >
-          <div className="font-mono text-ink-2">{points[hover].label}</div>
-          {series.map((s, i) => (
-            <div key={s.key} className="mt-0.5 flex items-center gap-1.5">
-              <span
-                aria-hidden
-                className="inline-block h-2 w-2 rounded-[2px]"
-                style={{ background: s.color ?? seriesColor(i) }}
+          {ticks.map((t) => (
+            <g key={t}>
+              <line
+                x1={CHART_PAD.left}
+                x2={W - CHART_PAD.right}
+                y1={geom.y(t)}
+                y2={geom.y(t)}
+                stroke={SURFACE.grid}
+                strokeWidth={1}
               />
-              <span className="text-ink-3">{s.label}</span>
-              <span className="ml-auto pl-3 font-mono text-ink">
-                {valueFormat(points[hover].values[s.key] ?? 0)}
-              </span>
-            </div>
+              <text
+                x={CHART_PAD.left - 6}
+                y={geom.y(t) + 3}
+                textAnchor="end"
+                fontSize={9}
+                fill={INK.muted}
+                fontFamily="var(--font-fira-code), monospace"
+              >
+                {valueFormat(t)}
+              </text>
+            </g>
           ))}
-        </div>
-      )}
+
+          {points.map((p, i) => {
+            const x =
+              CHART_PAD.left + geom.slot * i + (geom.slot - geom.barW) / 2;
+            let cursor = baseline;
+            const dim = hover != null && hover !== i;
+
+            return (
+              <g key={p.label} opacity={dim ? 0.5 : 1}>
+                {series.map((s, si) => {
+                  const v = p.values[s.key] ?? 0;
+                  if (v <= 0) return null;
+                  const h = baseline - geom.y(v);
+                  // 2px surface gap between touching segments.
+                  const drawH = Math.max(
+                    h - (cursor === baseline ? 0 : 2),
+                    0.5,
+                  );
+                  const top = cursor - drawH;
+                  cursor = top - (cursor === baseline ? 0 : 0);
+                  const isTop = si === lastNonZero(p, series);
+                  return (
+                    <rect
+                      key={s.key}
+                      x={x}
+                      y={top}
+                      width={geom.barW}
+                      height={drawH}
+                      fill={s.color ?? seriesColor(si)}
+                      /* 4px rounded data-end, square at the baseline. */
+                      rx={isTop ? Math.min(4, geom.barW / 2) : 0}
+                    />
+                  );
+                })}
+              </g>
+            );
+          })}
+
+          <line
+            x1={CHART_PAD.left}
+            x2={W - CHART_PAD.right}
+            y1={baseline}
+            y2={baseline}
+            stroke={SURFACE.border}
+            strokeWidth={1}
+          />
+
+          {[0, points.length - 1]
+            .filter((i, idx, arr) => arr.indexOf(i) === idx && i >= 0)
+            .map((i) => (
+              <text
+                key={`x${i}`}
+                x={CHART_PAD.left + geom.slot * i + geom.slot / 2}
+                y={height - 6}
+                textAnchor={i === 0 ? "start" : "end"}
+                fontSize={9}
+                fill={INK.muted}
+                fontFamily="var(--font-fira-code), monospace"
+              >
+                {points[i].label}
+              </text>
+            ))}
+        </svg>
+
+        {hover != null && (
+          <div
+            className="pointer-events-none absolute z-10 rounded border border-line bg-panel-2 px-2 py-1.5 text-[10px] shadow-lg"
+            style={{
+              top: 8,
+              left: `${((CHART_PAD.left + geom.slot * hover + geom.slot / 2) / W) * 100}%`,
+              transform:
+                hover > points.length / 2
+                  ? "translateX(-105%)"
+                  : "translateX(5%)",
+            }}
+          >
+            <div className="font-mono text-ink-2">{points[hover].label}</div>
+            {series.map((s, i) => (
+              <div key={s.key} className="mt-0.5 flex items-center gap-1.5">
+                <span
+                  aria-hidden
+                  className="inline-block h-2 w-2 rounded-[2px]"
+                  style={{ background: s.color ?? seriesColor(i) }}
+                />
+                <span className="text-ink-3">{s.label}</span>
+                <span className="ml-auto pl-3 font-mono text-ink">
+                  {valueFormat(points[hover].values[s.key] ?? 0)}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

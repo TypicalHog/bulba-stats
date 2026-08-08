@@ -31,7 +31,9 @@ export function RankedBars({
         return (
           <li key={row.key} className="grid grid-cols-[1fr_auto] gap-x-3">
             <div className="min-w-0 text-[12px]">{row.label}</div>
-            <div className="font-mono text-[12px] text-ink-2">{row.display}</div>
+            <div className="font-mono text-[12px] text-ink-2">
+              {row.display}
+            </div>
             <div className="col-span-2 mt-1 h-1.5 w-full rounded-full bg-panel-2">
               <div
                 className="h-full rounded-full"
