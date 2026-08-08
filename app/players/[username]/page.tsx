@@ -614,7 +614,7 @@ async function Counterparties({ username }: { username: string }) {
                   <Rank n={i + 1} />
                 </Td>
                 <Td>
-                  <PlayerLink username={r.username} uuid={null} size={16} />
+                  <PlayerLink username={r.username} uuid={r.uuid} size={16} />
                 </Td>
                 <Td align="right" mono className="text-ink">
                   {diamondsCompact(r.volume)}

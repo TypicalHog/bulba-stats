@@ -731,9 +731,9 @@ async function Network() {
                   <Tr key={`${e.a}-${e.b}`}>
                     <Td>
                       <span className="flex items-center gap-1.5">
-                        <PlayerLink username={e.a} uuid={null} size={16} />
+                        <PlayerLink username={e.a} uuid={e.aUuid} size={16} />
                         <span className="text-ink-3">↔</span>
-                        <PlayerLink username={e.b} uuid={null} size={16} />
+                        <PlayerLink username={e.b} uuid={e.bUuid} size={16} />
                       </span>
                     </Td>
                     <Td align="right" mono className="text-ink">

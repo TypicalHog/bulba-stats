@@ -1,7 +1,11 @@
 import { Suspense } from "react";
 import { getAllTrades } from "@/lib/api/endpoints";
 import { toLegs } from "@/lib/analytics/legs";
-import { counterpartyEdges, playerStats } from "@/lib/analytics/players";
+import {
+  counterpartyEdges,
+  playerStats,
+  type CounterpartyEdge,
+} from "@/lib/analytics/players";
 import { Panel, Caveat, SectionTitle } from "@/components/ui/panel";
 import { Stat } from "@/components/ui/stat";
 import { PanelSkeleton } from "@/components/ui/skeleton";
@@ -176,7 +180,7 @@ async function PlayersBody() {
 function RelationshipList({
   edges,
 }: {
-  edges: { a: string; b: string; volume: number; trades: number }[];
+  edges: CounterpartyEdge[];
 }) {
   if (!edges.length) {
     return (
@@ -196,9 +200,9 @@ function RelationshipList({
           className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 text-[12px]"
         >
           <span className="flex items-center gap-2">
-            <PlayerLink username={e.a} uuid={null} size={16} />
+            <PlayerLink username={e.a} uuid={e.aUuid} size={16} />
             <span className="text-ink-3">↔</span>
-            <PlayerLink username={e.b} uuid={null} size={16} />
+            <PlayerLink username={e.b} uuid={e.bUuid} size={16} />
           </span>
           <span className="ml-auto font-mono text-ink">
             {diamonds(e.volume)}
