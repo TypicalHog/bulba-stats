@@ -39,6 +39,13 @@ export function ItemIcon({
   );
 }
 
+/**
+ * Item identity, linked to its market page when there is one.
+ *
+ * Not every item reaches here with a listing id — bank balances are keyed by
+ * variant, and a variant that was never listed has no market page. Those
+ * render as plain text rather than a link to `/market/0`.
+ */
 export function ItemLink({
   listingId,
   itemName,
@@ -48,7 +55,7 @@ export function ItemLink({
   showNbt = false,
   className = "",
 }: {
-  listingId: number;
+  listingId: number | null | undefined;
   itemName: string | null;
   variantName: string | null;
   nbt?: { type: string; name: string; level: number }[];
@@ -60,14 +67,11 @@ export function ItemLink({
     ? nbtLabel(nbt as { type: "enchant" | "effect"; name: string; level: number }[])
     : "";
 
-  return (
-    <Link
-      href={`/market/${listingId}`}
-      className={`group flex min-w-0 items-center gap-2 ${className}`}
-    >
+  const body = (
+    <>
       <ItemIcon itemName={itemName} size={size} />
       <span className="min-w-0">
-        <span className="block truncate text-ink group-hover:text-accent">
+        <span className="block truncate group-hover:text-accent">
           {itemLabel({ itemName, variantName })}
         </span>
         {enchants && (
@@ -76,6 +80,23 @@ export function ItemLink({
           </span>
         )}
       </span>
+    </>
+  );
+
+  if (!listingId) {
+    return (
+      <span className={`flex min-w-0 items-center gap-2 text-ink ${className}`}>
+        {body}
+      </span>
+    );
+  }
+
+  return (
+    <Link
+      href={`/market/${listingId}`}
+      className={`group flex min-w-0 items-center gap-2 text-ink ${className}`}
+    >
+      {body}
     </Link>
   );
 }
