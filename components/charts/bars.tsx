@@ -7,47 +7,102 @@ import type { ReactNode } from "react";
  * real DOM rows means the labels stay selectable, the links stay links, and it
  * reflows on narrow screens without any viewBox math.
  */
+export type RankedBarRow = {
+  key: string;
+  label: ReactNode;
+  value: number;
+  display: string;
+  color?: string;
+  /**
+   * Optional breakdown of `value`. When present the bar is drawn as stacked
+   * parts instead of one block, so a row shows composition as well as
+   * magnitude. Parts must sum to `value` or the bar misreports its own total.
+   */
+  parts?: { key: string; value: number; color: string; label: string }[];
+};
+
+/**
+ * Horizontal ranked bars, laid out in CSS rather than SVG.
+ *
+ * A leaderboard is a table whose magnitude happens to be drawn — keeping it as
+ * real DOM rows means the labels stay selectable, the links stay links, and it
+ * reflows on narrow screens without any viewBox math.
+ */
 export function RankedBars({
   rows,
   max,
   color = "var(--accent)",
+  legend,
 }: {
-  rows: {
-    key: string;
-    label: ReactNode;
-    value: number;
-    display: string;
-    color?: string;
-  }[];
+  rows: RankedBarRow[];
   max?: number;
   color?: string;
+  /** Shown above the bars; required whenever rows carry more than one part. */
+  legend?: { label: string; color: string }[];
 }) {
   const ceiling = max ?? Math.max(...rows.map((r) => r.value), 1);
 
   return (
-    <ol className="flex flex-col gap-2">
-      {rows.map((row) => {
-        const pct = ceiling > 0 ? Math.max(0, (row.value / ceiling) * 100) : 0;
-        return (
-          <li key={row.key} className="grid grid-cols-[1fr_auto] gap-x-3">
-            <div className="min-w-0 text-[12px]">{row.label}</div>
-            <div className="font-mono text-[12px] text-ink-2">
-              {row.display}
-            </div>
-            <div className="col-span-2 mt-1 h-1.5 w-full rounded-full bg-panel-2">
-              <div
-                className="h-full rounded-full"
-                style={{
-                  width: `${pct}%`,
-                  background: row.color ?? color,
-                  minWidth: row.value > 0 ? 2 : 0,
-                }}
+    <div>
+      {legend && legend.length > 0 && (
+        <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px]">
+          {legend.map((l) => (
+            <span key={l.label} className="flex items-center gap-1.5 text-ink-3">
+              <span
+                aria-hidden
+                className="inline-block h-2 w-2 rounded-[2px]"
+                style={{ background: l.color }}
               />
-            </div>
-          </li>
-        );
-      })}
-    </ol>
+              {l.label}
+            </span>
+          ))}
+        </div>
+      )}
+
+      <ol className="flex flex-col gap-2">
+        {rows.map((row) => {
+          const pct = ceiling > 0 ? Math.max(0, (row.value / ceiling) * 100) : 0;
+          const parts = row.parts?.filter((p) => p.value > 0);
+
+          return (
+            <li key={row.key} className="grid grid-cols-[1fr_auto] gap-x-3">
+              <div className="min-w-0 text-[12px]">{row.label}</div>
+              <div className="font-mono text-[12px] text-ink-2">
+                {row.display}
+              </div>
+              <div className="col-span-2 mt-1 h-1.5 w-full rounded-full bg-panel-2">
+                {parts && parts.length > 0 ? (
+                  <div
+                    className="flex h-full overflow-hidden rounded-full"
+                    style={{ width: `${pct}%`, gap: parts.length > 1 ? 2 : 0 }}
+                  >
+                    {parts.map((p) => (
+                      <div
+                        key={p.key}
+                        title={`${p.label}`}
+                        style={{
+                          width: `${(p.value / (row.value || 1)) * 100}%`,
+                          background: p.color,
+                        }}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${pct}%`,
+                      background: row.color ?? color,
+                      minWidth: row.value > 0 ? 2 : 0,
+                    }}
+                  />
+                )}
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
   );
 }
 

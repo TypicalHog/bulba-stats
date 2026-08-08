@@ -50,9 +50,16 @@ export function LiveTicker({ seed }: { seed: TickerRow[] }) {
   useEffect(() => {
     const socket = io(SITE_ORIGIN, {
       path: WS_PATH,
-      transports: ["websocket"],
-      // This is a read-only tape; a failed connection degrades to the seed
-      // rather than retrying forever.
+      /*
+       * Try the WebSocket first for latency, but keep polling as a fallback.
+       * Pinning transports to websocket alone means a blocked or failed upgrade
+       * — a proxy, a corporate network, a handshake torn down early — kills the
+       * feed outright instead of degrading to long-polling, which this upstream
+       * also serves.
+       */
+      transports: ["websocket", "polling"],
+      // This is a read-only tape; a failed connection degrades to the seeded
+      // rows rather than retrying forever.
       reconnectionAttempts: 5,
       reconnectionDelay: 2000,
     });
@@ -82,7 +89,16 @@ export function LiveTicker({ seed }: { seed: TickerRow[] }) {
     });
 
     return () => {
+      /*
+       * Tearing down mid-handshake is normal — React runs effects twice in
+       * development, and any navigation can unmount before the upgrade
+       * completes. Drop our listeners first so the teardown can't flip state on
+       * an unmounted component; the browser may still log "closed before the
+       * connection is established", which is the socket being cancelled on
+       * purpose rather than a failure.
+       */
       socket.removeAllListeners();
+      socket.io.removeAllListeners();
       socket.disconnect();
       socketRef.current = null;
     };

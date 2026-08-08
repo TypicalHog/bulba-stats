@@ -17,8 +17,12 @@ export type DayBucket = {
   trades: number;
   fees: number;
   traders: number;
+  /** Venue split — partitions `volume`. */
   physical: number;
   storage: number;
+  /** Taker-side split — also partitions `volume`. */
+  buy: number;
+  sell: number;
 };
 
 /**
@@ -57,6 +61,8 @@ export function dailyActivity(trades: Trade[]): DayBucket[] {
       traders: traders.size,
       physical: sum(rows, (r) => (r.venue === "physical" ? r.total : 0)),
       storage: sum(rows, (r) => (r.venue === "storage" ? r.total : 0)),
+      buy: sum(rows, (r) => (r.side === "buy" ? r.total : 0)),
+      sell: sum(rows, (r) => (r.side === "sell" ? r.total : 0)),
     });
   }
   return out;

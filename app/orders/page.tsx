@@ -8,22 +8,22 @@ import { groupBy, sum } from "@/lib/analytics/legs";
 import { orderAges, orderFlow } from "@/lib/analytics/book";
 import { median, quantile } from "@/lib/analytics/market";
 import { Panel, Caveat, SectionTitle } from "@/components/ui/panel";
-import { Stat, Meter } from "@/components/ui/stat";
+import { Stat } from "@/components/ui/stat";
 import { PanelSkeleton } from "@/components/ui/skeleton";
-import { DataTable, Rank, Td, Th, Tr } from "@/components/ui/table";
-import { ItemLink, PlayerLink } from "@/components/ui/entity";
+import { DataTable, Td, Th, Tr } from "@/components/ui/table";
+import { PlayerLink } from "@/components/ui/entity";
 import { RankedBars, SplitBar } from "@/components/charts/bars";
 import { SERIES } from "@/lib/design";
 import {
-  diamonds,
   diamondsCompact,
   duration,
   MARKET_MAKER,
   num,
   percent,
-  price,
 } from "@/lib/format";
 import { requestTime } from "@/lib/time";
+import { DeepestBooks } from "./deepest-books";
+import { BANDS, bandKey } from "./bands";
 
 export const metadata = {
   title: "Orders",
@@ -109,7 +109,9 @@ async function RestingBook() {
     orders.filter((o) => o.player?.username !== MARKET_MAKER),
   );
 
-  const BANDS = [
+  /* Histogram buckets for the distance chart — distinct from the imported
+     filter BANDS used by the deepest-books table. */
+  const DISTANCE_BANDS = [
     { key: "tight", label: "≤1% of mid", max: 1, color: SERIES[2] },
     { key: "near", label: "1–5%", max: 5, color: SERIES[0] },
     { key: "mid", label: "5–20%", max: 20, color: SERIES[3] },
@@ -117,8 +119,8 @@ async function RestingBook() {
   ];
 
   const bandsFor = (values: number[]) =>
-    BANDS.map((b, i) => {
-      const lower = i === 0 ? -1 : BANDS[i - 1].max;
+    DISTANCE_BANDS.map((b, i) => {
+      const lower = i === 0 ? -1 : DISTANCE_BANDS[i - 1].max;
       return {
         key: b.key,
         label: b.label,
@@ -140,17 +142,39 @@ async function RestingBook() {
 
   const byListing = groupBy(orders, (o) => o.listing?.id ?? 0);
   const books = [...byListing.entries()]
-    .map(([listingId, rows]) => ({
-      listingId,
-      itemName: rows[0].listing?.itemName ?? null,
-      variantName: rows[0].listing?.variantName ?? null,
-      orders: rows.length,
-      value: sum(rows, (o) => o.limitPrice * o.remainingAmount),
-      mid: midByListing.get(listingId) ?? null,
-      writers: new Set(rows.map((o) => o.player?.username)).size,
-    }))
+    .map(([listingId, rows]) => {
+      const mid = midByListing.get(listingId) ?? null;
+
+      /*
+       * Aggregate each distance band here rather than shipping 20,000 orders to
+       * the browser so it can filter them. Four small numbers per book replace
+       * the entire crawl.
+       */
+      const byBand: Record<string, { orders: number; value: number }> = {};
+      for (const band of BANDS) {
+        const inBand =
+          band == null || mid == null || mid <= 0
+            ? rows
+            : rows.filter(
+                (o) => Math.abs(o.limitPrice - mid) / mid <= band / 100,
+              );
+        byBand[bandKey(band)] = {
+          orders: inBand.length,
+          value: sum(inBand, (o) => o.limitPrice * o.remainingAmount),
+        };
+      }
+
+      return {
+        listingId,
+        itemName: rows[0].listing?.itemName ?? null,
+        variantName: rows[0].listing?.variantName ?? null,
+        mid,
+        writers: new Set(rows.map((o) => o.player?.username)).size,
+        byBand,
+      };
+    })
     /* Every book, not a top-20 — the panel scrolls instead of truncating. */
-    .sort((a, b) => b.value - a.value);
+    .sort((a, b) => (b.byBand.all?.value ?? 0) - (a.byBand.all?.value ?? 0));
 
   const partial = orders.filter((o) => o.status === "partially_filled");
   const withExpiry = orders.filter((o) => o.expiresAt);
@@ -240,67 +264,18 @@ async function RestingBook() {
       </div>
 
       <div>
-        <SectionTitle
-          hint={`By resting value · all ${num(books.length)} books`}
-        >
+        <SectionTitle hint={`All ${num(books.length)} books`}>
           Deepest books
         </SectionTitle>
         <Panel bodyClassName="p-0">
-          <div className="scroll-y max-h-[520px]">
-            <DataTable>
-              <thead>
-                <tr>
-                  <Th>#</Th>
-                  <Th>Item</Th>
-                  <Th align="right">Mid</Th>
-                  <Th align="right">Orders</Th>
-                  <Th align="right" title="Distinct accounts quoting this book">
-                    Writers
-                  </Th>
-                  <Th align="right">Resting value</Th>
-                  <Th>Share of book</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {books.map((b, i) => (
-                  <Tr key={b.listingId}>
-                    <Td>
-                      <Rank n={i + 1} />
-                    </Td>
-                    <Td>
-                      <ItemLink
-                        listingId={b.listingId}
-                        itemName={b.itemName}
-                        variantName={b.variantName}
-                        size={16}
-                      />
-                    </Td>
-                    <Td align="right" mono className="text-ink-2">
-                      {price(b.mid)}
-                    </Td>
-                    <Td align="right" mono className="text-ink-2">
-                      {num(b.orders)}
-                    </Td>
-                    <Td align="right" mono className="text-ink-3">
-                      {num(b.writers)}
-                    </Td>
-                    <Td align="right" mono className="text-ink">
-                      {diamonds(b.value)}
-                    </Td>
-                    <Td className="w-28">
-                      <Meter
-                        value={b.value}
-                        max={books[0].value}
-                        color={SERIES[0]}
-                        label={`${b.itemName} resting value`}
-                      />
-                    </Td>
-                  </Tr>
-                ))}
-              </tbody>
-            </DataTable>
-          </div>
+          <DeepestBooks rows={books} />
         </Panel>
+        <Caveat>
+          The median resting order sits far from mid, so total resting value
+          measures how far a market maker has laddered as much as how much depth
+          you could trade against. Narrow the band to see the orders that could
+          realistically fill.
+        </Caveat>
       </div>
 
       {!complete && (

@@ -453,6 +453,10 @@ async function Liquidity() {
       itemName: legs[0].itemName,
       variantName: legs[0].variantName,
       volume: sum(legs, (l) => l.value),
+      /* Direction matters: the same volume reads very differently depending on
+         whether takers were accumulating the item or offloading it. */
+      buy: sum(legs, (l) => (l.side === "buy" ? l.value : 0)),
+      sell: sum(legs, (l) => (l.side === "sell" ? l.value : 0)),
       trades: legs.length,
     }))
     .sort((a, b) => b.volume - a.volume)
@@ -522,11 +526,28 @@ async function Liquidity() {
           subtitle="Traded value over the seven days ending at the market's last trade"
         >
           <RankedBars
+            legend={[
+              { label: "Taker bought", color: "var(--up)" },
+              { label: "Taker sold", color: "var(--down)" },
+            ]}
             rows={rising.map((r) => ({
               key: String(r.listingId),
               value: r.volume,
               display: `${diamondsCompact(r.volume)} · ${num(r.trades)} trades`,
-              color: SERIES[2],
+              parts: [
+                {
+                  key: "buy",
+                  value: r.buy,
+                  color: "var(--up)",
+                  label: `Bought ${diamondsCompact(r.buy)}`,
+                },
+                {
+                  key: "sell",
+                  value: r.sell,
+                  color: "var(--down)",
+                  label: `Sold ${diamondsCompact(r.sell)}`,
+                },
+              ],
               label: (
                 <ItemLink
                   listingId={r.listingId}

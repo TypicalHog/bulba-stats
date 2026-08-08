@@ -18,11 +18,11 @@ import { toLegs } from "@/lib/analytics/legs";
 import { playerStats } from "@/lib/analytics/players";
 import { Panel, Caveat } from "@/components/ui/panel";
 import { HeroStat, Stat } from "@/components/ui/stat";
-import { StackedBars } from "@/components/charts/timeseries";
-import { RankedBars, SplitBar } from "@/components/charts/bars";
+import { RankedBars } from "@/components/charts/bars";
 import { DataTable, Rank, Td, Th, Tr } from "@/components/ui/table";
 import { ItemLink, PlayerLink } from "@/components/ui/entity";
 import { LiveTicker } from "@/components/live/ticker";
+import { VolumeBreakdown } from "./volume-breakdown";
 import { SERIES } from "@/lib/design";
 import {
   compact,
@@ -243,44 +243,18 @@ async function VolumeHistory() {
 
   const points = days.map((d) => ({
     label: d.day.slice(5),
-    values: { physical: d.physical, storage: d.storage },
+    physical: d.physical,
+    storage: d.storage,
+    buy: d.buy,
+    sell: d.sell,
   }));
-
-  const totalPhysical = days.reduce((a, d) => a + d.physical, 0);
-  const totalStorage = days.reduce((a, d) => a + d.storage, 0);
 
   return (
     <Panel
-      title="Daily volume by venue"
+      title="Daily volume"
       subtitle="Every day since the market opened, including days with no trading"
     >
-      <StackedBars
-        points={points}
-        series={[
-          { key: "physical", label: "In-person (physical)", color: SERIES[0] },
-          { key: "storage", label: "Bank-to-bank (storage)", color: SERIES[2] },
-        ]}
-        height={220}
-        format="compact"
-      />
-      <div className="mt-4 border-t border-line pt-3">
-        <SplitBar
-          segments={[
-            {
-              key: "physical",
-              label: "In-person",
-              value: totalPhysical,
-              color: SERIES[0],
-            },
-            {
-              key: "storage",
-              label: "Bank-to-bank",
-              value: totalStorage,
-              color: SERIES[2],
-            },
-          ]}
-        />
-      </div>
+      <VolumeBreakdown points={points} />
     </Panel>
   );
 }
@@ -468,14 +442,13 @@ async function MarketStructure() {
   const totalVolume = shares.reduce((a, b) => a + b, 0);
 
   const withMid = summary.filter((s) => s.mid != null);
+  /* Every quoted book, in both directions — the panels scroll. */
   const widest = [...summary]
     .filter((s) => s.spread != null && s.mid)
-    .sort((a, b) => b.spread! / b.mid! - a.spread! / a.mid!)
-    .slice(0, 5);
+    .sort((a, b) => b.spread! / b.mid! - a.spread! / a.mid!);
   const tightest = [...summary]
     .filter((s) => s.spread != null && s.mid && s.spread! > 0)
-    .sort((a, b) => a.spread! / a.mid! - b.spread! / b.mid!)
-    .slice(0, 5);
+    .sort((a, b) => a.spread! / a.mid! - b.spread! / b.mid!);
 
   return (
     <div className="grid gap-4 lg:grid-cols-3">
@@ -566,41 +539,44 @@ function SpreadList({
   }
 
   return (
-    <DataTable>
-      <thead>
-        <tr>
-          <Th>Item</Th>
-          <Th align="right">Bid</Th>
-          <Th align="right">Ask</Th>
-          <Th align="right">Spread</Th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((s) => (
-          <Tr key={s.listingId}>
-            <Td>
-              <ItemLink
-                listingId={s.listingId}
-                itemName={s.itemName}
-                variantName={s.variantName}
-                size={16}
-              />
-            </Td>
-            <Td align="right" mono>
-              <span className="text-up">{price(s.bestBid)}</span>
-            </Td>
-            <Td align="right" mono>
-              <span className="text-down">{price(s.bestAsk)}</span>
-            </Td>
-            <Td align="right" mono className="text-ink-2">
-              {s.spread != null && s.mid
-                ? percent((s.spread / s.mid) * 100)
-                : "—"}
-            </Td>
-          </Tr>
-        ))}
-      </tbody>
-    </DataTable>
+    /* Scrolls rather than truncating, so every quoted book is reachable. */
+    <div className="scroll-y max-h-[300px]">
+      <DataTable>
+        <thead>
+          <tr>
+            <Th>Item</Th>
+            <Th align="right">Bid</Th>
+            <Th align="right">Ask</Th>
+            <Th align="right">Spread</Th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((s) => (
+            <Tr key={s.listingId}>
+              <Td>
+                <ItemLink
+                  listingId={s.listingId}
+                  itemName={s.itemName}
+                  variantName={s.variantName}
+                  size={16}
+                />
+              </Td>
+              <Td align="right" mono>
+                <span className="text-up">{price(s.bestBid)}</span>
+              </Td>
+              <Td align="right" mono>
+                <span className="text-down">{price(s.bestAsk)}</span>
+              </Td>
+              <Td align="right" mono className="text-ink-2">
+                {s.spread != null && s.mid
+                  ? percent((s.spread / s.mid) * 100)
+                  : "—"}
+              </Td>
+            </Tr>
+          ))}
+        </tbody>
+      </DataTable>
+    </div>
   );
 }
 
