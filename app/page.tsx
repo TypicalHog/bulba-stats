@@ -44,6 +44,19 @@ export const metadata = {
 export default function OverviewPage() {
   return (
     <div className="flex flex-col gap-6">
+      {/*
+        Every route carries exactly one h1. This page leads visually with the
+        hero figure, but a hero number is not a page title — screen readers and
+        search results need the heading to say what the page is.
+      */}
+      <div>
+        <h1 className="text-[17px] font-semibold">Market overview</h1>
+        <p className="mt-0.5 text-[12px] text-ink-3">
+          The whole BulbaStore exchange at a glance — volume, liquidity,
+          concentration and what&apos;s trading right now.
+        </p>
+      </div>
+
       <Suspense fallback={<HeaderSkeleton />}>
         <MarketHeader />
       </Suspense>
