@@ -28,7 +28,16 @@ export function ActivityHeatmap({ grid }: { grid: number[][] }) {
 
   return (
     <div className="scroll-x">
-      <div className="relative min-w-[560px]" onMouseLeave={() => setHovered(null)}>
+      {/*
+        The hover ring is drawn 2px outside the cell (1px offset + 1px width).
+        Outlines take no part in layout, but they DO overflow a scroll
+        container — without this padding, hovering a cell on the grid's edge
+        made a horizontal scrollbar appear. The padding gives the ring room.
+      */}
+      <div
+        className="relative min-w-[560px] p-[2px]"
+        onMouseLeave={() => setHovered(null)}
+      >
         <div className="grid grid-cols-[34px_repeat(24,1fr)] gap-[2px]">
           <div />
           {Array.from({ length: 24 }, (_, h) => (
