@@ -10,12 +10,18 @@ export const CURRENCY = "◇";
  * Used for stat-tile values and axis ticks, where the exact digit matters less
  * than the order of magnitude. Tables keep full precision.
  */
-export function compact(n: number, digits = 1): string {
+export function compact(n: number, digits?: number): string {
   const abs = Math.abs(n);
   if (abs < 1000) return trimZeros(n.toFixed(abs < 10 && abs % 1 !== 0 ? 2 : 0));
-  if (abs < 1e6) return `${trimZeros((n / 1e3).toFixed(digits))}K`;
-  if (abs < 1e9) return `${trimZeros((n / 1e6).toFixed(digits))}M`;
-  return `${trimZeros((n / 1e9).toFixed(digits))}B`;
+  /*
+   * Below 10K a single decimal throws away real precision — 2,984 rendering as
+   * "3K" reads as a rounder number than the data supports. Keep two decimals
+   * through the thousands, one above.
+   */
+  const d = digits ?? (abs < 1e4 ? 2 : 1);
+  if (abs < 1e6) return `${trimZeros((n / 1e3).toFixed(d))}K`;
+  if (abs < 1e9) return `${trimZeros((n / 1e6).toFixed(d))}M`;
+  return `${trimZeros((n / 1e9).toFixed(d))}B`;
 }
 
 function trimZeros(s: string): string {
