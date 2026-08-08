@@ -118,14 +118,14 @@ meaning. Everything below is computed in `lib/analytics/`.
 
 ### 2.2 Per item
 
-- Candlestick chart (1m…1d) with volume histogram
-- Order-book depth chart (cumulative bid/ask curves) and the ladder
-- VWAP, high/low, realized volatility, trade count, unique traders
+- Candlestick chart (1m…1d) with volume histogram; interval lives in the URL
+- Order-book depth chart (cumulative bid/ask curves) and the price ladder
+- VWAP, mid vs VWAP, realized volatility, trade count, unique traders, turnover
 - Maker/taker split, venue split, average trade size
-- Participant table: who provides liquidity here and at what share
-- Simulated slippage curve — cost to fill 1 / 10 / 100 / 1000 units, from
-  `/price`
-- Recent fills with counterparties
+- Participant tables: who quotes this book now, and who has actually filled here
+- Simulated slippage curve — cost to sweep 1 / 10 / 64 / 256 / 1024 units,
+  computed locally from the book so a whole curve costs no extra requests
+- Recent trades, aggregated to taker actions with the makers each one swept
 
 ### 2.3 Per player
 
@@ -164,7 +164,7 @@ holder count), and implied stock valuation from the `bulba_stock` listing.
 | Route | Contents |
 |---|---|
 | `/` | Overview: hero volume figure, KPI tiles, volume history, movers, most-traded, live ticker, market health |
-| `/market` | All listings — sortable, filterable, sparklines, spread, depth, mid |
+| `/market` | All listings — sortable, filterable, sparklines, spread, VWAP, volume; depth ownership streams separately |
 | `/market/[id]` | Item deep dive: candles, depth, ladder, stats, participants, fills |
 | `/players` | Leaderboards across every ranking dimension |
 | `/players/[username]` | Player deep dive: P&L, holdings, orders, trades, counterparties |
@@ -176,9 +176,14 @@ holder count), and implied stock valuation from the `bulba_stock` listing.
 
 **Progressive disclosure.** Overview and item pages lead with what matters and
 render instantly. Anything expensive (full-history aggregates, the open-order
-crawl, the counterparty graph) either streams in behind a boundary or sits behind
-an explicit user action — nothing makes a visitor wait 20 seconds for a first
-paint.
+crawl, the counterparty graph) streams in behind its own `<Suspense>` boundary —
+nothing makes a visitor wait 20 seconds for a first paint.
+
+Concretely, the market table is built from four upstream requests and renders
+immediately; the depth-ownership panel below it needs the ~20,700-row order
+crawl and arrives separately. Item sparklines come from actual fill prices
+rather than a candle request per listing, which would have cost ~118 extra
+requests against a 120/min budget.
 
 ---
 
@@ -201,7 +206,15 @@ each appears:
   behavior, not a bug in the aggregation.
 - **`BulbaStore` is the house market maker**, holding ~92% of resting orders.
   Leaderboards and concentration stats flag it explicitly and offer a toggle to
-  exclude it, because leaving it in drowns out every human trader.
+  exclude it, because leaving it in drowns out every human trader. Two
+  order-flow statistics go further and are reported *split* rather than blended,
+  because the combined figure describes neither population: quote distance from
+  mid (the MM ladders quotes far out by design) and order lifecycle (its ~99%
+  cancel rate is requoting to track price, not failed trades).
+- **Windowed statistics are anchored to the dataset's last event**, not the wall
+  clock, so a cached aggregate yields the same figure however old the cache is.
+  Order age and book staleness do use request time, since those are genuinely
+  live quantities.
 - **Niche variants** (odd enchant combinations) are hidden by default, per the
   upstream `niche` flag, with a toggle to reveal them.
 
@@ -263,9 +276,21 @@ proportional figures for hero numbers and stat-tile values.
 Hand-rolled SVG, no charting dependency — full control over the dense trading
 look and nothing extra in the bundle. Per the `dataviz` method: bars ≤24px with
 4px rounded data-ends, 2px lines, ≥8px markers, 2px surface gaps between touching
-fills, hairline recessive gridlines, one y-axis (never dual), legend whenever
-there are ≥2 series, direct labels used sparingly, hover crosshair + tooltip on
-every plot, and a table view available for the data behind each chart.
+fills, hairline recessive gridlines, one y-axis (never dual — the candle chart's
+volume histogram gets its own band and baseline), legend whenever there are ≥2
+series, direct labels used sparingly, hover crosshair + tooltip on every plot,
+and a table view available for the data behind each chart.
+
+Two behaviours worth stating because they were wrong first time and fixed after
+rendering the pages:
+
+- **Depth curves are windowed around mid**, not around the outermost order, with
+  the y-axis scaled to visible depth. Scaling to the extremes collapsed a real
+  book into a vertical line at the touch, because market makers park a few units
+  very far out. The chart says so when orders fall outside the view.
+- **Charts scroll rather than shrink below 560px.** The 800-unit viewBox scales
+  to its container, which rendered axis labels at ~4px on a phone. They now
+  scroll horizontally inside their panel, exactly like wide tables.
 
 ### 5.6 Assets
 
@@ -295,8 +320,16 @@ lib/
 ```
 
 Server Components fetch and compute; Client Components handle sorting,
-filtering, chart hover, and the live feed. No global state library — URL search
-params carry filter state so every view is linkable.
+filtering, chart hover, and the live feed. No global state library.
+
+Two boundary rules fall out of that split:
+
+- **Nothing crossing to a Client Component may be a function.** Chart value
+  formatters are named tokens (`"compact"`, `"diamonds"`, `"count"`) resolved on
+  the client, not closures passed as props.
+- **Panels set `min-width: 0`.** They are always grid or flex children, and the
+  `min-width: auto` default made any panel wrapping a wide table push its track
+  past the viewport and scroll the whole page sideways.
 
 ---
 
