@@ -24,6 +24,7 @@ import { PanelSkeleton } from "@/components/ui/skeleton";
 import { DataTable, Rank, Td, Th, Tr } from "@/components/ui/table";
 import { ItemLink, PlayerLink } from "@/components/ui/entity";
 import { ActivityHeatmap } from "@/components/charts/heatmap";
+import { NetworkGraph } from "./network-graph";
 import { RankedBars, SplitBar } from "@/components/charts/bars";
 import { SERIES } from "@/lib/design";
 import { anchorNow, DAY_MS } from "@/lib/time";
@@ -684,6 +685,20 @@ async function Network() {
     .sort((a, b) => b.degree - a.degree)
     .slice(0, 10);
 
+  /* Only accounts that actually have a relationship belong in the graph. */
+  const graphNodes = [...degree.keys()].map((username) => ({
+    username,
+    uuid: stats.get(username)?.uuid ?? null,
+    volume: stats.get(username)?.volume ?? 0,
+    isMarketMaker: username === MARKET_MAKER,
+  }));
+  const graphEdges = edges.map((e) => ({
+    a: e.a,
+    b: e.b,
+    volume: e.volume,
+    trades: e.trades,
+  }));
+
   const mmVolume = stats.get(MARKET_MAKER)?.volume ?? 0;
   const totalVolume = sum(traders, (t) => t.volume);
 
@@ -692,6 +707,20 @@ async function Network() {
       <SectionTitle hint="Both sides of every trade">
         The trading network
       </SectionTitle>
+
+      <div className="mb-4">
+        <Panel
+          title="Who trades with whom"
+          subtitle="Hover an account to isolate its relationships; hide any account to see the structure behind it"
+        >
+          <NetworkGraph nodes={graphNodes} edges={graphEdges} />
+          <Caveat>
+            Hiding the market maker is the interesting move: it connects to
+            nearly everyone, so removing it shows which traders have found each
+            other directly.
+          </Caveat>
+        </Panel>
+      </div>
       <div className="grid gap-4 lg:grid-cols-3">
         <Panel title="Shape of the network">
           <div className="grid grid-cols-2 gap-4 text-[11px]">
