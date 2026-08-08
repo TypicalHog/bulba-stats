@@ -58,9 +58,16 @@ export function RankedBars({
 export function SplitBar({
   segments,
   height = 8,
+  showLegend = true,
 }: {
   segments: { key: string; label: string; value: number; color: string }[];
   height?: number;
+  /**
+   * Legend off only where the bar is an in-row glyph and the labels already
+   * appear in neighbouring columns — never to save space in a standalone chart,
+   * where the legend is the identity channel.
+   */
+  showLegend?: boolean;
 }) {
   const total = segments.reduce((a, s) => a + s.value, 0);
   if (total <= 0) {
@@ -86,21 +93,23 @@ export function SplitBar({
             />
           ))}
       </div>
-      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px]">
-        {segments.map((s) => (
-          <span key={s.key} className="flex items-center gap-1.5 text-ink-3">
-            <span
-              aria-hidden
-              className="inline-block h-2 w-2 rounded-[2px]"
-              style={{ background: s.color }}
-            />
-            {s.label}
-            <span className="font-mono text-ink-2">
-              {((s.value / total) * 100).toFixed(1)}%
+      {showLegend && (
+        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px]">
+          {segments.map((s) => (
+            <span key={s.key} className="flex items-center gap-1.5 text-ink-3">
+              <span
+                aria-hidden
+                className="inline-block h-2 w-2 rounded-[2px]"
+                style={{ background: s.color }}
+              />
+              {s.label}
+              <span className="font-mono text-ink-2">
+                {((s.value / total) * 100).toFixed(1)}%
+              </span>
             </span>
-          </span>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
