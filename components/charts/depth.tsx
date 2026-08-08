@@ -36,41 +36,87 @@ export function DepthChart({
       book.mid ??
       (bids[0] && asks[0] ? (bids[0].price + asks[0].price) / 2 : (bids[0] ?? asks[0]).price);
 
-    // Symmetric price window around mid so neither side visually dominates
-    // just by resting further out.
-    const reach = Math.max(
-      bids.length ? mid - bids[bids.length - 1].price : 0,
-      asks.length ? asks[asks.length - 1].price - mid : 0,
-      mid * 0.02,
-    );
+    /*
+     * Window the view around mid rather than around the outermost order.
+     *
+     * A market maker often parks a few units at prices far from mid; scaling to
+     * those extremes compresses the entire real book into a vertical line at
+     * the touch. So reach is set by where 90% of each side's depth actually
+     * sits, then clamped so the window is never absurdly tight or wide.
+     */
+    const reachFor = (pts: typeof bids): number => {
+      if (!pts.length) return 0;
+      const target = pts[pts.length - 1].cumUnits * 0.9;
+      const cut = pts.find((p) => p.cumUnits >= target) ?? pts[pts.length - 1];
+      return Math.abs(cut.price - mid);
+    };
+
+    const rawReach = Math.max(reachFor(bids), reachFor(asks));
+    const reach = Math.min(Math.max(rawReach, mid * 0.03), mid * 0.6);
+
     const xMin = Math.max(mid - reach, 0);
     const xMax = mid + reach;
 
+    /*
+     * Scale the y-axis to the depth visible in the window, not the whole book —
+     * otherwise a distant tail flattens everything on screen.
+     */
+    const withinX = (p: { price: number }) => p.price >= xMin && p.price <= xMax;
+    const visibleBids = bids.filter(withinX);
+    const visibleAsks = asks.filter(withinX);
     const maxUnits = Math.max(
-      bids.length ? bids[bids.length - 1].cumUnits : 0,
-      asks.length ? asks[asks.length - 1].cumUnits : 0,
+      visibleBids.length ? visibleBids[visibleBids.length - 1].cumUnits : 0,
+      visibleAsks.length ? visibleAsks[visibleAsks.length - 1].cumUnits : 0,
       1,
     );
+
+    /** True when orders rest outside the drawn window. */
+    const clipped =
+      (bids.length > 0 && visibleBids.length < bids.length) ||
+      (asks.length > 0 && visibleAsks.length < asks.length);
 
     const x = linearScale([xMin, xMax], [CHART_PAD.left, W - CHART_PAD.right]);
     const y = linearScale([0, maxUnits], [CHART_PAD.top + plotH, CHART_PAD.top]);
 
-    // Step curves: depth is constant between price levels, so a straight
-    // interpolation would imply liquidity that isn't there.
+    /*
+     * Step curves: depth is constant between price levels, so straight
+     * interpolation would imply liquidity at prices where none rests.
+     */
     const stepPath = (pts: typeof bids, side: "bid" | "ask"): string => {
       if (!pts.length) return "";
       const baseY = CHART_PAD.top + plotH;
-      const parts: string[] = [`M${x(mid)},${baseY}`, `L${x(mid)},${y(pts[0].cumUnits)}`];
-      for (const p of pts) {
-        parts.push(`L${x(p.price)},${y(p.cumUnits)}`);
-      }
       const edge = side === "bid" ? xMin : xMax;
-      parts.push(`L${x(edge)},${y(pts[pts.length - 1].cumUnits)}`);
-      parts.push(`L${x(edge)},${baseY}`, "Z");
+      const parts: string[] = [
+        `M${x(mid)},${baseY}`,
+        `L${x(mid)},${y(pts[0].cumUnits)}`,
+      ];
+
+      let last = pts[0].cumUnits;
+      for (const p of pts) {
+        const clampedPrice = Math.max(xMin, Math.min(xMax, p.price));
+        // Horizontal run at the previous depth, then the step up.
+        parts.push(`L${x(clampedPrice)},${y(last)}`);
+        parts.push(`L${x(clampedPrice)},${y(Math.min(p.cumUnits, maxUnits))}`);
+        last = Math.min(p.cumUnits, maxUnits);
+        if (side === "bid" ? p.price <= xMin : p.price >= xMax) break;
+      }
+
+      parts.push(`L${x(edge)},${y(last)}`, `L${x(edge)},${baseY}`, "Z");
       return parts.join(" ");
     };
 
-    return { bids, asks, mid, x, y, xMin, xMax, maxUnits, stepPath };
+    return {
+      bids,
+      asks,
+      mid,
+      x,
+      y,
+      xMin,
+      xMax,
+      maxUnits,
+      stepPath,
+      clipped,
+    };
   }, [book, plotH]);
 
   if (!geom) {
@@ -110,6 +156,13 @@ export function DepthChart({
           Mid <span className="text-ink-2">{diamonds(geom.mid)}</span>
         </span>
       </div>
+
+      {geom.clipped && (
+        <p className="mb-1 text-[10px] text-ink-3">
+          Zoomed to the tradeable band around mid — orders resting further out
+          are off this view. Totals below cover the whole book.
+        </p>
+      )}
 
       <svg
         ref={svgRef}
