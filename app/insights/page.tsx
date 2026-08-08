@@ -14,7 +14,11 @@ import {
   priceClustering,
   volumeByItem,
 } from "@/lib/analytics/market";
-import { counterpartyEdges, playerStats } from "@/lib/analytics/players";
+import {
+  counterpartyEdges,
+  playerStats,
+  type CounterpartyEdge,
+} from "@/lib/analytics/players";
 import { Panel, Caveat, SectionTitle } from "@/components/ui/panel";
 import { PanelSkeleton } from "@/components/ui/skeleton";
 import { DataTable, Rank, Td, Th, Tr } from "@/components/ui/table";
@@ -48,19 +52,27 @@ export default function InsightsPage() {
         </p>
       </div>
 
-      <Suspense fallback={<PanelSkeleton height={320} label="Analysing rhythm…" />}>
+      <Suspense
+        fallback={<PanelSkeleton height={320} label="Analysing rhythm…" />}
+      >
         <Rhythm />
       </Suspense>
 
-      <Suspense fallback={<PanelSkeleton height={300} label="Analysing behaviour…" />}>
+      <Suspense
+        fallback={<PanelSkeleton height={300} label="Analysing behaviour…" />}
+      >
         <Behaviour />
       </Suspense>
 
-      <Suspense fallback={<PanelSkeleton height={320} label="Analysing liquidity…" />}>
+      <Suspense
+        fallback={<PanelSkeleton height={320} label="Analysing liquidity…" />}
+      >
         <Liquidity />
       </Suspense>
 
-      <Suspense fallback={<PanelSkeleton height={300} label="Analysing the network…" />}>
+      <Suspense
+        fallback={<PanelSkeleton height={300} label="Analysing the network…" />}
+      >
         <Network />
       </Suspense>
     </div>
@@ -82,7 +94,15 @@ async function Rhythm() {
   const peakHour = hourTotals.indexOf(Math.max(...hourTotals));
 
   const dayTotals = grid.map((row) => row.reduce((a, b) => a + b, 0));
-  const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const DAY_NAMES = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ];
   const peakDay = dayTotals.indexOf(Math.max(...dayTotals));
 
   const activeDays = days.filter((d) => d.trades > 0).length;
@@ -117,7 +137,10 @@ async function Rhythm() {
               <p className="text-ink-3">Days with trades</p>
               <p className="font-mono text-[15px] text-ink">
                 {num(activeDays)}
-                <span className="text-[11px] text-ink-3"> / {num(days.length)}</span>
+                <span className="text-[11px] text-ink-3">
+                  {" "}
+                  / {num(days.length)}
+                </span>
               </p>
             </div>
             <div>
@@ -174,7 +197,10 @@ async function Rhythm() {
 /* ----------------------------------------------------------- behaviour */
 
 async function Behaviour() {
-  const [trades, bankOps] = await Promise.all([getAllTrades(), getAllBankOps()]);
+  const [trades, bankOps] = await Promise.all([
+    getAllTrades(),
+    getAllBankOps(),
+  ]);
   const legs = toLegs(trades);
   const totals = marketTotals(trades);
 
@@ -348,9 +374,9 @@ async function Behaviour() {
           </DataTable>
           <div className="px-3 pb-3 pt-2">
             <p className="text-[11px] text-ink-3">
-              {num(bankOps.length)} bank movements against{" "}
-              {num(totals.trades)} trades — deposits and withdrawals are how
-              items get in and out of the exchange.
+              {num(bankOps.length)} bank movements against {num(totals.trades)}{" "}
+              trades — deposits and withdrawals are how items get in and out of
+              the exchange.
             </p>
           </div>
         </Panel>
@@ -378,13 +404,21 @@ async function Liquidity() {
    */
   const active = listings.filter((l) => l.isActive);
   const quoted = new Set(
-    summary.filter((s) => s.bestBid != null || s.bestAsk != null).map((s) => s.listingId),
+    summary
+      .filter((s) => s.bestBid != null || s.bestAsk != null)
+      .map((s) => s.listingId),
   );
   const traded = new Set([...volumes.keys()]);
 
-  const both = active.filter((l) => quoted.has(l.id) && traded.has(l.id)).length;
-  const quotedOnly = active.filter((l) => quoted.has(l.id) && !traded.has(l.id)).length;
-  const tradedOnly = active.filter((l) => !quoted.has(l.id) && traded.has(l.id)).length;
+  const both = active.filter(
+    (l) => quoted.has(l.id) && traded.has(l.id),
+  ).length;
+  const quotedOnly = active.filter(
+    (l) => quoted.has(l.id) && !traded.has(l.id),
+  ).length;
+  const tradedOnly = active.filter(
+    (l) => !quoted.has(l.id) && traded.has(l.id),
+  ).length;
   const neither = active.length - both - quotedOnly - tradedOnly;
 
   // Spread against traded volume: is a tight market a busy one?
@@ -400,15 +434,14 @@ async function Liquidity() {
       mid: s.mid!,
     }));
 
+  /* Every traded book, in both directions — the panels scroll rather than truncate. */
   const tightAndBusy = paired
     .filter((p) => p.trades > 0)
-    .sort((a, b) => a.spreadPct - b.spreadPct)
-    .slice(0, 10);
+    .sort((a, b) => a.spreadPct - b.spreadPct);
 
   const wideAndBusy = paired
     .filter((p) => p.trades > 0)
-    .sort((a, b) => b.spreadPct - a.spreadPct)
-    .slice(0, 10);
+    .sort((a, b) => b.spreadPct - a.spreadPct);
 
   const recentLegs = toLegs(trades).filter(
     (l) => !l.isMaker && l.at >= now - 7 * DAY_MS,
@@ -468,14 +501,14 @@ async function Liquidity() {
         <div className="grid gap-4 md:grid-cols-2">
           <Panel
             title="Tight and traded"
-            subtitle="Narrow spreads that also see real volume"
+            subtitle={`Narrow spreads that also see real volume — all ${num(tightAndBusy.length)}`}
             bodyClassName="p-0"
           >
             <SpreadVolumeTable rows={tightAndBusy} />
           </Panel>
           <Panel
             title="Expensive to cross"
-            subtitle="Traded despite a wide spread — demand outweighs cost"
+            subtitle={`Traded despite a wide spread — all ${num(wideAndBusy.length)}`}
             bodyClassName="p-0"
           >
             <SpreadVolumeTable rows={wideAndBusy} />
@@ -560,41 +593,44 @@ function SpreadVolumeTable({
   }
 
   return (
-    <DataTable>
-      <thead>
-        <tr>
-          <Th>Item</Th>
-          <Th align="right">Spread</Th>
-          <Th align="right">Volume</Th>
-          <Th align="right">Trades</Th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((r) => (
-          <Tr key={r.listingId}>
-            <Td>
-              <ItemLink
-                listingId={r.listingId}
-                itemName={r.itemName}
-                variantName={r.variantName}
-                size={16}
-              />
-            </Td>
-            <Td align="right" mono>
-              <span className={r.spreadPct < 5 ? "text-up" : "text-down"}>
-                {percent(r.spreadPct)}
-              </span>
-            </Td>
-            <Td align="right" mono className="text-ink">
-              {diamondsCompact(r.volume)}
-            </Td>
-            <Td align="right" mono className="text-ink-3">
-              {num(r.trades)}
-            </Td>
-          </Tr>
-        ))}
-      </tbody>
-    </DataTable>
+    /* Scrolls rather than truncating, so every traded book is reachable. */
+    <div className="scroll-y max-h-[340px]">
+      <DataTable>
+        <thead>
+          <tr>
+            <Th>Item</Th>
+            <Th align="right">Spread</Th>
+            <Th align="right">Volume</Th>
+            <Th align="right">Trades</Th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <Tr key={r.listingId}>
+              <Td>
+                <ItemLink
+                  listingId={r.listingId}
+                  itemName={r.itemName}
+                  variantName={r.variantName}
+                  size={16}
+                />
+              </Td>
+              <Td align="right" mono>
+                <span className={r.spreadPct < 5 ? "text-up" : "text-down"}>
+                  {percent(r.spreadPct)}
+                </span>
+              </Td>
+              <Td align="right" mono className="text-ink">
+                {diamondsCompact(r.volume)}
+              </Td>
+              <Td align="right" mono className="text-ink-3">
+                {num(r.trades)}
+              </Td>
+            </Tr>
+          ))}
+        </tbody>
+      </DataTable>
+    </div>
   );
 }
 
@@ -666,9 +702,7 @@ async function Network() {
           <p className="mt-3 text-[11px] leading-relaxed text-ink-2">
             The market maker is a counterparty to{" "}
             <span className="font-mono text-ink">
-              {percent(
-                totalVolume > 0 ? (mmVolume / totalVolume) * 100 : 0,
-              )}
+              {percent(totalVolume > 0 ? (mmVolume / totalVolume) * 100 : 0)}
             </span>{" "}
             of all traded value. Take it away and{" "}
             {humanEdges.length === 0
@@ -718,34 +752,46 @@ async function Network() {
           bodyClassName="p-0"
         >
           {humanEdges.length ? (
-            <DataTable>
-              <thead>
-                <tr>
-                  <Th>Pair</Th>
-                  <Th align="right">Value</Th>
-                  <Th align="right">Fills</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {humanEdges.slice(0, 10).map((e) => (
-                  <Tr key={`${e.a}-${e.b}`}>
-                    <Td>
-                      <span className="flex items-center gap-1.5">
-                        <PlayerLink username={e.a} uuid={e.aUuid} size={16} />
-                        <span className="text-ink-3">↔</span>
-                        <PlayerLink username={e.b} uuid={e.bUuid} size={16} />
-                      </span>
-                    </Td>
-                    <Td align="right" mono className="text-ink">
-                      {diamonds(e.volume)}
-                    </Td>
-                    <Td align="right" mono className="text-ink-3">
-                      {num(e.trades)}
-                    </Td>
-                  </Tr>
-                ))}
-              </tbody>
-            </DataTable>
+            <>
+              <div className="scroll-y max-h-[360px]">
+                <DataTable>
+                  <thead>
+                    <tr>
+                      <Th title="Diamonds flowed from the left account to the right one">
+                        Paid → received
+                      </Th>
+                      <Th
+                        align="right"
+                        title="Net diamonds that ended up with the receiving account, after flows in both directions cancel"
+                      >
+                        Net flow
+                      </Th>
+                      <Th
+                        align="right"
+                        title="Gross value traded, both directions"
+                      >
+                        Gross
+                      </Th>
+                      <Th align="right">Fills</Th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {humanEdges.map((e) => (
+                      <FlowRow key={`${e.a}-${e.b}`} edge={e} />
+                    ))}
+                  </tbody>
+                </DataTable>
+              </div>
+              <div className="px-3 pb-3 pt-2">
+                <Caveat>
+                  <span className="text-down">Red</span> paid diamonds out,{" "}
+                  <span className="text-up">green</span> took them in —
+                  direction of currency, not profit: the receiver handed over
+                  goods worth it. Excludes the taker fee, which goes to the
+                  treasury rather than the counterparty.
+                </Caveat>
+              </div>
+            </>
           ) : (
             <p className="px-4 py-8 text-center text-[12px] text-ink-3">
               Every trade so far has had the market maker on one side.
@@ -754,5 +800,65 @@ async function Network() {
         </Panel>
       </div>
     </div>
+  );
+}
+
+/**
+ * One counterparty pair, oriented so diamonds always flow left to right.
+ *
+ * Reordering the names by direction makes the arrow read literally — payer on
+ * the left, receiver on the right — instead of asking the reader to decode a
+ * sign against a fixed name order. Color reinforces it; the ordering and the
+ * arrow carry the meaning on their own.
+ */
+function FlowRow({ edge }: { edge: CounterpartyEdge }) {
+  const net = edge.netToA;
+  const balanced = Math.abs(net) < 1e-9;
+
+  // netToA > 0 means `a` received the diamonds, so `b` paid them.
+  const payer =
+    net > 0
+      ? { name: edge.b, uuid: edge.bUuid }
+      : { name: edge.a, uuid: edge.aUuid };
+  const receiver =
+    net > 0
+      ? { name: edge.a, uuid: edge.aUuid }
+      : { name: edge.b, uuid: edge.bUuid };
+
+  return (
+    <Tr>
+      <Td>
+        <span className="flex items-center gap-1.5">
+          <PlayerLink
+            username={payer.name}
+            uuid={payer.uuid}
+            size={16}
+            className={balanced ? "" : "[&_span]:text-down"}
+          />
+          <span aria-hidden className="text-ink-3">
+            {balanced ? "⇄" : "→"}
+          </span>
+          <PlayerLink
+            username={receiver.name}
+            uuid={receiver.uuid}
+            size={16}
+            className={balanced ? "" : "[&_span]:text-up"}
+          />
+        </span>
+      </Td>
+      <Td align="right" mono>
+        {balanced ? (
+          <span className="text-ink-3">balanced</span>
+        ) : (
+          <span className="text-up">{diamonds(Math.abs(net))}</span>
+        )}
+      </Td>
+      <Td align="right" mono className="text-ink-2">
+        {diamonds(edge.volume)}
+      </Td>
+      <Td align="right" mono className="text-ink-3">
+        {num(edge.trades)}
+      </Td>
+    </Tr>
   );
 }

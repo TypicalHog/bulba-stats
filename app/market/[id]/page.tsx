@@ -64,7 +64,9 @@ export default async function ItemPage({
 
   const sp = await searchParams;
   const requested = Array.isArray(sp.i) ? sp.i[0] : sp.i;
-  const interval: CandleInterval = INTERVALS.includes(requested as CandleInterval)
+  const interval: CandleInterval = INTERVALS.includes(
+    requested as CandleInterval,
+  )
     ? (requested as CandleInterval)
     : "1d";
 
@@ -149,7 +151,9 @@ async function QuoteTiles({
   const anchor = stats.lastTradeAt ?? 0;
   const change24 = priceChange(candles, DAY_MS, anchor);
   const change7 = priceChange(candles, 7 * DAY_MS, anchor);
-  const turn = book ? turnover(stats.volume, book.bidValue + book.askValue) : null;
+  const turn = book
+    ? turnover(stats.volume, book.bidValue + book.askValue)
+    : null;
 
   return (
     <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
@@ -245,8 +249,16 @@ async function DepthPanel({ listingId }: { listingId: number }) {
       <DepthChart book={view.orderBook} height={240} />
 
       <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2 border-t border-line pt-3 text-[11px] sm:grid-cols-4">
-        <Fact label="Bid depth" value={`${num(book.bidUnits)} units`} tone="up" />
-        <Fact label="Ask depth" value={`${num(book.askUnits)} units`} tone="down" />
+        <Fact
+          label="Bid depth"
+          value={`${num(book.bidUnits)} units`}
+          tone="up"
+        />
+        <Fact
+          label="Ask depth"
+          value={`${num(book.askUnits)} units`}
+          tone="down"
+        />
         <Fact label="Bid capital" value={diamondsCompact(book.bidValue)} />
         <Fact label="Ask inventory" value={diamondsCompact(book.askValue)} />
         <Fact
@@ -258,8 +270,14 @@ async function DepthPanel({ listingId }: { listingId: number }) {
           }
         />
         <Fact label="Levels" value={`${book.bidLevels} / ${book.askLevels}`} />
-        <Fact label="Within ±5% of mid" value={`${num(book.depthNearMid)} units`} />
-        <Fact label="Value near mid" value={diamondsCompact(book.valueNearMid)} />
+        <Fact
+          label="Within ±5% of mid"
+          value={`${num(book.depthNearMid)} units`}
+        />
+        <Fact
+          label="Value near mid"
+          value={diamondsCompact(book.valueNearMid)}
+        />
       </div>
 
       <div className="mt-4 border-t border-line pt-3">
@@ -291,7 +309,9 @@ async function DepthPanel({ listingId }: { listingId: number }) {
                 </Td>
                 <Td align="right" mono>
                   {s.buySlipPct != null ? (
-                    <span className="text-down">+{s.buySlipPct.toFixed(1)}%</span>
+                    <span className="text-down">
+                      +{s.buySlipPct.toFixed(1)}%
+                    </span>
                   ) : (
                     <span className="text-ink-3">book too thin</span>
                   )}
@@ -301,7 +321,9 @@ async function DepthPanel({ listingId }: { listingId: number }) {
                 </Td>
                 <Td align="right" mono>
                   {s.sellSlipPct != null ? (
-                    <span className="text-down">−{s.sellSlipPct.toFixed(1)}%</span>
+                    <span className="text-down">
+                      −{s.sellSlipPct.toFixed(1)}%
+                    </span>
                   ) : (
                     <span className="text-ink-3">book too thin</span>
                   )}
@@ -328,7 +350,8 @@ function Fact({
   value: string;
   tone?: "up" | "down";
 }) {
-  const cls = tone === "up" ? "text-up" : tone === "down" ? "text-down" : "text-ink";
+  const cls =
+    tone === "up" ? "text-up" : tone === "down" ? "text-down" : "text-ink";
   return (
     <div>
       <p className="text-ink-3">{label}</p>
@@ -397,7 +420,9 @@ async function Participants({ listingId }: { listingId: number }) {
                   <span className="text-up">{diamondsCompact(p.bidValue)}</span>
                 </Td>
                 <Td align="right" mono>
-                  <span className="text-down">{diamondsCompact(p.askValue)}</span>
+                  <span className="text-down">
+                    {diamondsCompact(p.askValue)}
+                  </span>
                 </Td>
                 <Td align="right" mono className="text-ink-2">
                   {percent(p.share * 100, 0)}
@@ -464,73 +489,79 @@ async function Participants({ listingId }: { listingId: number }) {
  * actually happened, with the makers it swept named inline.
  */
 async function RecentFills({ listingId }: { listingId: number }) {
-  const { rows: trades } = await getTrades({ listingId, limit: 40 });
+  /* 200 is the endpoint's per-page maximum; the panel scrolls rather than truncating. */
+  const { rows: trades } = await getTrades({ listingId, limit: 200 });
 
   return (
     <Panel
       title="Recent trades"
-      subtitle={`Last ${num(trades.length)} taker actions, with the resting orders each one filled`}
+      subtitle={`${num(trades.length)} taker actions, with the resting orders each one filled`}
       bodyClassName="p-0"
     >
       {trades.length ? (
-        <DataTable>
-          <thead>
-            <tr>
-              <Th>When</Th>
-              <Th>Side</Th>
-              <Th>Taker</Th>
-              <Th align="right">Amount</Th>
-              <Th align="right">Avg price</Th>
-              <Th align="right">Total</Th>
-              <Th align="right" title="4% taker fee, on top of the base total">
-                Fee
-              </Th>
-              <Th>Filled against</Th>
-              <Th>Venue</Th>
-            </tr>
-          </thead>
-          <tbody>
-            {trades.map((t) => (
-              <Tr key={t.id}>
-                <Td className="text-ink-3">
-                  {dateTime(t.completedAt ?? t.createdAt)}
-                </Td>
-                <Td>
-                  <SideTag side={t.side} />
-                </Td>
-                <Td>
-                  {t.taker ? (
-                    <PlayerLink
-                      username={t.taker.username}
-                      uuid={t.taker.uuid}
-                      size={16}
-                    />
-                  ) : (
-                    <span className="text-ink-3">—</span>
-                  )}
-                </Td>
-                <Td align="right" mono className="text-ink-2">
-                  {num(t.filledAmount)}
-                </Td>
-                <Td align="right" mono className="text-ink">
-                  {price(t.avgPrice)}
-                </Td>
-                <Td align="right" mono className="text-ink">
-                  {diamonds(t.total)}
-                </Td>
-                <Td align="right" mono className="text-ink-3">
-                  {diamonds(t.fee)}
-                </Td>
-                <Td>
-                  <MakerSummary makers={t.makers} />
-                </Td>
-                <Td>
-                  <Badge>{t.venue}</Badge>
-                </Td>
-              </Tr>
-            ))}
-          </tbody>
-        </DataTable>
+        <div className="scroll-y max-h-[460px]">
+          <DataTable>
+            <thead>
+              <tr>
+                <Th>When</Th>
+                <Th>Side</Th>
+                <Th>Taker</Th>
+                <Th align="right">Amount</Th>
+                <Th align="right">Avg price</Th>
+                <Th align="right">Total</Th>
+                <Th
+                  align="right"
+                  title="4% taker fee, on top of the base total"
+                >
+                  Fee
+                </Th>
+                <Th>Filled against</Th>
+                <Th>Venue</Th>
+              </tr>
+            </thead>
+            <tbody>
+              {trades.map((t) => (
+                <Tr key={t.id}>
+                  <Td className="text-ink-3">
+                    {dateTime(t.completedAt ?? t.createdAt)}
+                  </Td>
+                  <Td>
+                    <SideTag side={t.side} />
+                  </Td>
+                  <Td>
+                    {t.taker ? (
+                      <PlayerLink
+                        username={t.taker.username}
+                        uuid={t.taker.uuid}
+                        size={16}
+                      />
+                    ) : (
+                      <span className="text-ink-3">—</span>
+                    )}
+                  </Td>
+                  <Td align="right" mono className="text-ink-2">
+                    {num(t.filledAmount)}
+                  </Td>
+                  <Td align="right" mono className="text-ink">
+                    {price(t.avgPrice)}
+                  </Td>
+                  <Td align="right" mono className="text-ink">
+                    {diamonds(t.total)}
+                  </Td>
+                  <Td align="right" mono className="text-ink-3">
+                    {diamonds(t.fee)}
+                  </Td>
+                  <Td>
+                    <MakerSummary makers={t.makers} />
+                  </Td>
+                  <Td>
+                    <Badge>{t.venue}</Badge>
+                  </Td>
+                </Tr>
+              ))}
+            </tbody>
+          </DataTable>
+        </div>
       ) : (
         <p className="px-3 py-6 text-center text-[12px] text-ink-3">
           This item has never traded.

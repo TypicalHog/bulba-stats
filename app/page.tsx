@@ -121,7 +121,10 @@ async function MarketHeader() {
 
   const marketAgeDays =
     totals.firstTradeAt && totals.lastTradeAt
-      ? Math.max(1, Math.round((totals.lastTradeAt - totals.firstTradeAt) / DAY_MS))
+      ? Math.max(
+          1,
+          Math.round((totals.lastTradeAt - totals.firstTradeAt) / DAY_MS),
+        )
       : 1;
 
   return (
@@ -434,9 +437,7 @@ async function TopTraders() {
           value: r.volume,
           display: diamondsCompact(r.volume),
           color: r.isMarketMaker ? SERIES[3] : SERIES[2],
-          label: (
-            <PlayerLink username={r.username} uuid={r.uuid} size={16} />
-          ),
+          label: <PlayerLink username={r.username} uuid={r.uuid} size={16} />,
         }))}
       />
       <Caveat>

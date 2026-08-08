@@ -6,6 +6,9 @@ import { diamondsCompact, percent } from "@/lib/format";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+/** Width of the weekday-label column; the grid's cells start after it. */
+const LABEL_W = 34;
+
 type Hovered = { day: number; hour: number; value: number };
 
 /**
@@ -65,15 +68,7 @@ export function ActivityHeatmap({ grid }: { grid: number[][] }) {
           ))}
         </div>
 
-        {hovered && (
-          <Tooltip
-            hovered={hovered}
-            total={total}
-            /* Anchor to the cell's own column so the tooltip tracks the grid. */
-            leftPct={((hovered.hour + 0.5) / 24) * 100}
-            flip={hovered.hour > 15}
-          />
-        )}
+        {hovered && <Tooltip hovered={hovered} total={total} />}
 
         <div className="mt-3 flex items-center gap-2 text-[10px] text-ink-3">
           <span>Quiet</span>
@@ -139,26 +134,35 @@ function Row({
   );
 }
 
-function Tooltip({
-  hovered,
-  total,
-  leftPct,
-  flip,
-}: {
-  hovered: Hovered;
-  total: number;
-  leftPct: number;
-  flip: boolean;
-}) {
+/**
+ * Cell tooltip, anchored so it can never leave the scroll container.
+ *
+ * Two things were wrong before. The offset was `calc(34px + pct%)`, which adds
+ * the label column to a percentage of the *full* width — the cell track is only
+ * `100% - 34px` wide, so the anchor overshot by up to 34px. And flipping with
+ * `translateX(-105%)` pulls back by a share of the tooltip's own width, which
+ * on the last column wasn't enough to clear the edge, leaving ~8px hanging out
+ * and raising a scrollbar.
+ *
+ * Now the anchor is measured against the cell track, and tooltips on the right
+ * half are positioned by their `right` edge instead — growing leftward, so
+ * overflow is impossible whatever the tooltip's width turns out to be.
+ */
+function Tooltip({ hovered, total }: { hovered: Hovered; total: number }) {
   const share = total > 0 ? (hovered.value / total) * 100 : 0;
+
+  const frac = (hovered.hour + 0.5) / 24;
+  const track = `(100% - ${LABEL_W}px)`;
+  const anchorRight = frac > 0.5;
 
   return (
     <div
       className="pointer-events-none absolute -top-1 z-20 rounded border border-line bg-panel-2 px-2 py-1.5 text-[10px] whitespace-nowrap shadow-lg"
-      style={{
-        left: `calc(34px + ${leftPct}%)`,
-        transform: flip ? "translateX(-105%)" : "translateX(5%)",
-      }}
+      style={
+        anchorRight
+          ? { right: `calc(${track} * ${(1 - frac).toFixed(4)} + 8px)` }
+          : { left: `calc(${LABEL_W}px + ${track} * ${frac.toFixed(4)} + 8px)` }
+      }
     >
       <div className="font-mono text-ink">
         {DAYS[hovered.day]} {String(hovered.hour).padStart(2, "0")}:00 UTC

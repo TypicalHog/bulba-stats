@@ -18,7 +18,9 @@ export function OrderLadder({ book }: { book: OrderBook }) {
     .sort((a, b) => a.price - b.price)
     .slice(0, MAX_LEVELS)
     .reverse();
-  const bids = [...book.bids].sort((a, b) => b.price - a.price).slice(0, MAX_LEVELS);
+  const bids = [...book.bids]
+    .sort((a, b) => b.price - a.price)
+    .slice(0, MAX_LEVELS);
 
   const maxQty = Math.max(
     ...asks.map((l) => l.quantity),

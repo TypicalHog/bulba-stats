@@ -52,11 +52,12 @@ export default function AboutPage() {
 
           <Method title="Inventory value">
             Holdings are valued at the current mid of their variant. Items with
-            no quoted mid are <strong>excluded rather than valued at zero</strong>
-            , and the count of excluded items is shown, because &ldquo;we
-            don&apos;t know&rdquo; and &ldquo;worth nothing&rdquo; are different
-            claims. On a thin book a mid can move a long way on one order, so
-            treat these as indications.
+            no quoted mid are{" "}
+            <strong>excluded rather than valued at zero</strong>, and the count
+            of excluded items is shown, because &ldquo;we don&apos;t know&rdquo;
+            and &ldquo;worth nothing&rdquo; are different claims. On a thin book
+            a mid can move a long way on one order, so treat these as
+            indications.
           </Method>
 
           <Method title="The house market maker">
@@ -71,8 +72,8 @@ export default function AboutPage() {
             One trade produces a taker leg and one maker leg per resting order
             matched. Per-player volume counts a player&apos;s own legs, so
             summing volume across players exceeds market volume — that&apos;s
-            the intended reading of &ldquo;how much did this account trade&rdquo;,
-            not a double-count of the market.
+            the intended reading of &ldquo;how much did this account
+            trade&rdquo;, not a double-count of the market.
           </Method>
 
           <Method title="Time windows">
@@ -86,10 +87,11 @@ export default function AboutPage() {
 
           <Method title="Volatility &amp; price change">
             Volatility is the standard deviation of log returns between
-            consecutive candle closes, deliberately <strong>not annualized</strong>
-            . Price change returns nothing at all unless a candle old enough to
-            compare against exists, rather than silently comparing to the oldest
-            bucket available and labelling it &ldquo;24h&rdquo;.
+            consecutive candle closes, deliberately{" "}
+            <strong>not annualized</strong>. Price change returns nothing at all
+            unless a candle old enough to compare against exists, rather than
+            silently comparing to the oldest bucket available and labelling it
+            &ldquo;24h&rdquo;.
           </Method>
 
           <Method title="The fee is deflationary">
@@ -150,8 +152,8 @@ export default function AboutPage() {
                 <li>GET /banks/:id</li>
               </ul>
               <p className="mt-3 text-[11px] leading-relaxed text-ink-2">
-                The client treats these as optional: a missing endpoint removes a
-                section rather than failing a page.
+                The client treats these as optional: a missing endpoint removes
+                a section rather than failing a page.
               </p>
             </Panel>
 
@@ -214,14 +216,34 @@ export default function AboutPage() {
 
 const SOURCES = [
   { path: "GET /listings", use: "Item catalog", ttl: "60s" },
-  { path: "GET /orderbook", use: "Quotes for every listing in one call", ttl: "15s" },
-  { path: "GET /orderbook/:id", use: "Depth, ladder, participants", ttl: "15s" },
-  { path: "GET /orderbook/:id/view", use: "Listing + book + fills in one trip", ttl: "15s" },
+  {
+    path: "GET /orderbook",
+    use: "Quotes for every listing in one call",
+    ttl: "15s",
+  },
+  {
+    path: "GET /orderbook/:id",
+    use: "Depth, ladder, participants",
+    ttl: "15s",
+  },
+  {
+    path: "GET /orderbook/:id/view",
+    use: "Listing + book + fills in one trip",
+    ttl: "15s",
+  },
   { path: "GET /orderbook/:id/candles", use: "Price history", ttl: "60s" },
-  { path: "GET /transactions?view=trades", use: "Complete trade history", ttl: "300s" },
+  {
+    path: "GET /transactions?view=trades",
+    use: "Complete trade history",
+    ttl: "300s",
+  },
   { path: "GET /transactions?view=fills", use: "Bank movements", ttl: "300s" },
   { path: "GET /orders", use: "Resting and closed orders", ttl: "900s" },
-  { path: "GET /players/:username", use: "Profile, banks, balances", ttl: "60s" },
+  {
+    path: "GET /players/:username",
+    use: "Profile, banks, balances",
+    ttl: "60s",
+  },
   { path: "GET /treasury*", use: "Pools, revenue, distributions", ttl: "300s" },
   { path: "GET /commands", use: "Bot command reference", ttl: "1h" },
   { path: "GET /docs/:slug", use: "This reference", ttl: "1h" },
@@ -307,7 +329,9 @@ async function UpstreamDocs() {
                       {c.description}
                     </Td>
                     <Td align="right">
-                      <Badge tone={c.accessLevel === "info" ? "neutral" : "accent"}>
+                      <Badge
+                        tone={c.accessLevel === "info" ? "neutral" : "accent"}
+                      >
                         {c.accessLevel}
                       </Badge>
                     </Td>

@@ -25,7 +25,9 @@ export default function TradesPage() {
         </p>
       </div>
 
-      <Suspense fallback={<PanelSkeleton height={640} label="Loading trade history…" />}>
+      <Suspense
+        fallback={<PanelSkeleton height={640} label="Loading trade history…" />}
+      >
         <TradesBody />
       </Suspense>
     </div>
@@ -93,9 +95,7 @@ async function TradesBody() {
         />
         <Stat
           label="Largest trade"
-          value={diamonds(
-            Math.max(...rows.map((r) => r.total), 0),
-          )}
+          value={diamonds(Math.max(...rows.map((r) => r.total), 0))}
         />
         <Stat
           label="Median trade"

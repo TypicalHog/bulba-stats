@@ -53,13 +53,15 @@ export default function TreasuryPage() {
 }
 
 async function TreasuryBody() {
-  const [treasury, revenue, distributions, summary, trades] = await Promise.all([
-    getTreasury(),
-    getTreasuryRevenue(60),
-    getTreasuryDistributions(20),
-    getOrderbookSummary(),
-    getAllTrades(),
-  ]);
+  const [treasury, revenue, distributions, summary, trades] = await Promise.all(
+    [
+      getTreasury(),
+      getTreasuryRevenue(60),
+      getTreasuryDistributions(20),
+      getOrderbookSummary(),
+      getAllTrades(),
+    ],
+  );
 
   if (!treasury) {
     return (
@@ -154,7 +156,9 @@ async function TreasuryBody() {
           label="Implied stock cap"
           value={impliedCap != null ? diamondsCompact(impliedCap) : "—"}
           hint={
-            stockQuote?.mid != null ? `at ${price(stockQuote.mid)}◇/share` : "unquoted"
+            stockQuote?.mid != null
+              ? `at ${price(stockQuote.mid)}◇/share`
+              : "unquoted"
           }
         />
       </div>
@@ -277,9 +281,15 @@ async function TreasuryBody() {
                 height={10}
               />
               <div className="mt-4 grid grid-cols-2 gap-3 border-t border-line pt-3 text-[11px]">
-                <Fact label="Outstanding" value={num(stock.sharesOutstanding)} />
+                <Fact
+                  label="Outstanding"
+                  value={num(stock.sharesOutstanding)}
+                />
                 <Fact label="Float" value={num(float)} />
-                <Fact label="Treasury holds" value={num(stock.treasuryShares)} />
+                <Fact
+                  label="Treasury holds"
+                  value={num(stock.treasuryShares)}
+                />
                 <Fact label="Holders" value={num(stock.holdersCount)} />
               </div>
             </Panel>

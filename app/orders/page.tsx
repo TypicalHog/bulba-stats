@@ -149,8 +149,8 @@ async function RestingBook() {
       mid: midByListing.get(listingId) ?? null,
       writers: new Set(rows.map((o) => o.player?.username)).size,
     }))
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 20);
+    /* Every book, not a top-20 — the panel scrolls instead of truncating. */
+    .sort((a, b) => b.value - a.value);
 
   const partial = orders.filter((o) => o.status === "partially_filled");
   const withExpiry = orders.filter((o) => o.expiresAt);
@@ -240,60 +240,66 @@ async function RestingBook() {
       </div>
 
       <div>
-        <SectionTitle hint="By resting value">Deepest books</SectionTitle>
+        <SectionTitle
+          hint={`By resting value · all ${num(books.length)} books`}
+        >
+          Deepest books
+        </SectionTitle>
         <Panel bodyClassName="p-0">
-          <DataTable>
-            <thead>
-              <tr>
-                <Th>#</Th>
-                <Th>Item</Th>
-                <Th align="right">Mid</Th>
-                <Th align="right">Orders</Th>
-                <Th align="right" title="Distinct accounts quoting this book">
-                  Writers
-                </Th>
-                <Th align="right">Resting value</Th>
-                <Th>Share of book</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {books.map((b, i) => (
-                <Tr key={b.listingId}>
-                  <Td>
-                    <Rank n={i + 1} />
-                  </Td>
-                  <Td>
-                    <ItemLink
-                      listingId={b.listingId}
-                      itemName={b.itemName}
-                      variantName={b.variantName}
-                      size={16}
-                    />
-                  </Td>
-                  <Td align="right" mono className="text-ink-2">
-                    {price(b.mid)}
-                  </Td>
-                  <Td align="right" mono className="text-ink-2">
-                    {num(b.orders)}
-                  </Td>
-                  <Td align="right" mono className="text-ink-3">
-                    {num(b.writers)}
-                  </Td>
-                  <Td align="right" mono className="text-ink">
-                    {diamonds(b.value)}
-                  </Td>
-                  <Td className="w-28">
-                    <Meter
-                      value={b.value}
-                      max={books[0].value}
-                      color={SERIES[0]}
-                      label={`${b.itemName} resting value`}
-                    />
-                  </Td>
-                </Tr>
-              ))}
-            </tbody>
-          </DataTable>
+          <div className="scroll-y max-h-[520px]">
+            <DataTable>
+              <thead>
+                <tr>
+                  <Th>#</Th>
+                  <Th>Item</Th>
+                  <Th align="right">Mid</Th>
+                  <Th align="right">Orders</Th>
+                  <Th align="right" title="Distinct accounts quoting this book">
+                    Writers
+                  </Th>
+                  <Th align="right">Resting value</Th>
+                  <Th>Share of book</Th>
+                </tr>
+              </thead>
+              <tbody>
+                {books.map((b, i) => (
+                  <Tr key={b.listingId}>
+                    <Td>
+                      <Rank n={i + 1} />
+                    </Td>
+                    <Td>
+                      <ItemLink
+                        listingId={b.listingId}
+                        itemName={b.itemName}
+                        variantName={b.variantName}
+                        size={16}
+                      />
+                    </Td>
+                    <Td align="right" mono className="text-ink-2">
+                      {price(b.mid)}
+                    </Td>
+                    <Td align="right" mono className="text-ink-2">
+                      {num(b.orders)}
+                    </Td>
+                    <Td align="right" mono className="text-ink-3">
+                      {num(b.writers)}
+                    </Td>
+                    <Td align="right" mono className="text-ink">
+                      {diamonds(b.value)}
+                    </Td>
+                    <Td className="w-28">
+                      <Meter
+                        value={b.value}
+                        max={books[0].value}
+                        color={SERIES[0]}
+                        label={`${b.itemName} resting value`}
+                      />
+                    </Td>
+                  </Tr>
+                ))}
+              </tbody>
+            </DataTable>
+          </div>
         </Panel>
       </div>
 
@@ -337,14 +343,24 @@ function FlowBlock({
       </p>
       <SplitBar
         segments={[
-          { key: "filled", label: "Filled", value: flow.filled, color: SERIES[2] },
+          {
+            key: "filled",
+            label: "Filled",
+            value: flow.filled,
+            color: SERIES[2],
+          },
           {
             key: "cancelled",
             label: "Cancelled",
             value: flow.cancelled,
             color: SERIES[1],
           },
-          { key: "expired", label: "Expired", value: flow.expired, color: SERIES[3] },
+          {
+            key: "expired",
+            label: "Expired",
+            value: flow.expired,
+            color: SERIES[3],
+          },
         ]}
         height={10}
       />

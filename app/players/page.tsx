@@ -32,7 +32,9 @@ export default function PlayersPage() {
         </p>
       </div>
 
-      <Suspense fallback={<PanelSkeleton height={520} label="Aggregating traders…" />}>
+      <Suspense
+        fallback={<PanelSkeleton height={520} label="Aggregating traders…" />}
+      >
         <PlayersBody />
       </Suspense>
     </div>
@@ -177,11 +179,7 @@ async function PlayersBody() {
   );
 }
 
-function RelationshipList({
-  edges,
-}: {
-  edges: CounterpartyEdge[];
-}) {
+function RelationshipList({ edges }: { edges: CounterpartyEdge[] }) {
   if (!edges.length) {
     return (
       <p className="px-4 py-6 text-center text-[12px] text-ink-3">

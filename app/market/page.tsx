@@ -31,7 +31,9 @@ export default function MarketPage() {
         </p>
       </div>
 
-      <Suspense fallback={<PanelSkeleton height={600} label="Loading market…" />}>
+      <Suspense
+        fallback={<PanelSkeleton height={600} label="Loading market…" />}
+      >
         <MarketBody />
       </Suspense>
 
@@ -90,7 +92,9 @@ async function MarketBody() {
         bestBid: book?.bestBid ?? null,
         bestAsk: book?.bestAsk ?? null,
         spreadPct:
-          book?.spread != null && book.mid ? (book.spread / book.mid) * 100 : null,
+          book?.spread != null && book.mid
+            ? (book.spread / book.mid) * 100
+            : null,
         volume: vol?.volume ?? 0,
         units: vol?.units ?? 0,
         trades: vol?.trades ?? 0,
@@ -255,8 +259,8 @@ async function DepthPanel() {
 
       {!complete && (
         <Caveat>
-          The order crawl hit its page cap, so these depth figures cover the most
-          recent orders rather than the entire book.
+          The order crawl hit its page cap, so these depth figures cover the
+          most recent orders rather than the entire book.
         </Caveat>
       )}
     </div>

@@ -39,7 +39,9 @@ import {
   price,
 } from "@/lib/format";
 
-export async function generateMetadata({ params }: PageProps<"/players/[username]">) {
+export async function generateMetadata({
+  params,
+}: PageProps<"/players/[username]">) {
   const { username } = await params;
   const name = decodeURIComponent(username);
   return {
@@ -256,8 +258,18 @@ async function ActivityChart({ username }: { username: string }) {
           </p>
           <SplitBar
             segments={[
-              { key: "buy", label: "Bought", value: buyTotal, color: "var(--up)" },
-              { key: "sell", label: "Sold", value: sellTotal, color: "var(--down)" },
+              {
+                key: "buy",
+                label: "Bought",
+                value: buyTotal,
+                color: "var(--up)",
+              },
+              {
+                key: "sell",
+                label: "Sold",
+                value: sellTotal,
+                color: "var(--down)",
+              },
             ]}
           />
         </div>
@@ -267,8 +279,18 @@ async function ActivityChart({ username }: { username: string }) {
           </p>
           <SplitBar
             segments={[
-              { key: "maker", label: "Maker", value: makerTotal, color: SERIES[0] },
-              { key: "taker", label: "Taker", value: takerTotal, color: SERIES[3] },
+              {
+                key: "maker",
+                label: "Maker",
+                value: makerTotal,
+                color: SERIES[0],
+              },
+              {
+                key: "taker",
+                label: "Taker",
+                value: takerTotal,
+                color: SERIES[3],
+              },
             ]}
           />
         </div>
@@ -305,7 +327,10 @@ async function Positions({ username }: { username: string }) {
             <Th align="right">Spent</Th>
             <Th align="right">Received</Th>
             <Th align="right">Realized</Th>
-            <Th align="right" title="Units sold that were never bought on-market">
+            <Th
+              align="right"
+              title="Units sold that were never bought on-market"
+            >
               No basis
             </Th>
           </tr>
@@ -679,7 +704,9 @@ async function RecentActivity({ username }: { username: string }) {
           <tbody>
             {rows.map((t) => {
               const wasTaker = t.taker?.username === username;
-              const theirFills = t.makers.filter((m) => m.username === username);
+              const theirFills = t.makers.filter(
+                (m) => m.username === username,
+              );
               const amount = wasTaker
                 ? t.filledAmount
                 : sum(theirFills, (m) => m.fillAmount);

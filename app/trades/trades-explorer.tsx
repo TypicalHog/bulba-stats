@@ -25,14 +25,27 @@ export type TradeRow = {
   fee: number;
 };
 
-type Facet = "all" | "physical" | "storage" | "market" | "limit" | "buy" | "sell";
+type Facet =
+  "all" | "physical" | "storage" | "market" | "limit" | "buy" | "sell";
 
 const FACETS: { key: Facet; label: string; hint: string }[] = [
   { key: "all", label: "All", hint: "Every taker action" },
-  { key: "physical", label: "In-person", hint: "Trade-window trades with a bot" },
-  { key: "storage", label: "Bank-to-bank", hint: "Settled between bank accounts" },
+  {
+    key: "physical",
+    label: "In-person",
+    hint: "Trade-window trades with a bot",
+  },
+  {
+    key: "storage",
+    label: "Bank-to-bank",
+    hint: "Settled between bank accounts",
+  },
   { key: "market", label: "Market", hint: "Crossed the spread immediately" },
-  { key: "limit", label: "Limit", hint: "A limit order that crossed on placement" },
+  {
+    key: "limit",
+    label: "Limit",
+    hint: "A limit order that crossed on placement",
+  },
   { key: "buy", label: "Taker bought", hint: "Taker was the buyer" },
   { key: "sell", label: "Taker sold", hint: "Taker was the seller" },
 ];
@@ -224,7 +237,11 @@ export function TradesExplorer({ rows }: { rows: TradeRow[] }) {
           />
         </label>
 
-        <div className="flex flex-wrap gap-1" role="group" aria-label="Filter trades">
+        <div
+          className="flex flex-wrap gap-1"
+          role="group"
+          aria-label="Filter trades"
+        >
           {FACETS.map((f) => (
             <button
               key={f.key}

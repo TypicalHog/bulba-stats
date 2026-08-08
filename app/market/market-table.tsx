@@ -149,7 +149,9 @@ export function MarketTable({ rows }: { rows: MarketRow[] }) {
       align: "right",
       mono: true,
       cell: (r) => (
-        <span className="text-ink-2">{r.vwap != null ? price(r.vwap) : "—"}</span>
+        <span className="text-ink-2">
+          {r.vwap != null ? price(r.vwap) : "—"}
+        </span>
       ),
       sort: (r) => r.vwap,
     },
@@ -210,7 +212,9 @@ export function MarketTable({ rows }: { rows: MarketRow[] }) {
       align: "right",
       cell: (r) => (
         <span className="text-ink-3">
-          {r.lastTradeAt ? dateOnly(new Date(r.lastTradeAt).toISOString()) : "—"}
+          {r.lastTradeAt
+            ? dateOnly(new Date(r.lastTradeAt).toISOString())
+            : "—"}
         </span>
       ),
       sort: (r) => r.lastTradeAt,
