@@ -7,6 +7,7 @@ import { dateTime, num, price } from "@/lib/format";
 import {
   CHART_MIN_WIDTH,
   CHART_PAD,
+  clientXToViewBox,
   linearScale,
   niceTicks,
   padDomain,
@@ -118,9 +119,8 @@ export function CandleChart({
           aria-label={`Candlestick chart, ${candles.length} ${interval} buckets`}
           onMouseLeave={() => setHover(null)}
           onMouseMove={(e) => {
-            const rect = svgRef.current?.getBoundingClientRect();
-            if (!rect || rect.width === 0) return;
-            const xInView = ((e.clientX - rect.left) / rect.width) * W;
+            const xInView = clientXToViewBox(svgRef.current, e.clientX);
+            if (xInView == null) return;
             const i = Math.floor((xInView - CHART_PAD.left) / geom.slot);
             setHover(i >= 0 && i < candles.length ? i : null);
           }}

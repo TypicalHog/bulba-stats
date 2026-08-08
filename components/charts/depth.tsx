@@ -5,7 +5,14 @@ import type { OrderBook } from "@/lib/api/types";
 import { DIRECTION, INK, SURFACE } from "@/lib/design";
 import { diamonds, num, price } from "@/lib/format";
 import { depthCurve } from "@/lib/analytics/book";
-import { CHART_MIN_WIDTH, CHART_PAD, linearScale, niceTicks } from "./axis";
+import {
+  CHART_MIN_WIDTH,
+  CHART_PAD,
+  clientXToViewBox,
+  linearScale,
+  niceTicks,
+  viewBoxXToLocalPx,
+} from "./axis";
 
 /**
  * Order-book depth: cumulative bid and ask curves either side of mid.
@@ -21,7 +28,12 @@ export function DepthChart({
   height?: number;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
-  const [hover, setHover] = useState<{ x: number; price: number } | null>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [hover, setHover] = useState<{
+    x: number;
+    leftPx: number;
+    price: number;
+  } | null>(null);
 
   const W = 800;
   const plotH = height - CHART_PAD.top - CHART_PAD.bottom;
@@ -155,7 +167,11 @@ export function DepthChart({
 
   return (
     <div className="scroll-x">
-      <div className="relative" style={{ minWidth: CHART_MIN_WIDTH }}>
+      <div
+        ref={wrapRef}
+        className="relative"
+        style={{ minWidth: CHART_MIN_WIDTH }}
+      >
         <div className="mb-2 flex items-center gap-4 text-[11px]">
           <LegendKey color={DIRECTION.up} label="Bids (cumulative)" />
           <LegendKey color={DIRECTION.down} label="Asks (cumulative)" />
@@ -180,16 +196,21 @@ export function DepthChart({
           aria-label="Cumulative order book depth by price"
           onMouseLeave={() => setHover(null)}
           onMouseMove={(e) => {
-            const rect = svgRef.current?.getBoundingClientRect();
-            if (!rect || rect.width === 0) return;
-            const xInView = ((e.clientX - rect.left) / rect.width) * W;
+            const xInView = clientXToViewBox(svgRef.current, e.clientX);
+            if (xInView == null) return;
             if (xInView < CHART_PAD.left || xInView > W - CHART_PAD.right) {
               setHover(null);
               return;
             }
             const frac = (xInView - CHART_PAD.left) / plotW;
+            const leftPx = viewBoxXToLocalPx(
+              svgRef.current,
+              wrapRef.current,
+              xInView,
+            );
             setHover({
               x: xInView,
+              leftPx: leftPx ?? 0,
               price: geom.xMin + frac * (geom.xMax - geom.xMin),
             });
           }}
@@ -283,7 +304,7 @@ export function DepthChart({
           <div
             className="pointer-events-none absolute top-8 z-10 rounded border border-line bg-panel-2 px-2 py-1.5 font-mono text-[10px] shadow-lg"
             style={{
-              left: `${(hover.x / W) * 100}%`,
+              left: hover.leftPx,
               transform:
                 hover.x > W / 2 ? "translateX(-105%)" : "translateX(5%)",
             }}

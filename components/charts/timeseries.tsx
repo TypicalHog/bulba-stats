@@ -3,7 +3,14 @@
 import { useMemo, useRef, useState } from "react";
 import { INK, SURFACE, seriesColor } from "@/lib/design";
 import { compact, diamondsCompact, num } from "@/lib/format";
-import { CHART_MIN_WIDTH, CHART_PAD, linearScale, niceTicks } from "./axis";
+import {
+  CHART_MIN_WIDTH,
+  CHART_PAD,
+  clientXToViewBox,
+  linearScale,
+  niceTicks,
+  viewBoxXToLocalPx,
+} from "./axis";
 
 export type SeriesDef = {
   key: string;
@@ -51,7 +58,13 @@ export function StackedBars({
   format?: ValueFormat;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
-  const [hover, setHover] = useState<number | null>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  /*
+   * The tooltip's pixel offset is captured at hover time alongside the index,
+   * because converting viewBox units to container pixels needs the SVG's live
+   * screen transform — see viewBoxXToLocalPx.
+   */
+  const [hover, setHover] = useState<{ i: number; leftPx: number } | null>(null);
   const valueFormat = FORMATTERS[format];
 
   const W = 800;
@@ -85,7 +98,11 @@ export function StackedBars({
 
   return (
     <div className="scroll-x">
-      <div className="relative" style={{ minWidth: CHART_MIN_WIDTH }}>
+      <div
+        ref={wrapRef}
+        className="relative"
+        style={{ minWidth: CHART_MIN_WIDTH }}
+      >
         {/* A legend is always present for two or more series. */}
         {!single && (
           <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px]">
@@ -114,11 +131,20 @@ export function StackedBars({
           aria-label={`${series.map((s) => s.label).join(" and ")} over ${points.length} periods`}
           onMouseLeave={() => setHover(null)}
           onMouseMove={(e) => {
-            const rect = svgRef.current?.getBoundingClientRect();
-            if (!rect || rect.width === 0) return;
-            const xInView = ((e.clientX - rect.left) / rect.width) * W;
+            const xInView = clientXToViewBox(svgRef.current, e.clientX);
+            if (xInView == null) return;
             const i = Math.floor((xInView - CHART_PAD.left) / geom.slot);
-            setHover(i >= 0 && i < points.length ? i : null);
+            if (i < 0 || i >= points.length) {
+              setHover(null);
+              return;
+            }
+            const centre = CHART_PAD.left + geom.slot * i + geom.slot / 2;
+            const leftPx = viewBoxXToLocalPx(
+              svgRef.current,
+              wrapRef.current,
+              centre,
+            );
+            setHover({ i, leftPx: leftPx ?? 0 });
           }}
         >
           {ticks.map((t) => (
@@ -148,7 +174,7 @@ export function StackedBars({
             const x =
               CHART_PAD.left + geom.slot * i + (geom.slot - geom.barW) / 2;
             let cursor = baseline;
-            const dim = hover != null && hover !== i;
+            const dim = hover != null && hover.i !== i;
 
             return (
               <g key={p.label} opacity={dim ? 0.5 : 1}>
@@ -212,14 +238,14 @@ export function StackedBars({
             className="pointer-events-none absolute z-10 rounded border border-line bg-panel-2 px-2 py-1.5 text-[10px] shadow-lg"
             style={{
               top: 8,
-              left: `${((CHART_PAD.left + geom.slot * hover + geom.slot / 2) / W) * 100}%`,
+              left: hover.leftPx,
               transform:
-                hover > points.length / 2
+                hover.i > points.length / 2
                   ? "translateX(-105%)"
                   : "translateX(5%)",
             }}
           >
-            <div className="font-mono text-ink-2">{points[hover].label}</div>
+            <div className="font-mono text-ink-2">{points[hover.i].label}</div>
             {series.map((s, i) => (
               <div key={s.key} className="mt-0.5 flex items-center gap-1.5">
                 <span
@@ -229,7 +255,7 @@ export function StackedBars({
                 />
                 <span className="text-ink-3">{s.label}</span>
                 <span className="ml-auto pl-3 font-mono text-ink">
-                  {valueFormat(points[hover].values[s.key] ?? 0)}
+                  {valueFormat(points[hover.i].values[s.key] ?? 0)}
                 </span>
               </div>
             ))}

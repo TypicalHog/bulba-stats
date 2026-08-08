@@ -70,13 +70,43 @@ export const CHART_PAD = { top: 12, right: 12, bottom: 22, left: 46 } as const;
  */
 export const CHART_MIN_WIDTH = 560;
 
-/** Convert a mouse event to a fractional position within an SVG element. */
-export function pointerFraction(
-  event: { clientX: number },
-  el: SVGSVGElement | null,
+/**
+ * Convert a client X coordinate into the SVG's own viewBox units.
+ *
+ * The naive `(clientX - rect.left) / rect.width * viewBoxWidth` is WRONG. With
+ * the default `preserveAspectRatio="xMidYMid meet"`, a viewBox is scaled
+ * uniformly to *fit* its element and then centred — so an element wider than
+ * the viewBox's aspect ratio draws the chart in the middle with empty gutters
+ * either side. Treating the element's full width as the viewBox makes hover
+ * land correctly at the centre and drift further off toward each edge.
+ *
+ * `getScreenCTM()` is the element's real screen transform, so inverting it
+ * gives the true mapping whatever the aspect ratio, zoom, or scroll offset.
+ */
+export function clientXToViewBox(
+  svg: SVGSVGElement | null,
+  clientX: number,
 ): number | null {
-  if (!el) return null;
-  const rect = el.getBoundingClientRect();
-  if (rect.width === 0) return null;
-  return Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+  const ctm = svg?.getScreenCTM();
+  if (!ctm) return null;
+  return new DOMPoint(clientX, 0).matrixTransform(ctm.inverse()).x;
+}
+
+/**
+ * Convert a viewBox X back to pixels relative to `container`, for positioning
+ * HTML overlays (tooltips) over the drawing.
+ *
+ * The inverse of the problem above: a tooltip placed at `x / viewBoxWidth` of
+ * the container drifts the same way, because the container includes the
+ * gutters the drawing doesn't occupy.
+ */
+export function viewBoxXToLocalPx(
+  svg: SVGSVGElement | null,
+  container: HTMLElement | null,
+  viewBoxX: number,
+): number | null {
+  const ctm = svg?.getScreenCTM();
+  if (!ctm || !container) return null;
+  const screenX = new DOMPoint(viewBoxX, 0).matrixTransform(ctm).x;
+  return screenX - container.getBoundingClientRect().left;
 }
