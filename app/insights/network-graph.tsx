@@ -17,6 +17,10 @@ export type GraphEdge = {
   b: string;
   volume: number;
   trades: number;
+  /** Net diamonds that ended up with `b` once flows both ways cancel. */
+  net?: number;
+  /** Items traded between the pair, biggest first. */
+  items?: { itemName: string | null; variantName: string | null; volume: number }[];
 };
 
 const W = 800;
@@ -52,6 +56,8 @@ export function NetworkGraph({
    * impossible to reach. Selection survives the pointer leaving the node.
    */
   const [selected, setSelected] = useState<string | null>(null);
+  /* An edge, once clicked, opens the relationship behind it. */
+  const [pair, setPair] = useState<GraphEdge | null>(null);
 
   /** Pinned selection wins; hover is the transient preview. */
   const active = selected ?? hover;
@@ -184,6 +190,7 @@ export function NetworkGraph({
               const pb = layout.pos.get(e.b);
               if (!pa || !pb) return null;
               const lit = !active || e.a === active || e.b === active;
+              const isPair = pair?.a === e.a && pair?.b === e.b;
               return (
                 <line
                   key={`${e.a}-${e.b}`}
@@ -191,11 +198,18 @@ export function NetworkGraph({
                   y1={pa.y}
                   x2={pb.x}
                   y2={pb.y}
-                  stroke={lit ? SERIES[0] : INK.muted}
+                  onClick={() => setPair(isPair ? null : e)}
+                  stroke={isPair ? "var(--accent)" : lit ? SERIES[0] : INK.muted}
                   strokeWidth={1 + Math.sqrt(e.volume / maxEdge) * 4}
                   strokeLinecap="round"
                   opacity={active ? (lit ? 0.75 : 0.06) : 0.28}
-                />
+                  /* Fat invisible hit area: a 2px line is nearly unclickable. */
+                  style={{ cursor: "pointer" }}
+                >
+                  <title>
+                    {e.a} ↔ {e.b}
+                  </title>
+                </line>
               );
             })}
 
@@ -356,6 +370,76 @@ export function NetworkGraph({
           )}
         </div>
       </div>
+
+      {pair && (
+        <div className="mt-3 rounded border border-accent/40 bg-panel-2 p-3">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px]">
+            <Link
+              href={`/players/${encodeURIComponent(pair.a)}`}
+              className="font-mono text-ink hover:text-accent"
+            >
+              {pair.a}
+            </Link>
+            <span className="text-ink-3">↔</span>
+            <Link
+              href={`/players/${encodeURIComponent(pair.b)}`}
+              className="font-mono text-ink hover:text-accent"
+            >
+              {pair.b}
+            </Link>
+            <button
+              type="button"
+              onClick={() => setPair(null)}
+              className="ml-auto cursor-pointer text-[10px] text-ink-3 hover:text-ink-2"
+            >
+              close
+            </button>
+          </div>
+
+          <div className="mt-2 grid grid-cols-2 gap-3 text-[11px] sm:grid-cols-3">
+            <div>
+              <p className="text-ink-3">Traded between them</p>
+              <p className="font-mono text-[15px] text-ink">
+                {diamonds(pair.volume)}
+              </p>
+            </div>
+            <div>
+              <p className="text-ink-3">Fills</p>
+              <p className="font-mono text-[15px] text-ink">{pair.trades}</p>
+            </div>
+            {pair.net != null && (
+              <div>
+                <p className="text-ink-3">Net to</p>
+                <p className="font-mono text-[15px]">
+                  <span className={pair.net >= 0 ? "text-up" : "text-down"}>
+                    {pair.net >= 0 ? pair.b : pair.a} {diamonds(Math.abs(pair.net))}
+                  </span>
+                </p>
+              </div>
+            )}
+          </div>
+
+          {pair.items && pair.items.length > 0 && (
+            <div className="mt-2 border-t border-line pt-2">
+              <p className="mb-1 text-[10px] text-ink-3">What they traded</p>
+              <ul className="flex flex-wrap gap-x-4 gap-y-1 text-[11px]">
+                {pair.items.slice(0, 6).map((item) => (
+                  <li
+                    key={`${item.itemName}-${item.variantName}`}
+                    className="text-ink-2"
+                  >
+                    {item.itemName ?? "—"}
+                    {item.variantName ? `:${item.variantName}` : ""}{" "}
+                    <span className="font-mono text-ink-3">
+                      {diamonds(item.volume)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] text-ink-3">
         <span className="flex items-center gap-1.5">

@@ -1110,12 +1110,37 @@ async function Network() {
     volume: stats.get(username)?.volume ?? 0,
     isMarketMaker: username === MARKET_MAKER,
   }));
-  const graphEdges = edges.map((e) => ({
-    a: e.a,
-    b: e.b,
-    volume: e.volume,
-    trades: e.trades,
-  }));
+  /*
+   * Each edge carries the relationship behind it, so clicking one opens what
+   * the pair actually traded rather than only how much.
+   */
+  const legsByPair = groupBy(
+    legs.filter((l) => l.counterparty),
+    (l) => [l.username, l.counterparty!].sort().join(" "),
+  );
+
+  const graphEdges = edges.map((e) => {
+    const pairLegs = legsByPair.get([e.a, e.b].sort().join(" ")) ?? [];
+    const byItem = new Map<string, { itemName: string | null; variantName: string | null; volume: number }>();
+    for (const leg of pairLegs) {
+      const key = `${leg.itemName}:${leg.variantName}`;
+      const entry = byItem.get(key) ?? {
+        itemName: leg.itemName,
+        variantName: leg.variantName,
+        volume: 0,
+      };
+      entry.volume += leg.value;
+      byItem.set(key, entry);
+    }
+    return {
+      a: e.a,
+      b: e.b,
+      volume: e.volume,
+      trades: e.trades,
+      net: -e.netToA,
+      items: [...byItem.values()].sort((x, y) => y.volume - x.volume),
+    };
+  });
 
   const mmVolume = stats.get(MARKET_MAKER)?.volume ?? 0;
   const totalVolume = sum(traders, (t) => t.volume);
