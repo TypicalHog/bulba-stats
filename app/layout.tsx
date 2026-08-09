@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Fira_Code, Fira_Sans } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { SiteNav } from "@/components/ui/nav";
 import { SiteFooter } from "@/components/ui/footer";
@@ -49,6 +51,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           {children}
         </main>
         <SiteFooter />
+        {/*
+          Both are inert outside Vercel: the scripts are only injected on a
+          Vercel deployment, so local development and self-hosting are
+          unaffected. Neither collects personal data or sets cookies.
+        */}
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

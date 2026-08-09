@@ -67,6 +67,27 @@ view usually costs the upstream API nothing.
 
 Charts are hand-rolled SVG — no charting dependency.
 
+## Deploying
+
+Deploys to Vercel as a standard Next.js app — no environment variables, no
+database. Two settings are non-default and worth understanding:
+
+- **`vercel.json` pins the region to `lhr1` (London).** Every page proxies to
+  `webstore.bulbastore.uk`, and a cold order crawl is ~104 *sequential*
+  requests, so round-trip time dominates rather than compute. The region is
+  inferred from the upstream's `.uk` domain — if it is actually hosted
+  elsewhere, change this to the nearest region and the cold-cache pages get
+  proportionally faster.
+- **`maxDuration = 60` on `/market` and `/orders`.** Both depend on that crawl,
+  which takes ~20 s locally and would be killed by the default serverless
+  timeout on a cold cache. 60 s is the Hobby-tier ceiling, so it is safe on any
+  plan. Warm requests return from cache immediately.
+
+Vercel [Analytics](https://vercel.com/docs/analytics) and
+[Speed Insights](https://vercel.com/docs/speed-insights) are mounted in the root
+layout. Both are inert anywhere other than a Vercel deployment — the scripts are
+only injected there — so local development and self-hosting are unaffected.
+
 ## Documentation
 
 - **[SPEC.md](SPEC.md)** — full specification: endpoints consumed, measured data

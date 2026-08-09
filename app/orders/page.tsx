@@ -31,6 +31,14 @@ export const metadata = {
     "Resting order book analytics for BulbaStore: who owns the depth, how far quotes sit from mid, and how often orders fill.",
 };
 
+/**
+ * The resting-order crawl is ~104 sequential upstream requests and takes about
+ * 20 s locally, which is past the default serverless timeout — a cold cache
+ * would be killed mid-crawl. 60 s is the ceiling on Vercel's Hobby tier, so it
+ * is safe on any plan. Warm requests still return from cache immediately.
+ */
+export const maxDuration = 60;
+
 export default function OrdersPage() {
   return (
     <div className="flex flex-col gap-4">

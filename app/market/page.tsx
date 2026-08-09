@@ -20,6 +20,13 @@ export const metadata = {
     "Every BulbaStore listing with live quotes, spreads, traded volume and price trend.",
 };
 
+/**
+ * The depth-ownership panel shares the ~20 s resting-order crawl, so this route
+ * needs the same headroom as /orders on a cold cache. The quote table above it
+ * streams in first regardless.
+ */
+export const maxDuration = 60;
+
 export default function MarketPage() {
   return (
     <div className="flex flex-col gap-4">
