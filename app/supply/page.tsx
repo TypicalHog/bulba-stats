@@ -173,7 +173,7 @@ async function FlowBody() {
           subtitle="The currency itself crosses the same boundary"
         >
           {currency ? (
-            <div className="grid grid-cols-3 gap-4 text-[11px]">
+            <div className="grid grid-cols-2 gap-4 text-[11px] sm:grid-cols-3">
               <div>
                 <p className="text-ink-3">Deposited</p>
                 <p className="font-mono text-[18px] text-up">

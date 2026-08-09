@@ -611,6 +611,13 @@ rendering the pages and measuring them in a browser:
   the y-axis scaled to visible depth. Scaling to the extremes collapsed a real
   book into a vertical line at the touch, because market makers park a few units
   very far out. The chart says so when orders fall outside the view.
+- **Numbers are rounded at the client boundary.** Upstream prices carry full
+  float noise, and `8.333333333333332` costs eighteen characters in the payload
+  where four would do. `lib/round.ts` trims them where data crosses to a Client
+  Component; no displayed figure changes, since everything is formatted to far
+  fewer digits than it kept. Measured effect on `/orders`: 1,019 → 985 KiB raw.
+  The honest figure is the compressed one — every route is 12–68 KiB gzipped,
+  which is what actually ships.
 - **Charts scroll rather than shrink below 560px.** The 800-unit viewBox scales
   to its container, which rendered axis labels at ~4px on a phone. They now
   scroll horizontally inside their panel, exactly like wide tables.

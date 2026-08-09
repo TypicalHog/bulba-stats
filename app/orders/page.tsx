@@ -28,6 +28,7 @@ import { SERIES } from "@/lib/design";
 import { dateOnly, diamondsCompact, duration, num, percent } from "@/lib/format";
 import { isHouseOrder, partitionByHouse } from "@/lib/analytics/house";
 import { anchorNow, DAY_MS, requestTime } from "@/lib/time";
+import { r } from "@/lib/round";
 import { DeepestBooks } from "./deepest-books";
 import { BANDS, bandKey } from "./bands";
 
@@ -129,15 +130,18 @@ async function Organic() {
         listingId,
         itemName: info?.itemName ?? null,
         variantName: info?.variantName ?? null,
-        fullBid: fullBook?.bids[0]?.price ?? null,
-        fullAsk: fullBook?.asks[0]?.price ?? null,
-        fullSpreadPct: spread(
-          fullBook?.bids[0]?.price ?? null,
-          fullBook?.asks[0]?.price ?? null,
+        fullBid: r(fullBook?.bids[0]?.price, 6),
+        fullAsk: r(fullBook?.asks[0]?.price, 6),
+        fullSpreadPct: r(
+          spread(
+            fullBook?.bids[0]?.price ?? null,
+            fullBook?.asks[0]?.price ?? null,
+          ),
+          2,
         ),
-        organicBid,
-        organicAsk,
-        organicSpreadPct: spread(organicBid, organicAsk),
+        organicBid: r(organicBid, 6),
+        organicAsk: r(organicAsk, 6),
+        organicSpreadPct: r(spread(organicBid, organicAsk), 2),
         quoters: owners.size,
         organicOrders: book.orderCount,
       };
@@ -217,9 +221,9 @@ async function Liquidity() {
       legs.filter((l) => anchor - l.at <= ms).reduce((a, l) => a + l.amount, 0);
     const lifeDays = Math.max(1, (anchor - legs[0].at) / DAY_MS);
     return {
-      lifetime: legs.reduce((a, l) => a + l.amount, 0) / lifeDays,
-      d30: since(30 * DAY_MS) / 30,
-      d7: since(7 * DAY_MS) / 7,
+      lifetime: r(legs.reduce((a, l) => a + l.amount, 0) / lifeDays, 3) ?? 0,
+      d30: r(since(30 * DAY_MS) / 30, 3) ?? 0,
+      d7: r(since(7 * DAY_MS) / 7, 3) ?? 0,
     };
   };
 
@@ -235,14 +239,14 @@ async function Liquidity() {
       listingId,
       itemName: nameById.get(listingId)?.itemName ?? null,
       variantName: nameById.get(listingId)?.variantName ?? null,
-      mid: book.mid,
+      mid: r(book.mid, 6),
       asks: book.asks
         .slice(0, 25)
         .map(
           (level) =>
             // Rounded because upstream prices carry float noise like
             // 0.08499999999999999, and every extra digit ships to the browser.
-            [Number(level.price.toFixed(8)), level.quantity] as [number, number],
+            [r(level.price, 6) ?? 0, level.quantity] as [number, number],
         ),
     }));
 
@@ -264,16 +268,16 @@ async function Liquidity() {
         listingId,
         itemName: meta?.itemName ?? null,
         variantName: meta?.variantName ?? null,
-        mid: book.mid,
+        mid: r(book.mid, 6),
         buy: curve.map((p) => ({
           size: p.size,
-          pct: p.buySlipPct,
-          cost: p.buyAvg != null ? p.buyAvg * p.size : null,
+          pct: r(p.buySlipPct, 2),
+          cost: p.buyAvg != null ? r(p.buyAvg * p.size) : null,
         })),
         sell: curve.map((p) => ({
           size: p.size,
-          pct: p.sellSlipPct,
-          cost: p.sellAvg != null ? p.sellAvg * p.size : null,
+          pct: r(p.sellSlipPct, 2),
+          cost: p.sellAvg != null ? r(p.sellAvg * p.size) : null,
         })),
       };
     })

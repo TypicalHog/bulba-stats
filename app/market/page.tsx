@@ -17,6 +17,7 @@ import { Treemap } from "@/components/charts/treemap";
 import { DepthOwnership } from "./depth-ownership";
 import { diamondsCompact, itemLabel, num, percent } from "@/lib/format";
 import { anchorNow } from "@/lib/time";
+import { r } from "@/lib/round";
 
 export const metadata = {
   title: "Market",
@@ -110,24 +111,24 @@ async function MarketBody() {
         niche: listing.niche,
         lendingEnabled: Boolean(listing.lendingEnabled),
         stackAmount: listing.stackAmount ?? 1,
-        mid,
-        bestBid: book?.bestBid ?? null,
-        bestAsk: book?.bestAsk ?? null,
+        mid: r(mid, 6),
+        bestBid: r(book?.bestBid, 6),
+        bestAsk: r(book?.bestAsk, 6),
         spreadPct:
           book?.spread != null && book.mid
-            ? (book.spread / book.mid) * 100
+            ? r((book.spread / book.mid) * 100, 2)
             : null,
-        volume: vol?.volume ?? 0,
+        volume: r(vol?.volume, 3) ?? 0,
         units: vol?.units ?? 0,
         trades: vol?.trades ?? 0,
         traders: vol?.traders ?? 0,
-        vwap,
+        vwap: r(vwap, 6),
         vsVwapPct:
           mid != null && vwap != null && vwap > 0
-            ? ((mid - vwap) / vwap) * 100
+            ? r(((mid - vwap) / vwap) * 100, 2)
             : null,
         lastTradeAt: itemLegs.length ? itemLegs[itemLegs.length - 1].at : null,
-        spark: itemLegs.map((l) => l.price),
+        spark: itemLegs.map((l) => r(l.price, 6) ?? 0),
       };
     });
 
@@ -334,8 +335,8 @@ async function MarketMap() {
         itemName: listing.itemName,
         href: `/market/${listing.id}`,
         values: {
-          value: mid != null ? float * mid : 0,
-          volume: vol?.volume ?? 0,
+          value: mid != null ? (r(float * mid, 2) ?? 0) : 0,
+          volume: r(vol?.volume, 2) ?? 0,
           float,
         },
       };
