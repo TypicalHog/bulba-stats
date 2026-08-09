@@ -5,7 +5,8 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { Suspense } from "react";
 import { SiteNav } from "@/components/ui/nav";
-import { CommandPalette, buildIndex } from "@/components/ui/search";
+import { CommandPalette } from "@/components/ui/search";
+import { buildIndex } from "@/lib/search-index";
 import { getAllTrades, getListings } from "@/lib/api/endpoints";
 import { SiteFooter } from "@/components/ui/footer";
 

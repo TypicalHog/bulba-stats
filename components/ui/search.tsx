@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Avatar, ItemIcon } from "./entity";
-import { itemLabel } from "@/lib/format";
 
 export type SearchEntry = {
   kind: "item" | "player" | "page";
@@ -199,45 +198,4 @@ export function CommandPalette({ entries }: { entries: SearchEntry[] }) {
       </div>
     </div>
   );
-}
-
-/** Build the index. Kept here so the shape stays next to its consumer. */
-export function buildIndex({
-  items,
-  players,
-}: {
-  items: { id: number; itemName: string | null; variantName: string | null }[];
-  players: { username: string; uuid: string }[];
-}): SearchEntry[] {
-  const pages: SearchEntry[] = [
-    { kind: "page", label: "Overview", href: "/" },
-    { kind: "page", label: "Market", href: "/market" },
-    { kind: "page", label: "Recipes", href: "/recipes" },
-    { kind: "page", label: "Supply", href: "/supply" },
-    { kind: "page", label: "Players", href: "/players" },
-    { kind: "page", label: "Trades", href: "/trades" },
-    { kind: "page", label: "Orders", href: "/orders" },
-    { kind: "page", label: "The house", href: "/house" },
-    { kind: "page", label: "Treasury", href: "/treasury" },
-    { kind: "page", label: "Insights", href: "/insights" },
-    { kind: "page", label: "About", href: "/about" },
-  ];
-
-  return [
-    ...pages,
-    ...items.map((item) => ({
-      kind: "item" as const,
-      label: itemLabel(item),
-      sub: "item",
-      href: `/market/${item.id}`,
-      key: item.itemName,
-    })),
-    ...players.map((player) => ({
-      kind: "player" as const,
-      label: player.username,
-      sub: "trader",
-      href: `/players/${encodeURIComponent(player.username)}`,
-      key: player.uuid,
-    })),
-  ];
 }
