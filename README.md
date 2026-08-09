@@ -30,6 +30,7 @@ endpoints.
 | **Orders** | Resting-order analytics: depth ownership by distance from mid, a catalog-wide slippage matrix, the book with the house stripped out, fill and cancel rates, time-to-fill |
 | **House** | The market maker's position, the inventory it has absorbed, how fast it re-prices, and who operates it |
 | **Treasury** | Pool balances, daily fee revenue by source, distribution history, stock ownership |
+| **Compare** | Two to four listings side by side; the selection lives in the URL so it can be shared |
 | **Insights** | Activity heatmaps, price clustering, liquidity coverage, an interactive trading-network graph, and who operates the house |
 
 Several views offer a toggle that **reframes** the data rather than filtering

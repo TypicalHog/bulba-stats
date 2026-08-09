@@ -420,6 +420,7 @@ never crossed the boundary.
 | `/recipes` | Buy it or build it — the analyses in §2.6 |
 | `/supply` | What enters the exchange and what leaves it — the analyses in §2.7 |
 | `/house` | The market maker: position, inventory absorbed, quoting behaviour, operators |
+| `/compare` | Two to four listings side by side, selection in the URL |
 | `/insights` | The cross-cutting analyses in §2.8 |
 | `/about` | Data sources, methodology, caveats, upstream API reference |
 
@@ -658,6 +659,11 @@ Two boundary rules fall out of that split:
 - **Nothing crossing to a Client Component may be a function.** Chart value
   formatters are named tokens (`"compact"`, `"diamonds"`, `"count"`) resolved on
   the client, not closures passed as props.
+- **A helper called on the server may not live in a `"use client"` module.**
+  Next permits a client export to be *rendered* or *passed as a prop*, never
+  called, and the failure is a silent fall back to client rendering with a 200
+  response — so it survives a status check. Pure helpers both sides need live in
+  `lib/`.
 - **Panels set `min-width: 0`.** They are always grid or flex children, and the
   `min-width: auto` default made any panel wrapping a wide table push its track
   past the viewport and scroll the whole page sideways.
