@@ -7,6 +7,7 @@ import {
   getPlayerDirectory,
 } from "@/lib/api/endpoints";
 import { affiliations, type BankNode } from "@/lib/analytics/house";
+import { buildTape, fresh } from "@/lib/analytics/tape";
 import { groupBy, sum, toLegs } from "@/lib/analytics/legs";
 import {
   activityHeatmap,
@@ -81,6 +82,12 @@ export default function InsightsPage() {
       </Suspense>
 
       <Suspense
+        fallback={<PanelSkeleton height={200} label="Reading the tape…" />}
+      >
+        <Tape />
+      </Suspense>
+
+      <Suspense
         fallback={<PanelSkeleton height={260} label="Comparing reference prices…" />}
       >
         <ReferencePrice />
@@ -91,6 +98,79 @@ export default function InsightsPage() {
       >
         <Affiliations />
       </Suspense>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------- tape */
+
+/**
+ * How far from the last print trades actually happen.
+ *
+ * The obvious version of this question — how far from mid do resting orders
+ * get hit — cannot be answered: there is no historical order book, so no mid to
+ * measure against. The previous print on the same listing is the reference a
+ * trader would actually have seen, and it needs no extra requests.
+ */
+async function Tape() {
+  const trades = await getAllTrades();
+  const rows = buildTape(trades);
+  const priced = fresh(rows);
+
+  const bands = [
+    { key: "flat", label: "Within 1%", max: 1, color: SERIES[2] },
+    { key: "near", label: "1–5%", max: 5, color: SERIES[0] },
+    { key: "wide", label: "5–25%", max: 25, color: SERIES[3] },
+    { key: "far", label: "Over 25%", max: Infinity, color: SERIES[1] },
+  ];
+
+  const counts = bands.map((band, i) => {
+    const lower = i === 0 ? -1 : bands[i - 1].max;
+    return {
+      key: band.key,
+      label: band.label,
+      color: band.color,
+      value: priced.filter((r) => {
+        const move = Math.abs(r.premiumPct ?? 0);
+        return move > lower && move <= band.max;
+      }).length,
+    };
+  });
+
+  const stale = rows.filter(
+    (r) => r.premiumPct != null && !priced.includes(r),
+  ).length;
+
+  return (
+    <div>
+      <SectionTitle hint={`${num(priced.length)} trades with a recent reference`}>
+        Where trades actually print
+      </SectionTitle>
+      <Panel
+        title="Distance from the previous trade"
+        subtitle="How far each fill landed from the last price on the same item"
+      >
+        <SplitBar
+          segments={counts.map((c) => ({
+            key: c.key,
+            label: c.label,
+            value: c.value,
+            color: c.color,
+          }))}
+        />
+        <Caveat>
+          There is no historical order book upstream, so there is no mid to
+          measure against — the reference here is the previous print on the same
+          listing, which is what a trader would actually have seen.
+          {stale > 0 && (
+            <>
+              {" "}
+              {num(stale)} trades are excluded because their previous print was
+              over a week old and describes a different market.
+            </>
+          )}
+        </Caveat>
+      </Panel>
     </div>
   );
 }
