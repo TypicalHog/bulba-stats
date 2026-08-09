@@ -164,6 +164,17 @@ meaning. Everything below is computed in `lib/analytics/`.
 - **Breadth**: listings with a two-sided book, one-sided, or none at all
 - **Concentration**: Herfindahl index over per-player volume share, and the
   market-maker's share of resting liquidity
+- **Reconstructed books**: every order book rebuilt from the resting-order
+  crawl rather than from 118 per-listing requests. The crawl is already fetched
+  for other panels and its rows carry everything a book is made of, so
+  market-wide depth costs nothing extra. Verified exact — aggregating all
+  20,690 resting orders reproduces the official best bid and ask on 118 of 118
+  listings — and re-checked at render against `GET /orderbook`, since a
+  reconstruction is only as good as the crawl behind it. The result satisfies
+  `OrderBook`, so depth curves, metrics, slippage and participants work on it
+  unchanged. It also produces the **organic book**: the same aggregation with
+  house-posted orders removed, which the API cannot express because it
+  aggregates levels before anyone sees them.
 
 ### 2.2 Per item
 
