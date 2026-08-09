@@ -88,28 +88,34 @@ async function PlayersBody() {
   const stats = playerStats(legs);
   const { accounts, funnel } = population(directory, bankOps, legs, openOrders);
 
-  const rows: PlayerRow[] = [...stats.values()].map((s) => ({
-    username: s.username,
-    uuid: s.uuid,
-    isMarketMaker: s.isMarketMaker,
-    isNonTrading: false,
-    archetype: classify(s).label,
-    archetypeWhy: classify(s).because,
-    volume: s.volume,
-    buyVolume: s.buyVolume,
-    sellVolume: s.sellVolume,
-    trades: s.trades,
-    units: s.units,
-    feesPaid: s.feesPaid,
-    makerShare: s.makerShare,
-    netFlow: s.netFlow,
-    realizedPnl: s.realizedPnl,
-    unbackedUnits: s.unbackedUnits,
-    uniqueItems: s.uniqueItems,
-    uniqueCounterparties: s.uniqueCounterparties,
-    firstTradeAt: s.firstTradeAt,
-    lastTradeAt: s.lastTradeAt,
-  }));
+  const rows: PlayerRow[] = [...stats.values()].map((s) => {
+    /* Classified once — the label, the reason and the badge tone all come
+       from the same verdict. */
+    const verdict = classify(s);
+    return {
+      username: s.username,
+      uuid: s.uuid,
+      isMarketMaker: s.isMarketMaker,
+      isNonTrading: false,
+      archetype: verdict.label,
+      archetypeWhy: verdict.because,
+      archetypeKey: verdict.archetype,
+      volume: s.volume,
+      buyVolume: s.buyVolume,
+      sellVolume: s.sellVolume,
+      trades: s.trades,
+      units: s.units,
+      feesPaid: s.feesPaid,
+      makerShare: s.makerShare,
+      netFlow: s.netFlow,
+      realizedPnl: s.realizedPnl,
+      unbackedUnits: s.unbackedUnits,
+      uniqueItems: s.uniqueItems,
+      uniqueCounterparties: s.uniqueCounterparties,
+      firstTradeAt: s.firstTradeAt,
+      lastTradeAt: s.lastTradeAt,
+    };
+  });
 
   /*
    * Accounts that exist but have never traded are absent from the trade record
@@ -126,6 +132,7 @@ async function PlayersBody() {
       isNonTrading: true,
       archetype: "No trades",
       archetypeWhy: "Registered, but has never traded",
+      archetypeKey: "quiet",
       volume: 0,
       buyVolume: 0,
       sellVolume: 0,

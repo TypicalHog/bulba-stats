@@ -3,6 +3,28 @@
 import { useMemo, useState } from "react";
 import { SortableTable, type Column } from "@/components/ui/sortable";
 import { Badge, PlayerLink } from "@/components/ui/entity";
+import type { Archetype } from "@/lib/analytics/archetype";
+
+/**
+ * Badge tone per archetype — the direction the account pushes inventory.
+ *
+ * Green accumulates, red distributes, amber round-trips: the same up/down
+ * vocabulary the rest of the site uses for buying and selling pressure, with
+ * amber for the account that does both in comparable size. The behavioural
+ * labels that are not directional stay neutral.
+ */
+const ARCHETYPE_TONE: Record<
+  Archetype,
+  "neutral" | "up" | "down" | "accent" | "warn"
+> = {
+  house: "accent",
+  maker: "accent",
+  accumulator: "up",
+  distributor: "down",
+  "round-tripper": "warn",
+  "one-off": "neutral",
+  quiet: "neutral",
+};
 import {
   dateOnly,
   diamonds,
@@ -20,6 +42,8 @@ export type PlayerRow = {
   /** One-word behavioural label, with the rule that produced it. */
   archetype: string;
   archetypeWhy: string;
+  /** The classifier's key, not its label — the badge tone keys off this. */
+  archetypeKey: Archetype;
   volume: number;
   buyVolume: number;
   sellVolume: number;
@@ -69,7 +93,9 @@ export function PlayersTable({ rows }: { rows: PlayerRow[] }) {
           {r.isNonTrading ? (
             <Badge>No trades</Badge>
           ) : (
-            <Badge title={r.archetypeWhy}>{r.archetype}</Badge>
+            <Badge title={r.archetypeWhy} tone={ARCHETYPE_TONE[r.archetypeKey]}>
+              {r.archetype}
+            </Badge>
           )}
         </span>
       ),
