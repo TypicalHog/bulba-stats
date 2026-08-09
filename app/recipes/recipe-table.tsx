@@ -167,6 +167,21 @@ export function RecipeTable({ rows }: { rows: RecipeRow[] }) {
       sort: ({ savingPct }) => savingPct,
     },
     {
+      key: "sell",
+      header: "Sell",
+      title:
+        "Proceeds from selling the finished item, swept into the real bid side — the figure 'Build & sell' subtracts the build cost from",
+      align: "right",
+      mono: true,
+      cell: ({ sell }) =>
+        sell != null ? (
+          <span className="text-ink">{diamonds(sell)}</span>
+        ) : (
+          <span className="text-ink-3">—</span>
+        ),
+      sort: ({ sell }) => sell,
+    },
+    {
       key: "flip",
       header: "Build & sell",
       title: "Proceeds from selling the result, minus what building it cost",
