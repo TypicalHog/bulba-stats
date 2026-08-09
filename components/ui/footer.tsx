@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { DOCS_URL, SITE_ORIGIN } from "@/lib/api/constants";
+import { DOCS_URL, REPO_URL, SITE_ORIGIN } from "@/lib/api/constants";
 
 export function SiteFooter() {
   return (
@@ -28,9 +28,28 @@ export function SiteFooter() {
         >
           Upstream API docs ↗
         </a>
+        <a
+          href={REPO_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-accent"
+        >
+          Source ↗
+        </a>
         <span className="ml-auto">
           Every figure is derived from public endpoints. Nothing here places
           orders.
+        </span>
+        <span>
+          <a
+            href={`${REPO_URL}/blob/main/LICENSE.md`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-accent"
+          >
+            MIT
+          </a>{" "}
+          © 2026 TypicalHog
         </span>
       </div>
     </footer>

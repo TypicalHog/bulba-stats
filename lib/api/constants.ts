@@ -12,6 +12,9 @@ export const WS_PATH = "/api/ws";
 
 export const DOCS_URL = `${SITE_ORIGIN}/docs/api`;
 
+/** This project's source. */
+export const REPO_URL = "https://github.com/TypicalHog/bulba-stats";
+
 /**
  * Cache tag carried by *every* upstream read, on top of any specific tags.
  *
