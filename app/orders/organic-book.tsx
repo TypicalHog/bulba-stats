@@ -132,6 +132,7 @@ export function OrganicBook({ rows }: { rows: OrganicRow[] }) {
       columns={columns}
       initialSort="quoters"
       rowKey={(r) => r.listingId}
+      exportName="bulbastats-organic-book"
       maxHeight={420}
       emptyMessage="Nobody but the house has an order resting."
     />

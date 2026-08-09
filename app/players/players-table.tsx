@@ -257,6 +257,7 @@ export function PlayersTable({ rows }: { rows: PlayerRow[] }) {
         columns={columns}
         initialSort="volume"
         rowKey={(r) => r.username}
+        exportName="bulbastats-players"
         emptyMessage="No traders match that search."
       />
     </div>

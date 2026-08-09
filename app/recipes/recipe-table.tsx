@@ -289,6 +289,7 @@ export function RecipeTable({ rows }: { rows: RecipeRow[] }) {
           columns={columns}
           initialSort="saving"
           rowKey={({ row }) => row.id}
+          exportName="bulbastats-recipes"
           maxHeight={560}
           emptyMessage="No recipes match."
         />

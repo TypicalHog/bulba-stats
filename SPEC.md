@@ -428,6 +428,12 @@ render instantly. Anything expensive (full-history aggregates, the open-order
 crawl, the counterparty graph) streams in behind its own `<Suspense>` boundary —
 nothing makes a visitor wait 20 seconds for a first paint.
 
+**Every ranked table exports.** CSV download is a single option on the shared
+table component rather than a per-page feature, so it applies uniformly and
+stays consistent as tables are added. Rows export in the order shown — the sort
+the reader chose is part of what they are taking away — and values come from
+each column's scalar accessor rather than its rendered markup.
+
 **Long lists scroll rather than truncate.** Every table that ranks something
 carries the full set inside a fixed-height scroll container with a sticky
 header, so nothing is unreachable and no row count is arbitrary.

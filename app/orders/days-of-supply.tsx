@@ -134,6 +134,7 @@ export function DaysOfSupply({ rows }: { rows: SupplyRow[] }) {
         columns={columns}
         initialSort="days"
         rowKey={({ row }) => row.listingId}
+        exportName="bulbastats-days-of-supply"
         maxHeight={360}
         emptyMessage="Nothing resting on the ask side."
       />

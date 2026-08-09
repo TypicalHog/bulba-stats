@@ -405,6 +405,7 @@ export function MarketTable({
         columns={columns}
         initialSort="volume"
         rowKey={(r) => r.listingId}
+        exportName="bulbastats-market"
         emptyMessage="No items match those filters."
       />
     </div>

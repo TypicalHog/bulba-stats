@@ -215,6 +215,7 @@ export function FlowExplorer({
           columns={columns}
           initialSort={isValue ? "net" : "deposited"}
           rowKey={(r) => r.variantId}
+          exportName="bulbastats-supply"
           maxHeight={520}
           emptyMessage="No deposits recorded."
         />

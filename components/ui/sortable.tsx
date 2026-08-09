@@ -21,7 +21,21 @@ export type Column<T> = {
   /** Sort descending on first click — right for magnitudes. */
   descFirst?: boolean;
   className?: string;
+  /**
+   * Plain value for CSV export. Falls back to `sort`, which is already a
+   * scalar accessor — `cell` cannot be used because it returns markup.
+   */
+  csv?: (row: T) => string | number | null;
+  /** Header text for CSV, when `header` is markup rather than a string. */
+  csvHeader?: string;
 };
+
+/** RFC 4180 quoting: wrap anything containing a comma, quote or newline. */
+function csvCell(value: string | number | null | undefined): string {
+  if (value == null) return "";
+  const text = String(value);
+  return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
 
 const ALIGN = {
   left: "text-left",
@@ -37,6 +51,7 @@ export function SortableTable<T>({
   rowKey,
   emptyMessage = "Nothing to show.",
   maxHeight,
+  exportName,
 }: {
   rows: T[];
   columns: Column<T>[];
@@ -45,6 +60,8 @@ export function SortableTable<T>({
   rowKey: (row: T) => string | number;
   emptyMessage?: string;
   maxHeight?: number;
+  /** Enables CSV download, and names the file. */
+  exportName?: string;
 }) {
   const [sortKey, setSortKey] = useState(initialSort ?? columns[0]?.key);
   const [desc, setDesc] = useState(initialDesc);
@@ -79,6 +96,30 @@ export function SortableTable<T>({
     }
   };
 
+  /*
+   * Export what is on screen, in the order it is on screen: the sort the reader
+   * chose is part of what they are taking away, and silently exporting the
+   * original order would be a different table.
+   */
+  const download = () => {
+    const usable = columns.filter((c) => c.csv ?? c.sort);
+    const header = usable.map((c) =>
+      csvCell(c.csvHeader ?? (typeof c.header === "string" ? c.header : c.key)),
+    );
+    const body = sorted.map((row) =>
+      usable.map((c) => csvCell((c.csv ?? c.sort)!(row))).join(","),
+    );
+    const blob = new Blob([[header.join(","), ...body].join("\r\n")], {
+      type: "text/csv;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${exportName}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   if (!rows.length) {
     return (
       <p className="px-4 py-8 text-center text-[12px] text-ink-3">
@@ -88,10 +129,23 @@ export function SortableTable<T>({
   }
 
   return (
-    <div
-      className="scroll-x scroll-y"
-      style={maxHeight ? { maxHeight } : undefined}
-    >
+    <div>
+      {exportName && (
+        <div className="flex justify-end border-b border-line px-3 py-1.5">
+          <button
+            type="button"
+            onClick={download}
+            title="Download these rows, in the order shown, as CSV"
+            className="cursor-pointer rounded border border-line px-2 py-0.5 text-[10px] text-ink-3 transition-colors hover:border-accent/40 hover:text-accent"
+          >
+            Export CSV
+          </button>
+        </div>
+      )}
+      <div
+        className="scroll-x scroll-y"
+        style={maxHeight ? { maxHeight } : undefined}
+      >
       <table className="w-full min-w-max border-collapse text-[12px]">
         <thead>
           <tr>
@@ -148,6 +202,7 @@ export function SortableTable<T>({
           ))}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }
