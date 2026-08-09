@@ -81,10 +81,115 @@ export default function InsightsPage() {
       </Suspense>
 
       <Suspense
+        fallback={<PanelSkeleton height={260} label="Comparing reference prices…" />}
+      >
+        <ReferencePrice />
+      </Suspense>
+
+      <Suspense
         fallback={<PanelSkeleton height={280} label="Reading bank membership…" />}
       >
         <Affiliations />
       </Suspense>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------ reference price */
+
+/**
+ * `makerMid` — the house's stored reference price.
+ *
+ * The upstream docs imply this is a mid computed from maker orders. It is not.
+ * Tested against the live API: it matches no book-derived formula (house best
+ * mid, quantity-weighted mid either side, microprice, all-order VWAP — the best
+ * fit was 2 of 33 listings), it does not equal lifetime trade VWAP (1 of 27),
+ * and it is **completely static** — unchanged across hours while the book moved
+ * underneath it. Several unrelated items share suspiciously exact values: every
+ * log reads 0.0625, exactly one sixteenth.
+ *
+ * So it reads as a configured valuation rather than a computation: what the
+ * house thinks a thing is worth, independent of what it currently trades for.
+ * That makes the gap against mid worth showing — it is the market disagreeing
+ * with the house — provided it is labelled as a fixed reference and never as a
+ * second live price.
+ */
+async function ReferencePrice() {
+  const summary = await getOrderbookSummary();
+
+  const rows = summary
+    .filter((s) => s.makerMid != null && s.mid != null)
+    .map((s) => ({
+      listingId: s.listingId,
+      itemName: s.itemName,
+      variantName: s.variantName,
+      mid: s.mid!,
+      reference: s.makerMid!,
+      divergencePct: ((s.mid! - s.makerMid!) / s.makerMid!) * 100,
+    }))
+    .sort((a, b) => Math.abs(b.divergencePct) - Math.abs(a.divergencePct));
+
+  if (!rows.length) return null;
+
+  return (
+    <div>
+      <SectionTitle hint={`${num(rows.length)} of ${num(summary.length)} books`}>
+        Where the market disagrees with the house
+      </SectionTitle>
+      <Panel
+        title="Reference price vs traded price"
+        subtitle="The house carries a fixed internal valuation for some items; this is how far the market has moved from it"
+        bodyClassName="p-0"
+      >
+        <DataTable>
+          <thead>
+            <tr>
+              <Th>Item</Th>
+              <Th align="right">Reference</Th>
+              <Th align="right">Mid</Th>
+              <Th align="right">Market vs reference</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.slice(0, 15).map((r) => (
+              <Tr key={r.listingId}>
+                <Td>
+                  <ItemLink
+                    listingId={r.listingId}
+                    itemName={r.itemName}
+                    variantName={r.variantName}
+                    size={18}
+                  />
+                </Td>
+                <Td align="right" mono className="text-ink-3">
+                  {diamonds(r.reference)}
+                </Td>
+                <Td align="right" mono className="text-ink">
+                  {diamonds(r.mid)}
+                </Td>
+                <Td align="right" mono>
+                  <span
+                    className={r.divergencePct >= 0 ? "text-up" : "text-down"}
+                  >
+                    <span aria-hidden>{r.divergencePct >= 0 ? "▲" : "▼"}</span>{" "}
+                    {r.divergencePct >= 0 ? "+" : "−"}
+                    {percent(Math.abs(r.divergencePct))}
+                  </span>
+                </Td>
+              </Tr>
+            ))}
+          </tbody>
+        </DataTable>
+      </Panel>
+      <Caveat>
+        The upstream field is <span className="font-mono">makerMid</span>, and
+        the docs imply it is a mid computed from maker orders. Testing against
+        the live API says otherwise: it matches no book-derived formula, is not
+        trade VWAP, and does not change while the book moves — several unrelated
+        items share exact values, with every log reading 0.0625. It behaves as a
+        stored valuation rather than a live quote, so it is shown as a fixed
+        reference and never used as a price. Its exact meaning is undocumented.
+      </Caveat>
     </div>
   );
 }
