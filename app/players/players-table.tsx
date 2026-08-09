@@ -17,6 +17,9 @@ export type PlayerRow = {
   isMarketMaker: boolean;
   /** Registered, and possibly funded or quoting, but has never traded. */
   isNonTrading: boolean;
+  /** One-word behavioural label, with the rule that produced it. */
+  archetype: string;
+  archetypeWhy: string;
   volume: number;
   buyVolume: number;
   sellVolume: number;
@@ -63,7 +66,11 @@ export function PlayersTable({ rows }: { rows: PlayerRow[] }) {
       cell: (r) => (
         <span className="flex items-center gap-1.5">
           <PlayerLink username={r.username} uuid={r.uuid} />
-          {r.isNonTrading && <Badge>No trades</Badge>}
+          {r.isNonTrading ? (
+            <Badge>No trades</Badge>
+          ) : (
+            <Badge title={r.archetypeWhy}>{r.archetype}</Badge>
+          )}
         </span>
       ),
       sort: (r) => r.username.toLowerCase(),

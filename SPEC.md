@@ -245,6 +245,12 @@ player would multiply its contents by its membership. Access is not ownership,
 and a shared treasury is credited to nobody in particular. Items with no quoted
 mid are counted but not valued, and that count travels with the number.
 
+Each account carries a one-word **archetype** — maker, accumulator,
+distributor, round-tripper, one-off — derived from maker share and buy/sell
+skew. Deliberately a label on existing metrics rather than a classifier: with
+this few humans a reader can see the whole population anyway, so the value is
+in naming the pattern quickly. Every rule is stated in the badge's tooltip.
+
 Ranked over the **account population**, not the trade record. Accounts that
 registered and never traded are absent from `view=trades` entirely, so counting
 only traders answers "who trades" while appearing to answer "who is here". They

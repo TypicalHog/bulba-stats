@@ -10,6 +10,7 @@ import {
 import { toLegs } from "@/lib/analytics/legs";
 import { population } from "@/lib/analytics/population";
 import { gini, holders, itemConcentration } from "@/lib/analytics/wealth";
+import { classify } from "@/lib/analytics/archetype";
 import { RichList } from "./rich-list";
 import {
   counterpartyEdges,
@@ -77,6 +78,8 @@ async function PlayersBody() {
     uuid: s.uuid,
     isMarketMaker: s.isMarketMaker,
     isNonTrading: false,
+    archetype: classify(s).label,
+    archetypeWhy: classify(s).because,
     volume: s.volume,
     buyVolume: s.buyVolume,
     sellVolume: s.sellVolume,
@@ -106,6 +109,8 @@ async function PlayersBody() {
       uuid: account.uuid,
       isMarketMaker: false,
       isNonTrading: true,
+      archetype: "No trades",
+      archetypeWhy: "Registered, but has never traded",
       volume: 0,
       buyVolume: 0,
       sellVolume: 0,
