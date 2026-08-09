@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import {
+  getAllBankOps,
   getAllTrades,
   getOrderbookSummary,
   getTreasury,
@@ -54,15 +55,15 @@ export default function TreasuryPage() {
 }
 
 async function TreasuryBody() {
-  const [treasury, revenue, distributions, summary, trades] = await Promise.all(
-    [
+  const [treasury, revenue, distributions, summary, trades, bankOps] =
+    await Promise.all([
       getTreasury(),
       getTreasuryRevenue(60),
       getTreasuryDistributions(20),
       getOrderbookSummary(),
       getAllTrades(),
-    ],
-  );
+      getAllBankOps(),
+    ]);
 
   if (!treasury) {
     return (
@@ -126,7 +127,26 @@ async function TreasuryBody() {
 
   // Cross-check the treasury's own revenue figure against fees observed in
   // trade history — two independent paths to the same number.
-  const observedFees = dailyActivity(trades).reduce((a, d) => a + d.fees, 0);
+  const days = dailyActivity(trades);
+  const observedFees = days.reduce((a, d) => a + d.fees, 0);
+
+  /*
+   * The monetary picture. Diamonds are minted outside the exchange entirely:
+   * they arrive by deposit, leave by withdrawal, and the taker fee is the only
+   * process that destroys them.
+   */
+  const feeBurnPoints = days.map((d) => ({
+    label: d.day.slice(5),
+    values: { fees: d.fees },
+  }));
+
+  let currencyIn = 0;
+  let currencyOut = 0;
+  for (const op of bankOps) {
+    if (op.item?.itemName !== "diamond") continue;
+    if (op.type === "deposit") currencyIn += op.amount;
+    else if (op.type === "withdraw") currencyOut += op.amount;
+  }
 
   return (
     <div className="flex flex-col gap-5">
@@ -492,6 +512,72 @@ async function TreasuryBody() {
           </div>
         </div>
       )}
+
+      <div>
+        <SectionTitle hint="Diamonds are minted outside the exchange, never inside it">
+          The money supply
+        </SectionTitle>
+        <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
+          <Panel
+            title="Fees burned"
+            subtitle="The 4% taker fee is debited from the trader and credited to nobody"
+          >
+            <StackedBars
+              points={feeBurnPoints}
+              series={[
+                { key: "fees", label: "Fees burned that day", color: SERIES[1] },
+              ]}
+              height={180}
+              format="diamonds"
+            />
+            <Caveat>
+              Daily rather than cumulative, so each bar is what was actually
+              destroyed that day. {diamonds(observedFees)} has been burned in
+              total across the market&apos;s life — against{" "}
+              {num(currencyIn)} diamonds ever deposited, the deflation is real
+              but small so far.
+            </Caveat>
+          </Panel>
+
+          <Panel
+            title="Where the diamonds are"
+            subtitle="Currency crossing the boundary, and what the treasury holds"
+          >
+            <div className="grid grid-cols-2 gap-4 text-[11px]">
+              <div>
+                <p className="text-ink-3">Deposited</p>
+                <p className="font-mono text-[18px] text-up">
+                  {num(currencyIn)}
+                </p>
+              </div>
+              <div>
+                <p className="text-ink-3">Withdrawn</p>
+                <p className="font-mono text-[18px] text-down">
+                  {num(currencyOut)}
+                </p>
+              </div>
+              <div>
+                <p className="text-ink-3">Net on exchange</p>
+                <p className="font-mono text-[18px] text-ink">
+                  {num(currencyIn - currencyOut)}
+                </p>
+              </div>
+              <div>
+                <p className="text-ink-3">Held by the treasury</p>
+                <p className="font-mono text-[18px] text-ink">
+                  {diamondsCompact(totalHeld)}
+                </p>
+              </div>
+            </div>
+            <Caveat>
+              Diamonds enter only by being deposited and leave only by being
+              withdrawn — nothing on the exchange creates them. The fee is the
+              one process that removes them permanently, so the currency held
+              here shrinks with every trade unless more is brought in.
+            </Caveat>
+          </Panel>
+        </div>
+      </div>
 
       <div>
         <SectionTitle hint="Newest first">Distribution history</SectionTitle>

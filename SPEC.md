@@ -261,6 +261,13 @@ Pool balances and fill, revenue by day split by source, distribution history wit
 per-pool allocation, stock ownership (shares outstanding, treasury shares, float,
 holder count), and implied stock valuation from the `bulba_stock` listing.
 
+**The money supply.** Diamonds are minted outside the exchange entirely: they
+arrive by deposit, leave by withdrawal, and the 4% taker fee is the only
+process that destroys them. Shown as daily fees burned — daily rather than
+cumulative, so each bar is what was actually destroyed that day — beside
+currency in, out and net on the exchange, and what the treasury holds. This
+turns the deflation note in §4 from an assertion into a chart.
+
 **Dividend yield.** Half of every distribution goes to the stock pool, so
 divided by the shares that can receive it that is a dividend — the one
 genuinely financial metric the data supports, and one the API leaves
