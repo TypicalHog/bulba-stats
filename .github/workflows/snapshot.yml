@@ -8,8 +8,13 @@ name: Snapshot
 
 on:
   schedule:
-    # Offset from the hour: scheduled runs bunch up at :00 and get delayed.
-    - cron: "17 * * * *"
+    # On the hour, by request. Note that GitHub treats schedules as best
+    # effort and :00 is its most contended slot, so actual start times will
+    # drift — often by more than an offset minute would have. Every snapshot
+    # records the time it really ran in `capturedAt`, and consumers read that
+    # rather than assuming the slot, so drift costs accuracy of labelling,
+    # never correctness of data.
+    - cron: "0 * * * *"
   workflow_dispatch:
 
 # Runs must not overlap — two jobs pushing to `data` would race.
