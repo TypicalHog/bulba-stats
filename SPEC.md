@@ -223,7 +223,46 @@ Pool balances and fill, revenue by day split by source, distribution history wit
 per-pool allocation, stock ownership (shares outstanding, treasury shares, float,
 holder count), and implied stock valuation from the `bulba_stock` listing.
 
-### 2.6 Supply & flow
+### 2.6 Recipe economics
+
+Buy the finished item, or buy the parts and make it. Both sides are priced at
+what you would **actually pay**, by sweeping the real ask side for the quantity
+needed — mid is fictional on a one-sided or wide book, and most of this catalog
+is exactly that, so a craft cost quoted from mids would be a confident number
+for a trade nobody could execute. If any leg cannot be filled, the build has no
+total at all rather than a partial one.
+
+Two recipe families:
+
+- **Crafting and smelting** — 24 hand-written recipes, because nothing upstream
+  knows that nine ice make a packed ice. This is the one place on the site
+  where a wrong number is confidently wrong rather than missing, so only
+  deterministic conversions are included: ore is *smelted* rather than mined,
+  since mining lapis, redstone or copper drops a variable amount.
+- **Enchanting** — 23 routes derived from the catalog itself. Every listing
+  carrying enchantment `nbt` becomes its plain base item plus one
+  `enchanted_book:*` per enchantment, so it cannot drift out of step with
+  upstream. Listings whose nbt is a potion effect or firework attribute are
+  excluded: neither is assembled on an anvil.
+
+**Anvil cost is searched, not assumed.** Every item remembers how often it has
+been worked, and that penalty doubles with each use, so applying five books one
+at a time can cost half again what merging them in pairs first does — and can
+hit the 40-level "Too Expensive" wall survival refuses. The optimiser is
+exhaustive over merge orders, keeping the cheapest plan per (book subset, prior
+work) pair, and reports the winning order step by step. Worked example: five
+books onto a bow costs **26 levels optimally against 42 sequentially**.
+
+Four independent toggles, because "what does this cost me" has four honest
+answers depending on what you already hold: fee on buying, fee on selling, XP
+priced as bottles, and whether the base item is bought at all (off by default —
+most players already own the tool).
+
+Measured live: 47 recipes, 20 with both sides priceable, **building is cheaper
+on 15 of those 20**, the widest being `elytra:max` at 7.05 to build against
+60.00 to buy.
+
+### 2.7 Supply & flow
 
 Every other statistic here measures value changing hands *between accounts*.
 None of them see the boundary with the world outside: goods are mined, farmed
@@ -247,7 +286,7 @@ of 106 deposited items have never had a single unit taken back out.**
 *inside* the exchange, so counting them as supply would double-count goods that
 never crossed the boundary.
 
-### 2.7 Cross-cutting insights
+### 2.8 Cross-cutting insights
 
 - Hour-of-day × day-of-week activity heatmap
 - Venue mix and taker-side mix over time, as a toggle on the same columns
@@ -278,8 +317,9 @@ never crossed the boundary.
 | `/trades` | Trade explorer — filter by item, player, venue, mechanism, side |
 | `/orders` | Open-order book explorer, catalog-wide slippage matrix, order-flow analytics |
 | `/treasury` | Pools, revenue, distributions, stock |
-| `/supply` | What enters the exchange and what leaves it — the analyses in §2.6 |
-| `/insights` | The cross-cutting analyses in §2.7 |
+| `/recipes` | Buy it or build it — the analyses in §2.6 |
+| `/supply` | What enters the exchange and what leaves it — the analyses in §2.7 |
+| `/insights` | The cross-cutting analyses in §2.8 |
 | `/about` | Data sources, methodology, caveats, upstream API reference |
 
 **Progressive disclosure.** Overview and item pages lead with what matters and
