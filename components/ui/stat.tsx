@@ -14,6 +14,7 @@ export function Stat({
   unit,
   delta,
   deltaLabel,
+  deltaUnit = "%",
   spark,
   hint,
   tone = "neutral",
@@ -21,9 +22,15 @@ export function Stat({
   label: string;
   value: ReactNode;
   unit?: string;
-  /** Percentage change; sign drives both glyph and color. */
+  /** Change vs a named period; sign drives both glyph and color. */
   delta?: number | null;
   deltaLabel?: string;
+  /**
+   * Unit for the delta. A share that moves from 40% to 43% has risen three
+   * *percentage points*, not 3% — writing "%" there would be a different and
+   * wrong claim, so share tiles pass "pp".
+   */
+  deltaUnit?: "%" | "pp";
   spark?: number[];
   hint?: ReactNode;
   tone?: "neutral" | "up" | "down" | "accent";
@@ -68,7 +75,10 @@ export function Stat({
         <p className="mt-1.5 flex items-center gap-1.5 text-[11px] leading-tight">
           {delta != null && (
             <span className={`font-mono ${deltaTone}`}>
-              <span aria-hidden>{arrow(delta)}</span> {signedPercent(delta)}
+              <span aria-hidden>{arrow(delta)}</span>{" "}
+              {deltaUnit === "pp"
+                ? `${delta > 0 ? "+" : ""}${delta.toFixed(1)}pp`
+                : signedPercent(delta)}
             </span>
           )}
           {deltaLabel && <span className="text-ink-3">{deltaLabel}</span>}

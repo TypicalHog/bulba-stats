@@ -25,9 +25,10 @@ import { DataTable, Rank, Td, Th, Tr } from "@/components/ui/table";
 import { ItemLink, PlayerLink } from "@/components/ui/entity";
 import { ActivityHeatmap } from "@/components/charts/heatmap";
 import { NetworkGraph } from "./network-graph";
-import { RankedBars, SplitBar } from "@/components/charts/bars";
+import { MovingLately } from "./moving-lately";
+import { SplitBar } from "@/components/charts/bars";
 import { SERIES } from "@/lib/design";
-import { anchorNow, DAY_MS } from "@/lib/time";
+import { anchorNow } from "@/lib/time";
 import {
   diamonds,
   diamondsCompact,
@@ -444,24 +445,21 @@ async function Liquidity() {
     .filter((p) => p.trades > 0)
     .sort((a, b) => b.spreadPct - a.spreadPct);
 
-  const recentLegs = toLegs(trades).filter(
-    (l) => !l.isMaker && l.at >= now - 7 * DAY_MS,
-  );
-  const recentByItem = groupBy(recentLegs, (l) => l.listingId);
-  const rising = [...recentByItem.entries()]
-    .map(([listingId, legs]) => ({
-      listingId,
-      itemName: legs[0].itemName,
-      variantName: legs[0].variantName,
-      volume: sum(legs, (l) => l.value),
-      /* Direction matters: the same volume reads very differently depending on
-         whether takers were accumulating the item or offloading it. */
-      buy: sum(legs, (l) => (l.side === "buy" ? l.value : 0)),
-      sell: sum(legs, (l) => (l.side === "sell" ? l.value : 0)),
-      trades: legs.length,
-    }))
-    .sort((a, b) => b.volume - a.volume)
-    .slice(0, 10);
+  /*
+   * Hand the client one flat list of taker legs with their age relative to the
+   * market's last trade; it re-buckets on window change without another
+   * request. 200-odd legs is a trivial payload.
+   */
+  const movingLegs = toLegs(trades)
+    .filter((l) => !l.isMaker)
+    .map((l) => ({
+      listingId: l.listingId,
+      itemName: l.itemName,
+      variantName: l.variantName,
+      agoMs: Math.max(0, now - l.at),
+      value: l.value,
+      side: l.side,
+    }));
 
   return (
     <div>
@@ -523,47 +521,10 @@ async function Liquidity() {
 
       <div className="mt-4">
         <Panel
-          title="What's moving lately"
-          subtitle="Traded value over the seven days ending at the market's last trade"
+          title="What's moving"
+          subtitle="Most-traded items over a selectable window, ending at the market's last trade"
         >
-          <RankedBars
-            legend={[
-              { label: "Taker bought", color: "var(--up)" },
-              { label: "Taker sold", color: "var(--down)" },
-            ]}
-            rows={rising.map((r) => ({
-              key: String(r.listingId),
-              value: r.volume,
-              display: `${diamondsCompact(r.volume)} · ${num(r.trades)} trades`,
-              parts: [
-                {
-                  key: "buy",
-                  value: r.buy,
-                  color: "var(--up)",
-                  label: `Bought ${diamondsCompact(r.buy)}`,
-                },
-                {
-                  key: "sell",
-                  value: r.sell,
-                  color: "var(--down)",
-                  label: `Sold ${diamondsCompact(r.sell)}`,
-                },
-              ],
-              label: (
-                <ItemLink
-                  listingId={r.listingId}
-                  itemName={r.itemName}
-                  variantName={r.variantName}
-                  size={16}
-                />
-              ),
-            }))}
-          />
-          {!rising.length && (
-            <p className="text-[12px] text-ink-3">
-              No trades in the last seven days of recorded activity.
-            </p>
-          )}
+          <MovingLately legs={movingLegs} />
         </Panel>
       </div>
     </div>
@@ -711,7 +672,7 @@ async function Network() {
       <div className="mb-4">
         <Panel
           title="Who trades with whom"
-          subtitle="Hover an account to isolate its relationships; hide any account to see the structure behind it"
+          subtitle="Select an account to pin its relationships and open its profile; hide any account to see the structure behind it"
         >
           <NetworkGraph nodes={graphNodes} edges={graphEdges} />
           <Caveat>

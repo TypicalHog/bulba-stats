@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { INK, SURFACE } from "@/lib/design";
+import { INK, SERIES, SURFACE } from "@/lib/design";
 import { avatarUrl, diamonds, diamondsCompact, num } from "@/lib/format";
 
 export type GraphNode = {
@@ -46,6 +46,15 @@ export function NetworkGraph({
 }) {
   const [hidden, setHidden] = useState<string[]>([]);
   const [hover, setHover] = useState<string | null>(null);
+  /*
+   * Clicking pins an account. Hover alone can't be enough: the detail card
+   * carries a link to the player page, and a card that vanishes on mouse-out is
+   * impossible to reach. Selection survives the pointer leaving the node.
+   */
+  const [selected, setSelected] = useState<string | null>(null);
+
+  /** Pinned selection wins; hover is the transient preview. */
+  const active = selected ?? hover;
 
   const visible = useMemo(() => {
     const drop = new Set(hidden);
@@ -108,19 +117,19 @@ export function NetworkGraph({
   const maxEdge = Math.max(...visible.edges.map((e) => e.volume), 1);
 
   const neighbours = useMemo(() => {
-    if (!hover) return null;
-    const set = new Set<string>([hover]);
+    if (!active) return null;
+    const set = new Set<string>([active]);
     for (const e of visible.edges) {
-      if (e.a === hover) set.add(e.b);
-      if (e.b === hover) set.add(e.a);
+      if (e.a === active) set.add(e.b);
+      if (e.b === active) set.add(e.a);
     }
     return set;
-  }, [hover, visible.edges]);
+  }, [active, visible.edges]);
 
-  const hoveredNode = hover ? layout.pos.get(hover)?.node : null;
-  const hoveredEdges = hover
+  const activeNode = active ? layout.pos.get(active)?.node : null;
+  const activeEdges = active
     ? visible.edges
-        .filter((e) => e.a === hover || e.b === hover)
+        .filter((e) => e.a === active || e.b === active)
         .sort((x, y) => y.volume - x.volume)
     : [];
 
@@ -174,7 +183,7 @@ export function NetworkGraph({
               const pa = layout.pos.get(e.a);
               const pb = layout.pos.get(e.b);
               if (!pa || !pb) return null;
-              const lit = !hover || (e.a === hover || e.b === hover);
+              const lit = !active || e.a === active || e.b === active;
               return (
                 <line
                   key={`${e.a}-${e.b}`}
@@ -182,10 +191,10 @@ export function NetworkGraph({
                   y1={pa.y}
                   x2={pb.x}
                   y2={pb.y}
-                  stroke={lit ? "var(--accent)" : INK.muted}
+                  stroke={lit ? SERIES[0] : INK.muted}
                   strokeWidth={1 + Math.sqrt(e.volume / maxEdge) * 4}
                   strokeLinecap="round"
-                  opacity={hover ? (lit ? 0.75 : 0.06) : 0.28}
+                  opacity={active ? (lit ? 0.75 : 0.06) : 0.28}
                 />
               );
             })}
@@ -206,12 +215,42 @@ export function NetworkGraph({
                 <g
                   key={node.username}
                   opacity={lit ? 1 : 0.18}
+                  role="button"
+                  tabIndex={0}
+                  aria-pressed={selected === node.username}
+                  aria-label={`${node.username}, ${diamondsCompact(node.volume)} traded`}
                   onMouseEnter={() => setHover(node.username)}
+                  onClick={() =>
+                    setSelected((prev) =>
+                      prev === node.username ? null : node.username,
+                    )
+                  }
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setSelected((prev) =>
+                        prev === node.username ? null : node.username,
+                      );
+                    }
+                  }}
                   style={{ cursor: "pointer" }}
                 >
                   <clipPath id={`clip-${node.username}`}>
                     <circle cx={x} cy={y} r={r} />
                   </clipPath>
+                  {/* Selection ring follows the node's circle, replacing the
+                      browser's rectangular focus box. */}
+                  {selected === node.username && (
+                    <circle
+                      cx={x}
+                      cy={y}
+                      r={r + 6}
+                      fill="none"
+                      stroke="var(--accent)"
+                      strokeWidth={1}
+                      opacity={0.5}
+                    />
+                  )}
                   <circle
                     cx={x}
                     cy={y}
@@ -220,7 +259,13 @@ export function NetworkGraph({
                     stroke={
                       node.isMarketMaker ? "var(--warn)" : "var(--accent)"
                     }
-                    strokeWidth={hover === node.username ? 2 : 1}
+                    strokeWidth={
+                      selected === node.username
+                        ? 2.5
+                        : active === node.username
+                          ? 2
+                          : 1
+                    }
                   />
                   <image
                     href={avatarUrl(node.uuid, Math.ceil(r * 2))}
@@ -237,7 +282,7 @@ export function NetworkGraph({
                     y={ly + 3}
                     textAnchor={anchor}
                     fontSize={10}
-                    fill={hover === node.username ? INK.primary : INK.secondary}
+                    fill={active === node.username ? INK.primary : INK.secondary}
                     fontFamily="var(--font-fira-code), monospace"
                   >
                     {node.username}
@@ -247,18 +292,51 @@ export function NetworkGraph({
             })}
           </svg>
 
-          {hoveredNode && (
-            <div className="pointer-events-none absolute left-2 top-2 rounded border border-line bg-panel-2 px-2.5 py-2 text-[10px] shadow-lg">
-              <div className="font-mono text-[12px] text-ink">
-                {hoveredNode.username}
+          {activeNode && (
+            /*
+              Interactive only once pinned. While it's just following the
+              pointer it must not swallow mouse events, or moving toward a node
+              behind it would steal the hover.
+            */
+            <div
+              className={`absolute left-2 top-2 rounded border bg-panel-2 px-2.5 py-2 text-[10px] shadow-lg ${
+                selected
+                  ? "pointer-events-auto border-accent/50"
+                  : "pointer-events-none border-line"
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-[12px] text-ink">
+                  {activeNode.username}
+                </span>
+                {selected ? (
+                  <button
+                    type="button"
+                    onClick={() => setSelected(null)}
+                    className="ml-auto cursor-pointer text-ink-3 hover:text-accent"
+                    aria-label="Clear selection"
+                  >
+                    ✕
+                  </button>
+                ) : (
+                  <span className="ml-auto text-ink-3">click to pin</span>
+                )}
               </div>
               <div className="mt-0.5 text-ink-3">
-                {diamondsCompact(hoveredNode.volume)} traded ·{" "}
-                {num(hoveredEdges.length)} partners
+                {diamondsCompact(activeNode.volume)} traded ·{" "}
+                {num(activeEdges.length)} partners
               </div>
+              {selected && (
+                <Link
+                  href={`/players/${encodeURIComponent(activeNode.username)}`}
+                  className="mt-1.5 inline-block rounded border border-line px-1.5 py-0.5 text-[10px] text-ink-2 transition-colors duration-150 hover:border-accent/40 hover:text-accent"
+                >
+                  Open profile →
+                </Link>
+              )}
               <ul className="mt-1.5 flex flex-col gap-0.5">
-                {hoveredEdges.slice(0, 6).map((e) => {
-                  const other = e.a === hoveredNode.username ? e.b : e.a;
+                {activeEdges.slice(0, 6).map((e) => {
+                  const other = e.a === activeNode.username ? e.b : e.a;
                   return (
                     <li key={other} className="flex gap-3">
                       <span className="text-ink-2">{other}</span>
@@ -268,9 +346,9 @@ export function NetworkGraph({
                     </li>
                   );
                 })}
-                {hoveredEdges.length > 6 && (
+                {activeEdges.length > 6 && (
                   <li className="text-ink-3">
-                    +{hoveredEdges.length - 6} more
+                    +{activeEdges.length - 6} more
                   </li>
                 )}
               </ul>
@@ -297,15 +375,15 @@ export function NetworkGraph({
         <span>Circle area = volume traded · line width = value between the pair</span>
         <span className="ml-auto">
           {visible.nodes.length} shown ·{" "}
-          {hoveredNode ? (
+          {selected ? (
             <Link
-              href={`/players/${encodeURIComponent(hoveredNode.username)}`}
-              className="hover:text-accent"
+              href={`/players/${encodeURIComponent(selected)}`}
+              className="text-ink-2 hover:text-accent"
             >
-              open {hoveredNode.username} →
+              open {selected} →
             </Link>
           ) : (
-            "hover an account"
+            "select an account"
           )}
         </span>
       </div>

@@ -83,6 +83,17 @@
     outline-offset: 2px;
     border-radius: 2px;
   }
+
+  /*
+   * SVG focus/active rings are drawn around the element's bounding box, which
+   * on a circular node reads as a stray rectangle floating over the graph. The
+   * node draws its own ring on its actual geometry instead — the highlight is
+   * still there, it just follows the shape.
+   */
+  svg [role="button"]:focus,
+  svg [role="button"]:focus-visible {
+    outline: none;
+  }
 }
 
 @layer components {

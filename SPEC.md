@@ -152,10 +152,13 @@ holder count), and implied stock valuation from the `bulba_stock` listing.
 ### 2.6 Cross-cutting insights
 
 - Hour-of-day × day-of-week activity heatmap
-- Venue mix over time (physical in-person vs storage book trading)
+- Venue mix and taker-side mix over time, as a toggle on the same columns
 - Order lifecycle: fill rate, cancel rate, time-to-fill distribution
 - Price-level clustering — do traders round to whole diamonds?
-- Counterparty network: who trades with whom, weighted by volume
+- Counterparty network, both as a ranked table and as an interactive
+  node-and-edge graph
+- **Directional flow** between each pair: which account is the net receiver of
+  diamonds and which the net payer, not just the gross traded between them
 
 ---
 
@@ -178,6 +181,22 @@ holder count), and implied stock valuation from the `bulba_stock` listing.
 render instantly. Anything expensive (full-history aggregates, the open-order
 crawl, the counterparty graph) streams in behind its own `<Suspense>` boundary —
 nothing makes a visitor wait 20 seconds for a first paint.
+
+**Long lists scroll rather than truncate.** Every table that ranks something
+carries the full set inside a fixed-height scroll container with a sticky
+header, so nothing is unreachable and no row count is arbitrary.
+
+**Views that reframe rather than filter.** Several panels offer a toggle where
+the alternative view answers a different question about the same data, rather
+than just hiding rows:
+
+| Where | Toggle | Why |
+|---|---|---|
+| Market table | Single / Stack / Shulker | Stack size is a per-item property (1, 16 or 64), so a stack price is a per-row multiplier, not a constant |
+| Daily volume | By venue / by side | Both partition the same total, so column heights stay comparable and only the split changes |
+| Deepest books | All / ±25% / ±10% / ±5% of mid | Total resting value largely measures how far a market maker has laddered; the bands isolate depth that could actually fill |
+| Leaderboards | Market maker in / out | It sits on one side of most trades |
+| Network graph | Hide any account | Hiding the house reveals which traders found each other directly |
 
 Concretely, the market table is built from four upstream requests and renders
 immediately; the depth-ownership panel below it needs the ~20,700-row order
@@ -281,9 +300,15 @@ volume histogram gets its own band and baseline), legend whenever there are ≥2
 series, direct labels used sparingly, hover crosshair + tooltip on every plot,
 and a table view available for the data behind each chart.
 
-Two behaviours worth stating because they were wrong first time and fixed after
-rendering the pages:
+Behaviours worth stating because they were wrong first time and fixed after
+rendering the pages and measuring them in a browser:
 
+- **Hover maps through the SVG's real screen transform.** The obvious
+  `(clientX − rect.left) / rect.width × viewBoxWidth` assumes the viewBox
+  stretches edge to edge. Under the default `preserveAspectRatio="xMidYMid meet"`
+  it doesn't — the drawing is scaled to fit and centred, leaving gutters — so
+  hover was accurate at the centre and drifted toward the edges. Both directions
+  now go through `getScreenCTM()`.
 - **Depth curves are windowed around mid**, not around the outermost order, with
   the y-axis scaled to visible depth. Scaling to the extremes collapsed a real
   book into a vertical line at the touch, because market makers park a few units
@@ -291,6 +316,15 @@ rendering the pages:
 - **Charts scroll rather than shrink below 560px.** The 800-unit viewBox scales
   to its container, which rendered axis labels at ~4px on a phone. They now
   scroll horizontally inside their panel, exactly like wide tables.
+- **Overlays anchored inside a scroll container are positioned from the nearer
+  edge.** A tooltip placed left-of-centre uses `left`, one right-of-centre uses
+  `right`, so it grows inward and can never overflow whatever width it ends up.
+  Translate-based flipping pulls back a share of the tooltip's own width, which
+  is not guaranteed to be enough.
+
+The network graph uses a deterministic elliptical layout rather than a force
+simulation: at this scale physics would add a dependency and settle differently
+on every render, so the same data would never look the same twice.
 
 ### 5.6 Assets
 

@@ -106,6 +106,31 @@ export default function AboutPage() {
             fee. A real order also moves the price it is being measured against,
             so the curve is a floor on cost, not a quote.
           </Method>
+
+          <Method title="Net flow between traders">
+            Direction of <strong>currency, not profit</strong>. A pair&apos;s net
+            flow is the diamonds one account received from the other minus what
+            it paid back; the receiver handed over goods worth it. Taker fees are
+            excluded because they go to the treasury rather than the
+            counterparty, so the figure is strictly what moved between the two
+            accounts.
+          </Method>
+
+          <Method title="Stack and shulker prices">
+            Minecraft stack size is a property of the item — 64 for most blocks,
+            16 for eggs and pearls, 1 for tools — so a per-stack price is a{" "}
+            <strong>per-row multiplier</strong>, not a constant. A shulker box is
+            27 stacks. Only unit prices scale with the toggle: spread stays a
+            ratio and volume stays a total.
+          </Method>
+
+          <Method title="Resting value near mid">
+            An order parked far from mid will not trade, so total resting value
+            flatters a book. The median resting order sits a long way out, and
+            only a small fraction of all resting value falls within 5% of mid —
+            the distance bands on the orders page separate depth you could
+            realistically hit from a market maker&apos;s ladder.
+          </Method>
         </div>
       </div>
 

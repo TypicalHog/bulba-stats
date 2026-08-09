@@ -13,6 +13,7 @@ import {
   herfindahl,
   marketTotals,
   volumeByItem,
+  type DayBucket,
 } from "@/lib/analytics/market";
 import { toLegs } from "@/lib/analytics/legs";
 import { playerStats } from "@/lib/analytics/players";
@@ -108,6 +109,49 @@ async function MarketHeader() {
   const volDelta = volPrev7 > 0 ? ((vol7 - volPrev7) / volPrev7) * 100 : null;
 
   /*
+   * Trends for the tiles whose history the trade record actually contains.
+   *
+   * Book-structure tiles (two-sided books, median spread) deliberately have no
+   * trend: the API exposes the order book only as it stands right now, so there
+   * is no history to chart. Drawing a sparkline there would be inventing one.
+   */
+  const totalOf = (bucket: DayBucket[], pick: (d: DayBucket) => number) =>
+    bucket.reduce((a, d) => a + pick(d), 0);
+
+  const trades7 = totalOf(last7, (d) => d.trades);
+  const tradesPrev7 = totalOf(prev7, (d) => d.trades);
+  const tradesDelta =
+    tradesPrev7 > 0 ? ((trades7 - tradesPrev7) / tradesPrev7) * 100 : null;
+
+  /** Share deltas are percentage points, not percentages of a percentage. */
+  const shareDelta = (
+    pick: (d: DayBucket) => number,
+  ): { now: number; delta: number | null } => {
+    const share = (bucket: DayBucket[]) => {
+      const volume = totalOf(bucket, (d) => d.volume);
+      return volume > 0 ? (totalOf(bucket, pick) / volume) * 100 : null;
+    };
+    const current = share(last7);
+    const before = share(prev7);
+    return {
+      now: current ?? 0,
+      delta: current != null && before != null ? current - before : null,
+    };
+  };
+
+  const buyShare7 = shareDelta((d) => d.buy);
+  const physicalShare7 = shareDelta((d) => d.physical);
+
+  /** Daily share series for a sparkline; quiet days carry the prior level. */
+  const shareSeries = (pick: (d: DayBucket) => number) => {
+    let last = 0;
+    return days.slice(-14).map((d) => {
+      if (d.volume > 0) last = (pick(d) / d.volume) * 100;
+      return last;
+    });
+  };
+
+  /*
    * Windows are anchored to the market's most recent trade rather than the
    * wall clock, so the same cached aggregate always yields the same figure —
    * see lib/time.ts.
@@ -200,17 +244,25 @@ async function MarketHeader() {
         <Stat
           label="Taker buy share"
           value={percent(totals.buyShare * 100)}
-          hint="of volume"
+          delta={buyShare7.delta}
+          deltaUnit="pp"
+          deltaLabel="7d vs prior"
+          spark={shareSeries((d) => d.buy)}
         />
         <Stat
           label="In-person volume"
           value={percent(totals.physicalShare * 100)}
-          hint="vs bank-to-bank"
+          delta={physicalShare7.delta}
+          deltaUnit="pp"
+          deltaLabel="7d vs prior"
+          spark={shareSeries((d) => d.physical)}
         />
         <Stat
           label="Trades / day"
           value={num(totals.trades / marketAgeDays, 1)}
-          hint="lifetime average"
+          delta={tradesDelta}
+          deltaLabel="7d vs prior"
+          spark={last7.map((d) => d.trades)}
         />
       </div>
     </div>
