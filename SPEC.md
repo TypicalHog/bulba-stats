@@ -245,6 +245,15 @@ player would multiply its contents by its membership. Access is not ownership,
 and a shared treasury is credited to nobody in particular. Items with no quoted
 mid are counted but not valued, and that count travels with the number.
 
+**Automation** is reported from order timing as a confidence level — likely,
+possible, no evidence, too few — never as a binary verdict. The criteria and
+each account's measured numbers (order count, median gap, variability, share of
+sub-second gaps) are printed beside the verdict, because naming a real player's
+account as a bot is a claim that should be auditable rather than asserted.
+Regularity rather than speed is the signal; batch placement is handled
+separately, since hundreds of orders landing at one instant makes the variance
+test read as irregular.
+
 Each account carries a one-word **archetype** — maker, accumulator,
 distributor, round-tripper, one-off — derived from maker share and buy/sell
 skew. Deliberately a label on existing metrics rather than a classifier: with

@@ -3,6 +3,7 @@ import {
   getAllBankOps,
   getAllOpenOrders,
   getAllTrades,
+  getClosedOrders,
   getListings,
   getOrderbookSummary,
   getPlayerDirectory,
@@ -11,6 +12,10 @@ import { toLegs } from "@/lib/analytics/legs";
 import { population } from "@/lib/analytics/population";
 import { gini, holders, itemConcentration } from "@/lib/analytics/wealth";
 import { classify } from "@/lib/analytics/archetype";
+import {
+  automationVerdicts,
+  AUTOMATION_CRITERIA,
+} from "@/lib/analytics/automation";
 import { RichList } from "./rich-list";
 import {
   counterpartyEdges,
@@ -60,7 +65,15 @@ export default function PlayersPage() {
 }
 
 async function PlayersBody() {
-  const [trades, directory, bankOps, { rows: openOrders }, listings, summary] =
+  const [
+    trades,
+    directory,
+    bankOps,
+    { rows: openOrders },
+    listings,
+    summary,
+    closedOrders,
+  ] =
     await Promise.all([
       getAllTrades(),
       getPlayerDirectory(),
@@ -68,6 +81,7 @@ async function PlayersBody() {
       getAllOpenOrders(),
       getListings(),
       getOrderbookSummary(),
+      getClosedOrders(45).then((r) => r.rows),
     ]);
   const legs = toLegs(trades);
   const stats = playerStats(legs);
@@ -139,6 +153,12 @@ async function PlayersBody() {
     if (listing.variantId == null) continue;
     midByVariant.set(listing.variantId, midByListing.get(listing.id) ?? null);
   }
+
+  /*
+   * Timing evidence uses open and closed orders together: the open crawl
+   * carries the humans who ladder, the closed one carries the requote loop.
+   */
+  const automation = automationVerdicts([...openOrders, ...closedOrders]);
 
   const holderRows = holders(directory, midByVariant);
   const giniAll = gini(holderRows.map((h) => h.total));
@@ -310,6 +330,55 @@ async function PlayersBody() {
             are counted but not valued, and that count travels with each row.
             With a population this small the Gini figure is indicative rather
             than rigorous: one account arriving moves it visibly.
+          </Caveat>
+        </Panel>
+      </div>
+
+      <div>
+        <SectionTitle hint="From order timing alone">
+          Automated or hand-placed
+        </SectionTitle>
+        <Panel
+          title="Order timing"
+          subtitle="A person places orders in bursts; a program places them on a clock"
+        >
+          <ul className="flex flex-col gap-2">
+            {automation
+              .filter((v) => v.confidence !== "too few")
+              .map((v) => (
+                <li
+                  key={v.username}
+                  className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px]"
+                >
+                  <PlayerLink username={v.username} uuid={v.uuid ?? ""} size={18} />
+                  <span
+                    className={
+                      v.confidence === "likely"
+                        ? "text-warn"
+                        : v.confidence === "possible"
+                          ? "text-ink-2"
+                          : "text-ink-3"
+                    }
+                  >
+                    {v.confidence}
+                  </span>
+                  <span className="ml-auto font-mono text-[11px] text-ink-3">
+                    {num(v.orders)} orders · median gap{" "}
+                    {v.medianGapMs != null
+                      ? `${(v.medianGapMs / 1000).toFixed(2)}s`
+                      : "—"}{" "}
+                    · variability{" "}
+                    {v.variability != null ? v.variability.toFixed(2) : "—"}
+                  </span>
+                </li>
+              ))}
+          </ul>
+          <Caveat>
+            The criteria, in full: {AUTOMATION_CRITERIA.join("; ")}. Every
+            account&apos;s measured numbers are shown beside its verdict so the
+            claim can be checked rather than taken on trust. Regularity, not
+            speed, is what separates the two — a fast burst by hand is common,
+            a low-variance clock is not. This measures behaviour, not identity.
           </Caveat>
         </Panel>
       </div>
