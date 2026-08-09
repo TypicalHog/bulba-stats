@@ -293,7 +293,18 @@ meaning. Everything below is computed in `lib/analytics/`.
 ### 2.4 Wealth & leaderboards
 
 Volume, trade count, fees paid, net flow, maker share, unique items traded,
-inventory value, open-order capital.
+inventory value, open-order capital. Leaderboards page through the top 40 eight
+at a time, on a scale fixed over the whole list so a bar's length means the
+same thing on every page. Maker share ranks anyone who has traded at all, with
+the trade count shown beside the share so a thin sample is legible rather than
+hidden behind a minimum.
+
+**Counterparty attribution walks maker legs, from both directions.** A taker
+leg names a counterparty only when the sweep matched exactly one maker, since
+there is no single name to give otherwise — reading a player's own legs would
+therefore drop every multi-maker fill and understate the pairing. A maker leg
+has no such ambiguity: it names its taker and carries its own fill value, so a
+sweep across three makers contributes three exact rows.
 
 **Holdings** are public on every player profile but visible one player at a
 time, so nothing upstream answers "who owns most of this market". Net worth is
@@ -320,6 +331,11 @@ distributor, round-tripper, one-off — derived from maker share and buy/sell
 skew. Deliberately a label on existing metrics rather than a classifier: with
 this few humans a reader can see the whole population anyway, so the value is
 in naming the pattern quickly. Every rule is stated in the badge's tooltip.
+
+The badge is toned by direction: green accumulating, red distributing, amber
+round-tripping, accent for the house and for makers. That reuses the same
+up/down vocabulary the rest of the site gives to buying and selling pressure,
+so the colour carries the same meaning it does everywhere else.
 
 Ranked over the **account population**, not the trade record. Accounts that
 registered and never traded are absent from `view=trades` entirely, so counting
@@ -365,6 +381,11 @@ needed — mid is fictional on a one-sided or wide book, and most of this catalo
 is exactly that, so a craft cost quoted from mids would be a confident number
 for a trade nobody could execute. If any leg cannot be filled, the build has no
 total at all rather than a partial one.
+
+The reverse trade is priced the same way: **Sell** sweeps the real *bid* side
+for what the finished item would fetch, and **Build & sell** is that minus the
+build cost. Both carry the buy/sell fee toggles, so the pair can be read as a
+round trip rather than two unrelated numbers.
 
 Two recipe families:
 

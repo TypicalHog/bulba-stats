@@ -80,8 +80,9 @@ nothing to show.
 Server Components fetch from the upstream API and run the aggregation in
 `lib/analytics/`; Client Components handle sorting, filtering, chart hover, and
 the Socket.IO live feed. Results are cached with Next.js `revalidate` tiers
-(15 s for live book data up to 15 min for the full open-order crawl), so a page
-view usually costs the upstream API nothing.
+(5 s for live book data up to 5 min for the full open-order crawl), so a page
+view usually costs the upstream API nothing. Every cached read also carries a
+shared tag, which is what **Refresh** expires.
 
 Charts are hand-rolled SVG — no charting dependency.
 

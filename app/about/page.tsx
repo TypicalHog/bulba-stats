@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { getApiDoc, getCommands } from "@/lib/api/endpoints";
-import { API_BASE } from "@/lib/api/client";
+import { API_BASE, TTL } from "@/lib/api/client";
 import { DOCS_URL, SITE_ORIGIN } from "@/lib/api/constants";
 import { Panel, SectionTitle } from "@/components/ui/panel";
 import { PanelSkeleton } from "@/components/ui/skeleton";
@@ -161,12 +161,28 @@ export default function AboutPage() {
           <Method title="Trends, and where they're missing">
             Stat tiles built from the trade record carry a sparkline and a
             change against the prior period. The book-structure tiles —
-            two-sided books, median spread — carry <strong>neither on purpose</strong>
-            : the API exposes the order book only as it stands right now, so
-            there is no history behind them and a trend line would be invented.
-            Changes in a share are given in <strong>percentage points</strong>,
-            because a share moving from 40% to 43% has risen three points, not
-            3%.
+            two-sided books, median spread — have no such history to draw on:
+            the API exposes the order book only as it stands right now, so a
+            trend over it can only come from the hourly capture. They stay
+            blank until enough snapshots exist to make a line meaningful, and a
+            capture that could not reach the depth endpoint records{" "}
+            <strong>null rather than zero</strong>, so those points are dropped
+            instead of drawing a collapse that never happened. Changes in a
+            share are given in <strong>percentage points</strong>, because a
+            share moving from 40% to 43% has risen three points, not 3%.
+          </Method>
+
+          <Method title="How fresh the numbers are">
+            Every figure is read server-side and cached, so a page view usually
+            costs the upstream API nothing. The window depends on what it costs
+            to fetch: {TTL.live}s for the order book, {TTL.near}s for listings
+            and profiles, {TTL.aggregate}s for the full trade-history crawls,{" "}
+            {TTL.heavy}s for the ~20,000-row open-order crawl. A number can
+            therefore sit behind the market by up to its tier, which is the
+            wrong trade exactly once —{" "}
+            <strong>when you have just traded and want to see it</strong>. The
+            Refresh control in the header discards every cached read and
+            refetches the page you are on.
           </Method>
         </div>
       </div>
