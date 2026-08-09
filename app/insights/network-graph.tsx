@@ -245,10 +245,30 @@ export function NetworkGraph({
                     strokeLinecap="round"
                     pointerEvents="stroke"
                     style={{ cursor: "pointer" }}
+                    /*
+                     * Same treatment the nodes get. Without a role the
+                     * aria-label on a bare <line> is not exposed at all, and
+                     * without a tab stop and a key handler the relationship
+                     * panel — net diamonds, fills, items traded — is reachable
+                     * only by mouse, and that data appears nowhere else on the
+                     * page. Focus doubles as aim, so tabbing highlights the
+                     * edge exactly as hovering does.
+                     */
+                    role="button"
+                    tabIndex={0}
+                    aria-pressed={isPair}
+                    aria-label={`Relationship between ${e.a} and ${e.b}, ${diamondsCompact(e.volume)} traded`}
                     onClick={() => setPinnedPair(isPair ? null : e)}
+                    onKeyDown={(ev) => {
+                      if (ev.key === "Enter" || ev.key === " ") {
+                        ev.preventDefault();
+                        setPinnedPair(isPair ? null : e);
+                      }
+                    }}
                     onMouseEnter={() => setHoverEdge(key)}
                     onMouseLeave={() => setHoverEdge(null)}
-                    aria-label={`${e.a} and ${e.b}`}
+                    onFocus={() => setHoverEdge(key)}
+                    onBlur={() => setHoverEdge(null)}
                   />
 
                   {/* The mark itself never intercepts the pointer. */}
