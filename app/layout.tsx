@@ -80,7 +80,24 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
  * request per account. Everyone worth searching for has traded.
  */
 async function SearchIndex() {
-  const [listings, trades] = await Promise.all([getListings(), getAllTrades()]);
+  /*
+   * Both reads degrade to empty rather than throwing.
+   *
+   * This renders in the root layout, and `error.tsx` does not wrap the layout
+   * above it — there is no `global-error.tsx` either — so a throw here has no
+   * boundary anywhere in the app. An upstream outage would take down every
+   * route with an uncaught server exception, including the pages that are
+   * built to degrade (`/about` reads everything softly and still says so).
+   *
+   * The palette is chrome, not content, and `buildIndex` still returns the
+   * static page entries from empty input, so ⌘K keeps navigating even when
+   * nothing else resolves. Losing item and player search is a far smaller
+   * failure than losing the site.
+   */
+  const [listings, trades] = await Promise.all([
+    getListings().catch(() => []),
+    getAllTrades().catch(() => []),
+  ]);
 
   const players = new Map<string, string>();
   for (const trade of trades) {
