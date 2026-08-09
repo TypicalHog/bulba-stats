@@ -51,10 +51,21 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${firaSans.variable} ${firaCode.variable} h-full`}
     >
       <body className="flex min-h-full flex-col bg-bg text-ink antialiased">
-        <SiteNav />
-        <Suspense fallback={null}>
-          <SearchIndex />
-        </Suspense>
+        {/*
+          The palette trigger is passed into the header rather than rendered
+          beside it. As a direct child of this column flex container it was
+          stretched to the full width of the page by the default `stretch`
+          alignment, so the "Search ⌘K" button read as a full-bleed bar sitting
+          under the nav. A server component can be handed to a Client Component
+          as a prop, so the index is still built on the server.
+        */}
+        <SiteNav
+          search={
+            <Suspense fallback={null}>
+              <SearchIndex />
+            </Suspense>
+          }
+        />
         <WatchAlerts />
         <main className="mx-auto w-full max-w-[1600px] flex-1 px-3 py-4 sm:px-5 sm:py-6">
           {children}

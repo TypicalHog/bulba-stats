@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SITE_ORIGIN } from "@/lib/api/constants";
@@ -19,7 +20,7 @@ const LINKS = [
   { href: "/about", label: "About" },
 ] as const;
 
-export function SiteNav() {
+export function SiteNav({ search }: { search?: ReactNode }) {
   const pathname = usePathname();
 
   const isActive = (href: string) =>
@@ -65,6 +66,8 @@ export function SiteNav() {
             </Link>
           ))}
         </nav>
+
+        {search}
 
         {/* Kept visible at every width, unlike the BulbaStore link — every
             page it sits above serves cached figures. */}
