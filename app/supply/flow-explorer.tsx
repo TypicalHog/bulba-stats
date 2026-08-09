@@ -153,7 +153,11 @@ export function FlowExplorer({
       align: "right",
       cell: (r) => (
         <span className="text-ink-3">
-          {dateOnly(new Date(r.lastAt).toISOString())}
+          {/* Guarded for the same reason as the trades explorer: an invalid
+              timestamp makes `toISOString` throw and kills the table. */}
+          {dateOnly(
+            Number.isFinite(r.lastAt) ? new Date(r.lastAt).toISOString() : null,
+          )}
         </span>
       ),
       sort: (r) => r.lastAt,

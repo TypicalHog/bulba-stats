@@ -114,7 +114,10 @@ export function TradesExplorer({ rows }: { rows: TradeRow[] }) {
       header: "When",
       cell: (r) => (
         <span className="text-ink-3">
-          {dateTime(new Date(r.at).toISOString())}
+          {/* `toISOString` throws on an invalid date, which would take the
+              whole table down rather than blanking one cell. `dateTime`
+              already renders null as an em dash. */}
+          {dateTime(Number.isFinite(r.at) ? new Date(r.at).toISOString() : null)}
         </span>
       ),
       sort: (r) => r.at,
