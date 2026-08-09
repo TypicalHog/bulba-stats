@@ -506,6 +506,11 @@ each appears:
   hours, but the books had not moved in that window either, so the observation
   showed nothing. The hourly capture (§1.5) records the field, so a few days of
   snapshots will settle it. Surfaced beside mid, never used as a quote.
+- **Self-crosses are flagged, not removed.** A handful of trades have the taker
+  also appearing among the makers — an account filling against its own resting
+  order. They stay in every total, because they are real fills that moved real
+  inventory and because silently differing from the upstream's own volume
+  figures would be worse. Nothing on the site implies intent.
 - **The account roster is a floor, not a census.** There is no players index
   upstream, so accounts are discovered from the trade record, from anyone who
   has moved funds, and then transitively through shared-bank membership. An

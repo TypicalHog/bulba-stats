@@ -142,6 +142,8 @@ async function Tape() {
     (r) => r.premiumPct != null && !priced.includes(r),
   ).length;
 
+  const selfCrosses = rows.filter((r) => r.selfCross);
+
   return (
     <div>
       <SectionTitle hint={`${num(priced.length)} trades with a recent reference`}>
@@ -171,6 +173,17 @@ async function Tape() {
             </>
           )}
         </Caveat>
+        {selfCrosses.length > 0 && (
+          <Caveat>
+            {num(selfCrosses.length)} of these trades were{" "}
+            <strong>self-crosses</strong> — the taker also appeared among the
+            makers, so an account traded with its own resting order. They are
+            counted in every total on this site rather than quietly removed,
+            because they are real fills that moved real inventory, and because
+            silently differing from the upstream&apos;s own volume figures would
+            be worse than noting this. Nothing here implies intent.
+          </Caveat>
+        )}
       </Panel>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
