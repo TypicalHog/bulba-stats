@@ -22,6 +22,7 @@ endpoints.
 | **Overview** | Market-wide volume, fees, breadth and concentration; movers; live trade ticker |
 | **Market** | All 184 listings — mid, spread, depth, turnover, sparklines; sortable and filterable |
 | **Item** | Candlesticks, order-book depth curve and ladder, VWAP, volatility, slippage curve, participants, fills |
+| **Supply** | What enters the exchange and what leaves it — deposits, withdrawals, net float per item, and the goods that arrived and never traded |
 | **Players** | Leaderboards by volume, fees, maker share, inventory value, open-order capital; the funnel from registering to trading |
 | **Player** | Realized P&L by cost basis, holdings at mid, open orders, counterparty graph, activity |
 | **Trades** | Full trade explorer — filter by item, player, venue, mechanism, side |
@@ -32,8 +33,9 @@ endpoints.
 Several views offer a toggle that **reframes** the data rather than filtering
 it: prices per single / stack / shulker (stack size is a per-item property),
 daily volume split by venue or by taker side, book depth narrowed to within
-25 / 10 / 5% of mid, and any account hidden from the network graph — hiding the
-house market maker shows which traders have actually found each other.
+25 / 10 / 5% of mid, supply measured in units or in diamonds, and any account
+hidden from the network graph — hiding the house market maker shows which
+traders have actually found each other.
 
 Statistics are computed over the **complete** dataset, not a sample — the market
 opened 2026-07-12, so full history still fits in a cached server-side aggregation.

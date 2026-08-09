@@ -7,6 +7,7 @@ import { SITE_ORIGIN } from "@/lib/api/constants";
 const LINKS = [
   { href: "/", label: "Overview" },
   { href: "/market", label: "Market" },
+  { href: "/supply", label: "Supply" },
   { href: "/players", label: "Players" },
   { href: "/trades", label: "Trades" },
   { href: "/orders", label: "Orders" },
@@ -39,7 +40,7 @@ export function SiteNav() {
         </Link>
 
         {/*
-          Horizontal scroll on the nav strip itself, so eight destinations fit a
+          Horizontal scroll on the nav strip itself, so nine destinations fit a
           375px viewport without the page body ever scrolling sideways.
         */}
         <nav

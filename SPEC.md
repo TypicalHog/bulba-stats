@@ -223,7 +223,31 @@ Pool balances and fill, revenue by day split by source, distribution history wit
 per-pool allocation, stock ownership (shares outstanding, treasury shares, float,
 holder count), and implied stock valuation from the `bulba_stock` listing.
 
-### 2.6 Cross-cutting insights
+### 2.6 Supply & flow
+
+Every other statistic here measures value changing hands *between accounts*.
+None of them see the boundary with the world outside: goods are mined, farmed
+and crafted on the Minecraft server, **deposited**, and leave again only by
+being **withdrawn**. Those two transaction types are the exchange's entire
+relationship with the world around it, and nothing in the API aggregates them.
+
+- Per item: units in, units out, net left on the exchange, and the same three
+  valued at mid
+- Daily flow over the market's life, gap-filled across quiet days
+- Items deposited but never traded — supply arriving is not the same as a
+  market existing for it
+- Diamonds tracked separately: the currency is the unit of account, not supply,
+  so it never enters the goods totals
+
+The shape is the finding. Measured live: **1,128,743 units of goods have been
+deposited and 5,677 withdrawn — 199 arriving for every one that leaves — and 84
+of 106 deposited items have never had a single unit taken back out.**
+
+`transfer` and `pay` are excluded throughout. They move holdings between banks
+*inside* the exchange, so counting them as supply would double-count goods that
+never crossed the boundary.
+
+### 2.7 Cross-cutting insights
 
 - Hour-of-day × day-of-week activity heatmap
 - Venue mix and taker-side mix over time, as a toggle on the same columns
@@ -254,7 +278,8 @@ holder count), and implied stock valuation from the `bulba_stock` listing.
 | `/trades` | Trade explorer — filter by item, player, venue, mechanism, side |
 | `/orders` | Open-order book explorer, catalog-wide slippage matrix, order-flow analytics |
 | `/treasury` | Pools, revenue, distributions, stock |
-| `/insights` | The cross-cutting analyses in §2.6 |
+| `/supply` | What enters the exchange and what leaves it — the analyses in §2.6 |
+| `/insights` | The cross-cutting analyses in §2.7 |
 | `/about` | Data sources, methodology, caveats, upstream API reference |
 
 **Progressive disclosure.** Overview and item pages lead with what matters and
