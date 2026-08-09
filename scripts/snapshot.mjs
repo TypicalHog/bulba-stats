@@ -275,9 +275,29 @@ async function discoverPlayers(roster) {
   // page of activity no longer mentions them.
   const cold = roster.size === 0;
 
+  /*
+   * A cold sweep that stops at its page cap is a silent, permanent hole: every
+   * account whose only activity predates the cutoff is never discovered, and
+   * because the roster is warm from then on, no later run goes looking again.
+   * So record it rather than discarding `complete`.
+   *
+   * The caps match the app's own crawls (getAllTrades 25, getAllBankOps 40) —
+   * they were 10 and 25, which meant the branch could be rebuilt from a
+   * shallower history than the site itself reads.
+   */
+  const sweep = async (label, buildPath, maxPages) => {
+    const { rows, complete } = await crawl(buildPath, { maxPages });
+    if (!complete) {
+      errors.push(`${label}: cold sweep hit the ${maxPages}-page cap — roster may be incomplete`);
+    }
+    return rows;
+  };
+
+  const tradePath = (before) =>
+    `/transactions?view=trades&limit=200${before ? `&before=${before}` : ""}`;
   const trades = cold
-    ? (await crawl((before) => `/transactions?view=trades&limit=200${before ? `&before=${before}` : ""}`, { maxPages: 10 })).rows
-    : ((await get("/transactions?view=trades&limit=200")) ?? []);
+    ? await sweep("trades", tradePath, 25)
+    : ((await get(tradePath(null))) ?? []);
   for (const trade of trades) {
     if (trade.taker?.username) roster.add(trade.taker.username);
     for (const maker of trade.makers ?? []) roster.add(maker.username);
@@ -288,7 +308,7 @@ async function discoverPlayers(roster) {
   const bankPath = (before) =>
     `/transactions?view=fills&type=deposit,withdraw,transfer,pay&limit=200${before ? `&before=${before}` : ""}`;
   const ops = cold
-    ? (await crawl(bankPath, { maxPages: 25 })).rows
+    ? await sweep("bank movements", bankPath, 40)
     : ((await get(bankPath(null))) ?? []);
   for (const op of ops) if (op.player?.username) roster.add(op.player.username);
 
