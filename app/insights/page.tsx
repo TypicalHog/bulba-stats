@@ -7,7 +7,7 @@ import {
   getPlayerDirectory,
 } from "@/lib/api/endpoints";
 import { affiliations, type BankNode } from "@/lib/analytics/house";
-import { buildTape, fresh } from "@/lib/analytics/tape";
+import { buildTape, fresh, venueStats } from "@/lib/analytics/tape";
 import { groupBy, sum, toLegs } from "@/lib/analytics/legs";
 import {
   activityHeatmap,
@@ -116,6 +116,7 @@ async function Tape() {
   const trades = await getAllTrades();
   const rows = buildTape(trades);
   const priced = fresh(rows);
+  const venues = venueStats(rows);
 
   const bands = [
     { key: "flat", label: "Within 1%", max: 1, color: SERIES[2] },
@@ -171,6 +172,83 @@ async function Tape() {
           )}
         </Caveat>
       </Panel>
+
+      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+        <Panel
+          title="In person versus bank to bank"
+          subtitle="Execution against the previous print, and how long each takes to settle"
+        >
+          <ul className="flex flex-col gap-3">
+            {venues.map((v) => (
+              <li key={v.venue}>
+                <div className="flex items-baseline justify-between gap-2 text-[12px]">
+                  <span className="text-ink">
+                    {v.venue === "physical" ? "In person" : "Bank to bank"}
+                  </span>
+                  <span className="font-mono text-ink-3">
+                    {num(v.trades)} priced trades
+                  </span>
+                </div>
+                <div className="mt-1 grid grid-cols-2 gap-2 text-[11px]">
+                  <span className="text-ink-3">
+                    Average against previous print{" "}
+                    <span
+                      className={
+                        (v.meanPremiumPct ?? 0) >= 0 ? "text-up" : "text-down"
+                      }
+                    >
+                      {v.meanPremiumPct != null
+                        ? `${v.meanPremiumPct >= 0 ? "+" : "−"}${percent(Math.abs(v.meanPremiumPct))}`
+                        : "—"}
+                    </span>
+                  </span>
+                  <span className="text-ink-3">
+                    Median settlement{" "}
+                    <span className="font-mono text-ink-2">
+                      {v.medianSettlementMs != null
+                        ? `${(v.medianSettlementMs / 1000).toFixed(1)}s`
+                        : "—"}
+                    </span>
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ul>
+          <Caveat>
+            Comparing venue averages directly would measure time drift rather
+            than venue — items trade on different venues in different weeks.
+            Each trade is therefore compared to its own previous print instead.
+            The sample is small, so read this as indicative; it will sharpen on
+            its own as the market grows.
+          </Caveat>
+        </Panel>
+
+        <Panel
+          title="How long a trade takes"
+          subtitle="An in-person trade needs two people to open a trade window; a bank transfer does not"
+        >
+          <div className="grid grid-cols-2 gap-4 text-[11px]">
+            {venues.map((v) => (
+              <div key={v.venue}>
+                <p className="text-ink-3">
+                  {v.venue === "physical" ? "In person" : "Bank to bank"}
+                </p>
+                <p className="font-mono text-[18px] text-ink">
+                  {v.medianSettlementMs != null
+                    ? `${(v.medianSettlementMs / 1000).toFixed(1)}s`
+                    : "—"}
+                </p>
+              </div>
+            ))}
+          </div>
+          <Caveat>
+            Measured from when the trade was created to when it completed. The
+            in-person figure is human latency — someone walking over and
+            confirming — and is the only place in this dataset where the
+            physical world shows up directly in the numbers.
+          </Caveat>
+        </Panel>
+      </div>
     </div>
   );
 }
