@@ -15,6 +15,7 @@ import {
   type DayBucket,
 } from "@/lib/analytics/market";
 import { toLegs } from "@/lib/analytics/legs";
+import { buildTape, venueStats } from "@/lib/analytics/tape";
 import { playerStats } from "@/lib/analytics/players";
 import { Panel, Caveat } from "@/components/ui/panel";
 import { HeroStat, Stat } from "@/components/ui/stat";
@@ -98,6 +99,15 @@ async function MarketHeader() {
   ]);
 
   const totals = marketTotals(trades);
+
+  /*
+   * How long an in-person trade takes to settle. The only place in this
+   * dataset where the physical world shows up directly: a bank transfer is
+   * instant, a trade window needs two people to meet.
+   */
+  const physicalSettlementMs =
+    venueStats(buildTape(trades)).find((v) => v.venue === "physical")
+      ?.medianSettlementMs ?? null;
   const days = dailyActivity(trades);
   const health = bookHealth(summary, listings);
 
@@ -262,6 +272,15 @@ async function MarketHeader() {
           delta={tradesDelta}
           deltaLabel="vs prior 7d"
           spark={last7.map((d) => d.trades)}
+        />
+        <Stat
+          label="In-person settlement"
+          value={
+            physicalSettlementMs != null
+              ? `${(physicalSettlementMs / 1000).toFixed(0)}s`
+              : "—"
+          }
+          hint="median, two people meeting"
         />
       </div>
     </div>
