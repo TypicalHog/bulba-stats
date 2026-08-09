@@ -174,10 +174,24 @@ export function StackedBars({
             const x =
               CHART_PAD.left + geom.slot * i + (geom.slot - geom.barW) / 2;
             let cursor = baseline;
-            const dim = hover != null && hover.i !== i;
+            /*
+             * Highlight the hovered column by brightening it, rather than
+             * dimming the other twenty-eight.
+             *
+             * Dimming inverts on a near-black ground: `opacity: 0.5` blends a
+             * saturated fill toward #0b0f14, so the untouched bars turn muddy
+             * and the chart reads as "some bars are randomly darker" instead of
+             * "this one is selected". Brightening touches only the bar the
+             * pointer is actually on, so every other bar keeps the exact colour
+             * its legend swatch promises.
+             */
+            const active = hover != null && hover.i === i;
 
             return (
-              <g key={p.label} opacity={dim ? 0.5 : 1}>
+              <g
+                key={p.label}
+                style={active ? { filter: "brightness(1.35)" } : undefined}
+              >
                 {series.map((s, si) => {
                   const v = p.values[s.key] ?? 0;
                   if (v <= 0) return null;

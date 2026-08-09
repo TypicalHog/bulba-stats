@@ -160,7 +160,12 @@ export function CandleChart({
                 width={geom.body}
                 height={Math.max(h, 0.5)}
                 fill={c.close >= c.open ? DIRECTION.up : DIRECTION.down}
-                opacity={hover == null || hover === i ? 0.4 : 0.18}
+                /*
+                 * The volume histogram sits behind the candles, so 0.4 is its
+                 * resting weight. Hovering raises that one bar rather than
+                 * pushing the rest down to 0.18 — see the note in timeseries.
+                 */
+                opacity={hover === i ? 0.75 : 0.4}
               />
             );
           })}
@@ -172,9 +177,12 @@ export function CandleChart({
             const yClose = geom.y(c.close);
             const top = Math.min(yOpen, yClose);
             const bodyH = Math.max(Math.abs(yClose - yOpen), 1);
-            const dim = hover != null && hover !== i;
+            const active = hover === i;
             return (
-              <g key={c.time} opacity={dim ? 0.45 : 1}>
+              <g
+                key={c.time}
+                style={active ? { filter: "brightness(1.35)" } : undefined}
+              >
                 <line
                   x1={geom.x(i)}
                   x2={geom.x(i)}
