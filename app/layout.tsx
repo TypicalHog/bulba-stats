@@ -3,7 +3,10 @@ import { Fira_Code, Fira_Sans } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
+import { Suspense } from "react";
 import { SiteNav } from "@/components/ui/nav";
+import { CommandPalette, buildIndex } from "@/components/ui/search";
+import { getAllTrades, getListings } from "@/lib/api/endpoints";
 import { SiteFooter } from "@/components/ui/footer";
 
 /**
@@ -47,6 +50,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="flex min-h-full flex-col bg-bg text-ink antialiased">
         <SiteNav />
+        <Suspense fallback={null}>
+          <SearchIndex />
+        </Suspense>
         <main className="mx-auto w-full max-w-[1600px] flex-1 px-3 py-4 sm:px-5 sm:py-6">
           {children}
         </main>
@@ -60,5 +66,34 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <SpeedInsights />
       </body>
     </html>
+  );
+}
+
+/**
+ * The search index, built in the shell so ⌘K works on every route.
+ *
+ * Deliberately assembled from the two cheapest cached reads — the catalog and
+ * the trade record — rather than the full player directory, which costs a
+ * request per account. Everyone worth searching for has traded.
+ */
+async function SearchIndex() {
+  const [listings, trades] = await Promise.all([getListings(), getAllTrades()]);
+
+  const players = new Map<string, string>();
+  for (const trade of trades) {
+    if (trade.taker) players.set(trade.taker.username, trade.taker.uuid);
+    for (const maker of trade.makers) players.set(maker.username, maker.uuid);
+  }
+
+  return (
+    <CommandPalette
+      entries={buildIndex({
+        items: listings.filter((l) => l.isActive),
+        players: [...players.entries()].map(([username, uuid]) => ({
+          username,
+          uuid,
+        })),
+      })}
+    />
   );
 }
