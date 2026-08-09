@@ -56,7 +56,25 @@ jobs:
           # this one — see the sparse-checkout note below.
           NEXT_DAY="$(date -u -d '+1 day' +%Y-%m-%d)"
 
-          if git ls-remote --exit-code --heads "$REMOTE" data >/dev/null 2>&1; then
+          # `git ls-remote --exit-code` answers three different things, and a
+          # plain `if` treats two of them as "no branch": 0 the branch exists,
+          # 2 the repo is reachable and the branch is not there, 128 the repo
+          # could not be reached at all — an expired DATA_PUSH_TOKEN, a DNS
+          # blip, GitHub having a moment. Taking the 128 path would `git init`
+          # a fresh orphan branch, sweep the roster cold, and try to push a
+          # one-row history over the real one. Only the non-forced push stops
+          # that from replacing the entire dataset, which is far too thin a
+          # margin. Verified exit codes against git 2.49.
+          set +e
+          git ls-remote --exit-code --heads "$REMOTE" data >/dev/null 2>&1
+          ls_remote_status=$?
+          set -e
+          if [ "$ls_remote_status" -ne 0 ] && [ "$ls_remote_status" -ne 2 ]; then
+            echo "::error::Could not reach the repository to look for the data branch (git ls-remote exit $ls_remote_status). Refusing to start a replacement history — check DATA_PUSH_TOKEN has not expired."
+            exit 1
+          fi
+
+          if [ "$ls_remote_status" -eq 0 ]; then
             # Partial clone plus a sparse checkout: the branch accumulates
             # indefinitely, and neither a full clone nor a shallow one is
             # workable — shallow clones can't push, full clones would download
