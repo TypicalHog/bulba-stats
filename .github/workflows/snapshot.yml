@@ -76,10 +76,23 @@ jobs:
 
           if [ "$ls_remote_status" -eq 0 ]; then
             # Partial clone plus a sparse checkout: the branch accumulates
-            # indefinitely, and neither a full clone nor a shallow one is
-            # workable — shallow clones can't push, full clones would download
-            # every snapshot ever taken. This fetches the commit graph without
-            # blobs, then materialises only the root files and today's folder.
+            # indefinitely and a full clone would download every snapshot ever
+            # taken. This fetches the commit graph without blobs, then
+            # materialises only the root files and today's folder.
+            #
+            # The cost that remains grows with the branch's age: no blobs, but
+            # the whole commit graph, and this pushes 24 commits a day forever.
+            # At a few thousand commits that is seconds; it is worth watching
+            # against `timeout-minutes` over years, not now.
+            #
+            # `--depth=1` would make it constant. An earlier version of this
+            # comment claimed shallow clones cannot push, which is not true —
+            # verified locally against git 2.49, a depth-1 clone commits and
+            # pushes fine. It is left alone deliberately: that test was against
+            # a file:// remote, and GitHub's receive path can reject shallow
+            # updates in ways a local remote does not, which would break the
+            # capture outright. Validate against the real remote before
+            # adopting it.
             git clone --filter=blob:none --no-checkout --single-branch --branch data "$REMOTE" data-branch
             cd data-branch
             git sparse-checkout init --cone

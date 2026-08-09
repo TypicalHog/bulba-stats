@@ -122,6 +122,15 @@ bid/ask, spread, tick size, and depth in both units and diamonds — total and
 within ±5% and ±10% of mid — plus the treasury, and balances for every bank
 account. ~25 KiB per snapshot.
 
+**The branch grows without bound, by design.** Roughly 0.6 MB and 24 commits a
+day, forever; pruning it would destroy the only copy of exactly what this
+exists to preserve. Readers pay nothing for that — the app fetches individual
+files over `raw.githubusercontent.com` — and the capture pays only for the
+commit graph, since its clone is blobless and sparse. That cost does grow with
+the branch's age, so it is worth watching against the job's `timeout-minutes`
+over a horizon of years. `--depth=1` is the remedy if it ever bites; see the
+note in `snapshot.yml` for why it has not been adopted pre-emptively.
+
 Four properties are deliberate:
 
 - **Snapshot files are immutable.** Git stores each blob exactly once, whereas
