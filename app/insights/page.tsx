@@ -146,13 +146,22 @@ async function BookHistory() {
     );
   }
 
-  const points = history.map((h) => ({
-    label: h.at.slice(5, 16).replace("T", " "),
-    values: {
-      bid: h.bidValueNearMid ?? 0,
-      ask: h.askValueNearMid ?? 0,
-    },
-  }));
+  /*
+   * A capture that could not reach the depth endpoint records null, not zero.
+   * Coercing that to zero draws a bar of no liquidity — a collapse and recovery
+   * that never happened. Drop the point instead, so the gap reads as a missing
+   * capture, which is what it is.
+   */
+  const points = history.flatMap((h) =>
+    h.bidValueNearMid != null && h.askValueNearMid != null
+      ? [
+          {
+            label: h.at.slice(5, 16).replace("T", " "),
+            values: { bid: h.bidValueNearMid, ask: h.askValueNearMid },
+          },
+        ]
+      : [],
+  );
 
   const first = history[0];
   const last = history[history.length - 1];
@@ -193,10 +202,16 @@ async function BookHistory() {
           subtitle="Across every two-sided book, at each capture"
         >
           <StackedBars
-            points={history.map((h) => ({
-              label: h.at.slice(5, 16).replace("T", " "),
-              values: { spread: h.medianSpreadPct ?? 0 },
-            }))}
+            points={history.flatMap((h) =>
+              h.medianSpreadPct != null
+                ? [
+                    {
+                      label: h.at.slice(5, 16).replace("T", " "),
+                      values: { spread: h.medianSpreadPct },
+                    },
+                  ]
+                : [],
+            )}
             series={[
               { key: "spread", label: "Median spread %", color: SERIES[0] },
             ]}

@@ -264,7 +264,11 @@ async function MarketHeader() {
           hint="of mid, quotable books"
           spark={
             trend
-              ? history.map((h) => h.medianSpreadPct ?? 0)
+              ? // Captures with no quotable book record null, not a zero
+                // spread — drop them rather than drawing a dip to the floor.
+                history.flatMap((h) =>
+                  h.medianSpreadPct != null ? [h.medianSpreadPct] : [],
+                )
               : undefined
           }
         />

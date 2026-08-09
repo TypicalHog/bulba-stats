@@ -427,6 +427,7 @@ function marketRow(capturedAt, snapshot) {
   let askValue = 0;
   let bidNear = 0;
   let askNear = 0;
+  let missingDepth = 0;
 
   for (const row of rows) {
     if (row[mid] != null) quoted++;
@@ -436,11 +437,26 @@ function marketRow(capturedAt, snapshot) {
         spreads.push((row[spread] / row[mid]) * 100);
       }
     }
-    bidValue += row[bv] ?? 0;
-    askValue += row[av] ?? 0;
-    bidNear += row[bv5] ?? 0;
-    askNear += row[av5] ?? 0;
+    // A null here means the book was never fetched, not that it was empty —
+    // `listingRow` writes 0 for a genuinely empty side and null only when the
+    // request failed or --no-depth was passed. Counting it as 0 would silently
+    // publish an understated market total.
+    if (row[bv] == null) {
+      missingDepth++;
+      continue;
+    }
+    bidValue += row[bv];
+    askValue += row[av];
+    bidNear += row[bv5];
+    askNear += row[av5];
   }
+
+  // These are market-wide totals, so a partial sum is not a smaller total —
+  // it is a different quantity wearing the same label. Publishing one draws a
+  // liquidity withdrawal that never happened and then "recovers" an hour later.
+  // The per-snapshot file keeps the real per-listing nulls either way, so the
+  // series can be rebuilt by hand if a run is ever worth salvaging.
+  const depthComplete = missingDepth === 0;
 
   spreads.sort((a, b) => a - b);
 
@@ -452,13 +468,15 @@ function marketRow(capturedAt, snapshot) {
     medianSpreadPct: spreads.length
       ? r(spreads[Math.floor(spreads.length / 2)])
       : null,
-    bidValue: r(bidValue),
-    askValue: r(askValue),
-    bidValueNearMid: r(bidNear),
-    askValueNearMid: r(askNear),
-    treasury: r(
-      (snapshot.treasury?.pools ?? []).reduce((a, p) => a + (p.balance ?? 0), 0),
-    ),
+    bidValue: depthComplete ? r(bidValue) : null,
+    askValue: depthComplete ? r(askValue) : null,
+    bidValueNearMid: depthComplete ? r(bidNear) : null,
+    askValueNearMid: depthComplete ? r(askNear) : null,
+    // Likewise: a failed /treasury is not an empty treasury. Recording 0 drew
+    // the pool draining and refilling inside one hour.
+    treasury: snapshot.treasury
+      ? r((snapshot.treasury.pools ?? []).reduce((a, p) => a + (p.balance ?? 0), 0))
+      : null,
   };
 }
 

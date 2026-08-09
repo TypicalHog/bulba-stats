@@ -138,7 +138,18 @@ Four properties are deliberate:
   full trade and bank-movement history; a warm one reads only the newest page.
   Shared-bank membership is then followed as its own discovery channel — which
   is the only way `ayayabot`, an account appearing in no trade and no bank
-  movement, is found at all.
+  movement, is found at all. The roster only ever grows: a profile fetch that
+  fails is not evidence the account is gone, and an account that has stopped
+  trading appears in no other feed, so dropping it would end its balance
+  history permanently.
+- **Missing means `null`, never `0`.** In a series row the depth totals are
+  null unless *every* listing's book was fetched, and `treasury` is null when
+  `/treasury` did not answer. A market-wide total computed from a subset is not
+  a smaller total — it is a different quantity wearing the same label, and
+  publishing one draws a liquidity withdrawal that never happened. Readers must
+  skip null samples rather than coerce them, which is why the depth and spread
+  charts drop those points instead of plotting zero. The per-snapshot file
+  always keeps the true per-listing nulls, so a degraded run can be rebuilt.
 
 **Reading it back.** `lib/api/snapshots.ts` fetches the per-day series from the
 branch over `raw.githubusercontent.com`, overridable with `BULBA_DATA_BASE`.
