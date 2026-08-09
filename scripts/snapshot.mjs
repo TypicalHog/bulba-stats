@@ -387,11 +387,20 @@ async function main() {
 
   await appendSeries(day, marketRow(capturedAt, snapshot));
 
-  // Persist everyone actually resolved, not just those discovered from activity,
-  // so bank-only accounts survive into the next run's warm path.
+  // Persist every account this run knows of — the ones it attempted, plus the
+  // bank members the final pass surfaced with no pass left to fetch them —
+  // rather than only the ones that resolved.
+  //
+  // `get` returns null for three failed attempts exactly as it does for a 404,
+  // so persisting only the resolved set lets one transient 5xx erase an account
+  // for good: a player who has stopped trading and shares no bank appears in no
+  // other feed, so no later run rediscovers them and their balance history just
+  // stops. Accumulating instead means a deleted account lingers as one wasted
+  // request per run, which is the cheaper mistake by a wide margin.
+  const known = new Set([...fetched, ...queue]);
   await writeFile(
     join(OUT, "roster.json"),
-    `${JSON.stringify({ usernames: players.map((p) => p.username) }, null, 2)}\n`,
+    `${JSON.stringify({ usernames: [...known].sort() }, null, 2)}\n`,
   );
 
   await writeBranchMeta();
