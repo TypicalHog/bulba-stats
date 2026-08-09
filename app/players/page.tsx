@@ -3,10 +3,14 @@ import {
   getAllBankOps,
   getAllOpenOrders,
   getAllTrades,
+  getListings,
+  getOrderbookSummary,
   getPlayerDirectory,
 } from "@/lib/api/endpoints";
 import { toLegs } from "@/lib/analytics/legs";
 import { population } from "@/lib/analytics/population";
+import { gini, holders, itemConcentration } from "@/lib/analytics/wealth";
+import { RichList } from "./rich-list";
 import {
   counterpartyEdges,
   playerStats,
@@ -55,12 +59,15 @@ export default function PlayersPage() {
 }
 
 async function PlayersBody() {
-  const [trades, directory, bankOps, { rows: openOrders }] = await Promise.all([
-    getAllTrades(),
-    getPlayerDirectory(),
-    getAllBankOps(),
-    getAllOpenOrders(),
-  ]);
+  const [trades, directory, bankOps, { rows: openOrders }, listings, summary] =
+    await Promise.all([
+      getAllTrades(),
+      getPlayerDirectory(),
+      getAllBankOps(),
+      getAllOpenOrders(),
+      getListings(),
+      getOrderbookSummary(),
+    ]);
   const legs = toLegs(trades);
   const stats = playerStats(legs);
   const { accounts, funnel } = population(directory, bankOps, legs, openOrders);
@@ -115,6 +122,36 @@ async function PlayersBody() {
       lastTradeAt: 0,
     });
   }
+
+  /*
+   * Holdings are keyed by variant, quotes by listing, so the two are joined
+   * through the catalog. Items with no book contribute nothing rather than
+   * being valued at zero.
+   */
+  const midByListing = new Map(summary.map((s) => [s.listingId, s.mid]));
+  const midByVariant = new Map<number, number | null>();
+  for (const listing of listings) {
+    if (listing.variantId == null) continue;
+    midByVariant.set(listing.variantId, midByListing.get(listing.id) ?? null);
+  }
+
+  const holderRows = holders(directory, midByVariant);
+  const giniAll = gini(holderRows.map((h) => h.total));
+  const giniHumans = gini(
+    holderRows.filter((h) => !h.isHouse).map((h) => h.total),
+  );
+
+  const listingIdByVariant = new Map(
+    listings
+      .filter((l) => l.variantId != null)
+      .map((l) => [l.variantId!, l.id] as const),
+  );
+  const concentrationRows = itemConcentration(directory)
+    .slice(0, 40)
+    .map((c) => ({
+      ...c,
+      listingId: listingIdByVariant.get(c.variantId) ?? null,
+    }));
 
   const humans = rows.filter((r) => !r.isMarketMaker && !r.isNonTrading);
   const totalFees = rows.reduce((a, r) => a + r.feesPaid, 0);
@@ -243,6 +280,33 @@ async function PlayersBody() {
             />
           </Panel>
         </div>
+      </div>
+
+      <div>
+        <SectionTitle hint="Holdings valued at current mid">
+          Who holds what
+        </SectionTitle>
+        <Panel
+          title="Net worth"
+          subtitle="Diamonds and goods across every account and shared bank"
+        >
+          <RichList
+            holders={holderRows}
+            concentration={concentrationRows}
+            giniAll={giniAll}
+            giniHumans={giniHumans}
+          />
+          <Caveat>
+            A shared bank appears identically on every member&apos;s profile, so
+            it is listed once as its own row rather than summed into each member
+            — crediting it to all five members of{" "}
+            <span className="font-mono">BulbaTeam</span> would multiply its
+            contents fivefold. Access is not ownership. Items with no quoted mid
+            are counted but not valued, and that count travels with each row.
+            With a population this small the Gini figure is indicative rather
+            than rigorous: one account arriving moves it visibly.
+          </Caveat>
+        </Panel>
       </div>
 
       <div>

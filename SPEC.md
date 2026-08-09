@@ -229,10 +229,21 @@ meaning. Everything below is computed in `lib/analytics/`.
 - Traded-item breakdown, first/last activity, activity timeline
 - Counterparty graph — who they trade with, and how much
 
-### 2.4 Leaderboards
+### 2.4 Wealth & leaderboards
 
 Volume, trade count, fees paid, net flow, maker share, unique items traded,
 inventory value, open-order capital.
+
+**Holdings** are public on every player profile but visible one player at a
+time, so nothing upstream answers "who owns most of this market". Net worth is
+diamonds held plus goods valued at mid, with a Gini coefficient and per-item
+ownership concentration alongside.
+
+Shared banks are their own rows rather than folded into their members: a bank
+with five members appears **identically** on all five profiles, so summing per
+player would multiply its contents by its membership. Access is not ownership,
+and a shared treasury is credited to nobody in particular. Items with no quoted
+mid are counted but not valued, and that count travels with the number.
 
 Ranked over the **account population**, not the trade record. Accounts that
 registered and never traded are absent from `view=trades` entirely, so counting
