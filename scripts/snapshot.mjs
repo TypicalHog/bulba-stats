@@ -385,6 +385,8 @@ async function main() {
     `${JSON.stringify({ capturedAt, path: relative }, null, 2)}\n`,
   );
 
+  await appendSeries(day, marketRow(capturedAt, snapshot));
+
   // Persist everyone actually resolved, not just those discovered from activity,
   // so bank-only accounts survive into the next run's warm path.
   await writeFile(
@@ -393,6 +395,88 @@ async function main() {
   );
 
   await writeBranchMeta();
+}
+
+/**
+ * Market-wide scalars for one snapshot.
+ *
+ * The per-snapshot files hold everything, but reading a fortnight of history
+ * from them would be hundreds of requests. This is the same moment reduced to
+ * a dozen numbers, so a chart of spread or depth over time costs one request
+ * per day rather than one per hour.
+ */
+function marketRow(capturedAt, snapshot) {
+  const col = (name) => snapshot.listings.columns.indexOf(name);
+  const [mid, bid, ask, spread] = ["mid", "bid", "ask", "spread"].map(col);
+  const [bv, av, bv5, av5] = ["bidValue", "askValue", "bidValue5", "askValue5"].map(col);
+
+  const rows = snapshot.listings.rows;
+  const spreads = [];
+  let quoted = 0;
+  let twoSided = 0;
+  let bidValue = 0;
+  let askValue = 0;
+  let bidNear = 0;
+  let askNear = 0;
+
+  for (const row of rows) {
+    if (row[mid] != null) quoted++;
+    if (row[bid] != null && row[ask] != null) {
+      twoSided++;
+      if (row[spread] != null && row[mid]) {
+        spreads.push((row[spread] / row[mid]) * 100);
+      }
+    }
+    bidValue += row[bv] ?? 0;
+    askValue += row[av] ?? 0;
+    bidNear += row[bv5] ?? 0;
+    askNear += row[av5] ?? 0;
+  }
+
+  spreads.sort((a, b) => a - b);
+
+  return {
+    at: capturedAt,
+    listings: rows.length,
+    quoted,
+    twoSided,
+    medianSpreadPct: spreads.length
+      ? r(spreads[Math.floor(spreads.length / 2)])
+      : null,
+    bidValue: r(bidValue),
+    askValue: r(askValue),
+    bidValueNearMid: r(bidNear),
+    askValueNearMid: r(askNear),
+    treasury: r(
+      (snapshot.treasury?.pools ?? []).reduce((a, p) => a + (p.balance ?? 0), 0),
+    ),
+  };
+}
+
+/**
+ * Append a row to the day's series file.
+ *
+ * Rewritten on each capture, unlike the snapshots themselves. That is a
+ * deliberate exception to the immutability rule: at roughly 80 bytes a row a
+ * day's file stays a couple of kilobytes, so twenty-four rewrites cost a few
+ * tens of kilobytes of git objects — nothing, against the hundreds of requests
+ * it saves every reader.
+ */
+async function appendSeries(day, row) {
+  const path = join(OUT, `series/${day}.json`);
+  await mkdir(dirname(path), { recursive: true });
+
+  let rows = [];
+  try {
+    const parsed = JSON.parse(await readFile(path, "utf8"));
+    if (Array.isArray(parsed)) rows = parsed;
+  } catch {
+    /* first capture of the day */
+  }
+
+  if (!rows.some((existing) => existing.at === row.at)) rows.push(row);
+  rows.sort((a, b) => String(a.at).localeCompare(String(b.at)));
+  await writeFile(path, `${JSON.stringify(rows)}\n`);
 }
 
 /** Write only if absent, so hand edits on the data branch survive. */

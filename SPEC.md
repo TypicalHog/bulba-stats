@@ -114,6 +114,7 @@ otherwise be 24 rebuilds.
 | `snapshots/<date>/<timestamp>Z.json` | One immutable snapshot |
 | `snapshots/<date>/index.json` | That day's filenames |
 | `latest.json` | Pointer to the most recent snapshot |
+| `series/<date>.json` | That day's captures, reduced to market-wide scalars |
 | `roster.json` | Every account seen so far |
 
 Each snapshot carries, for all 118 quoted listings: mid, `makerMid`, best
@@ -139,9 +140,20 @@ Four properties are deliberate:
   is the only way `ayayabot`, an account appearing in no trade and no bank
   movement, is found at all.
 
-Nothing on the site renders from this yet; capture starts accruing before the
-views that consume it exist, because the alternative is a permanent hole in the
-record.
+**Reading it back.** `lib/api/snapshots.ts` fetches the per-day series from the
+branch over `raw.githubusercontent.com`, overridable with `BULBA_DATA_BASE`.
+One request per day rather than per snapshot: the per-snapshot files hold far
+more, but a fortnight of them would be hundreds of requests, which is why the
+capture also writes the compact series. That file is the one thing on the
+branch that *is* rewritten in place — at ~240 bytes a row a day stays a few
+kilobytes, so twenty-four rewrites cost a trivial amount of git object storage
+against the requests they save every reader.
+
+**It must degrade to nothing.** Until the workflow has been pushed and run the
+branch does not exist and every fetch 404s. That is the normal state of a fresh
+deployment, not an error: the reader resolves to an empty series, the book-history
+panel says so plainly, and the two book-structure tiles simply carry no sparkline
+— exactly as they did before any of this existed.
 
 ---
 
@@ -460,9 +472,11 @@ than just hiding rows:
 
 **Trends are shown only where history exists.** Stat tiles derived from the
 trade record carry a sparkline and a change against the prior period. The
-book-structure tiles (two-sided books, median spread) deliberately carry
-neither: the API exposes the order book only as it stands right now, so there
-is no history behind them and a sparkline would be invented. Share deltas are
+book-structure tiles (two-sided books, median spread) have no history in the
+API — it exposes the order book only as it stands right now — so they carry a
+sparkline **only** once the hourly capture (§1.5) has accrued enough captures
+to have a shape worth drawing, and look exactly as they always did until then.
+A single point is not a line. Share deltas are
 expressed in **percentage points**, since a share moving 40% → 43% has risen
 three points, not 3%.
 

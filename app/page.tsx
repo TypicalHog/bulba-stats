@@ -34,6 +34,7 @@ import {
   price,
 } from "@/lib/format";
 import { anchorNow, DAY_MS } from "@/lib/time";
+import { getMarketHistory, hasTrend } from "@/lib/api/snapshots";
 import { PanelSkeleton, TileRowSkeleton } from "@/components/ui/skeleton";
 
 export const metadata = {
@@ -92,11 +93,15 @@ export default function OverviewPage() {
 /* ---------------------------------------------------------------- header */
 
 async function MarketHeader() {
-  const [trades, summary, listings] = await Promise.all([
+  const [trades, summary, listings, history] = await Promise.all([
     getAllTrades(),
     getOrderbookSummary(),
     getListings(),
+    getMarketHistory(14),
   ]);
+
+  /* Captured history exists only once the snapshot workflow has been running. */
+  const trend = hasTrend(history);
 
   const totals = marketTotals(trades);
 
@@ -236,10 +241,18 @@ async function MarketHeader() {
           deltaLabel="vs prior 7d"
           spark={last7.map((d) => d.volume)}
         />
+        {/*
+          These two describe the book, not the trade record, so they carried no
+          trend for as long as the API was the only source. The hourly capture
+          now supplies one — but only once enough of it has accrued, so the
+          sparkline appears when there is genuinely a shape to draw and the
+          tiles otherwise look exactly as they did.
+        */}
         <Stat
           label="Two-sided books"
           value={num(health.twoSided)}
           hint={`${num(health.oneSided)} one-sided · ${num(health.empty)} empty`}
+          spark={trend ? history.map((h) => h.twoSided) : undefined}
         />
         <Stat
           label="Median spread"
@@ -249,6 +262,11 @@ async function MarketHeader() {
               : "—"
           }
           hint="of mid, quotable books"
+          spark={
+            trend
+              ? history.map((h) => h.medianSpreadPct ?? 0)
+              : undefined
+          }
         />
         <Stat
           label="Taker buy share"

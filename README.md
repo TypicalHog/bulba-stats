@@ -81,9 +81,14 @@ One thing is recorded rather than derived. The API exposes the order book only
 as it stands *right now*, so spread and depth over time cannot be recovered
 after the fact. A GitHub Action runs `npm run snapshot` hourly and commits the
 result to a separate **`data` branch** — roughly 25 KiB per snapshot covering
-every book, the treasury, and every bank balance. Nothing on the site reads it
-yet; it accrues so that the history exists when the views that need it do. See
-[SPEC.md §1.5](SPEC.md#15-captured-history).
+every book, the treasury, and every bank balance, plus a compact per-day series
+the site reads back in one request per day.
+
+Spread and depth over time, and the sparklines on the two book-structure tiles,
+come from that branch and nowhere else. Until the workflow has run they simply
+aren't there: the panel says so and the tiles carry no trend, which is the
+normal state of a fresh deployment. Set `BULBA_DATA_BASE` to read a fork or a
+local mirror. See [SPEC.md §1.5](SPEC.md#15-captured-history).
 
 ## Deploying
 

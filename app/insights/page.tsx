@@ -8,6 +8,8 @@ import {
 } from "@/lib/api/endpoints";
 import { affiliations, type BankNode } from "@/lib/analytics/house";
 import { anomalies, buildTape, fresh, venueStats } from "@/lib/analytics/tape";
+import { getMarketHistory, hasTrend } from "@/lib/api/snapshots";
+import { StackedBars } from "@/components/charts/timeseries";
 import { groupBy, sum, toLegs } from "@/lib/analytics/legs";
 import {
   activityHeatmap,
@@ -83,6 +85,12 @@ export default function InsightsPage() {
       </Suspense>
 
       <Suspense
+        fallback={<PanelSkeleton height={220} label="Reading captured history…" />}
+      >
+        <BookHistory />
+      </Suspense>
+
+      <Suspense
         fallback={<PanelSkeleton height={200} label="Reading the tape…" />}
       >
         <Tape />
@@ -99,6 +107,118 @@ export default function InsightsPage() {
       >
         <Affiliations />
       </Suspense>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------- history */
+
+/**
+ * Book structure over time.
+ *
+ * Everything else on this site is derived on demand, because the upstream API
+ * can be re-read at any moment and still answer the same question. This panel
+ * cannot: the order book is exposed only as it stands *now*, so spread and
+ * depth over time exist solely because the hourly capture recorded them.
+ *
+ * Until that capture has been running there is nothing here, which is the
+ * normal state of a fresh deployment rather than a fault. The panel says so
+ * instead of drawing an empty chart.
+ */
+async function BookHistory() {
+  const history = await getMarketHistory(14);
+
+  if (!hasTrend(history)) {
+    return (
+      <div>
+        <SectionTitle hint="From the hourly capture">
+          How the book has moved
+        </SectionTitle>
+        <Panel title="Book history">
+          <EmptyState>
+            No captured history yet. The order book is only ever exposed as it
+            stands right now, so spread and depth over time cannot be
+            reconstructed after the fact — they appear here once the hourly
+            snapshot workflow has been running for a few hours.
+          </EmptyState>
+        </Panel>
+      </div>
+    );
+  }
+
+  const points = history.map((h) => ({
+    label: h.at.slice(5, 16).replace("T", " "),
+    values: {
+      bid: h.bidValueNearMid ?? 0,
+      ask: h.askValueNearMid ?? 0,
+    },
+  }));
+
+  const first = history[0];
+  const last = history[history.length - 1];
+  const spreadDelta =
+    first.medianSpreadPct != null && last.medianSpreadPct != null
+      ? last.medianSpreadPct - first.medianSpreadPct
+      : null;
+
+  return (
+    <div>
+      <SectionTitle
+        hint={`${num(history.length)} captures since ${dateOnly(first.at)}`}
+      >
+        How the book has moved
+      </SectionTitle>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Panel
+          title="Depth near mid"
+          subtitle="Diamonds resting within ±5% of mid, bid and ask side"
+        >
+          <StackedBars
+            points={points}
+            series={[
+              { key: "bid", label: "Bid side", color: SERIES[2] },
+              { key: "ask", label: "Ask side", color: SERIES[1] },
+            ]}
+            height={180}
+            format="compact"
+          />
+          <Caveat>
+            Depth beyond ±5% of mid is excluded: the market maker ladders quotes
+            a long way out, and counting those makes every book look deep.
+          </Caveat>
+        </Panel>
+
+        <Panel
+          title="Median spread"
+          subtitle="Across every two-sided book, at each capture"
+        >
+          <StackedBars
+            points={history.map((h) => ({
+              label: h.at.slice(5, 16).replace("T", " "),
+              values: { spread: h.medianSpreadPct ?? 0 },
+            }))}
+            series={[
+              { key: "spread", label: "Median spread %", color: SERIES[0] },
+            ]}
+            height={180}
+            format="count"
+          />
+          <Caveat>
+            {spreadDelta != null && (
+              <>
+                Median spread has moved{" "}
+                <span className={spreadDelta <= 0 ? "text-up" : "text-down"}>
+                  {spreadDelta >= 0 ? "+" : "−"}
+                  {percent(Math.abs(spreadDelta))}
+                </span>{" "}
+                over this window, in percentage points.{" "}
+              </>
+            )}
+            This is the one statistic on the site that could not be recovered if
+            the capture stopped — the API has no memory of it.
+          </Caveat>
+        </Panel>
+      </div>
     </div>
   );
 }
