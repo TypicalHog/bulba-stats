@@ -13,10 +13,18 @@ import { SITE_ORIGIN } from "@/lib/api/constants";
  */
 export default function Error({
   error,
-  reset,
+  retry,
 }: {
   error: Error & { digest?: string };
-  reset: () => void;
+  /*
+   * `retry`, not `reset`. The two are not interchangeable here: `reset` clears
+   * the error state and re-renders the boundary's children *without*
+   * re-fetching, so it would hand the same failed result straight back and the
+   * error would return immediately. Every failure this boundary catches is an
+   * upstream read, and the likely cause — the bot restarting or rate-limiting —
+   * is transient, which is exactly what re-fetching recovers from.
+   */
+  retry: () => void;
 }) {
   useEffect(() => {
     console.error(error);
@@ -37,7 +45,7 @@ export default function Error({
       <div className="mt-2 flex flex-wrap gap-2">
         <button
           type="button"
-          onClick={reset}
+          onClick={() => retry()}
           className="cursor-pointer rounded border border-accent/50 bg-accent/10 px-3 py-1.5 text-[12px] text-accent transition-colors duration-150 hover:bg-accent/20"
         >
           Try again
