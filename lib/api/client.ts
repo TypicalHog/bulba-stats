@@ -14,18 +14,29 @@ export const API_BASE =
 /**
  * Revalidation tiers, in seconds. Chosen against measured upstream cost —
  * see SPEC.md §1.2/§1.3.
+ *
+ * Sized against the 120 req/min read allowance, using the measured page counts:
+ * a full aggregate refresh is 39 requests (2 trades + 20 fills + 17 bank ops)
+ * and the heavy crawl is 104. Sustained worst case, with someone watching a
+ * page in each tier continuously, is roughly 26 + 21 + 12 + 3 ≈ 62 req/min,
+ * which leaves room for the hourly capture's 60 req/min burst to overlap
+ * without either being throttled.
+ *
+ * These are the floor for *passive* freshness. The Refresh control in the
+ * header exists for the case a tier can never serve well — wanting to see a
+ * trade the moment it lands — so there is no need to price these for that.
  */
 export const TTL = {
-  /** Order book summary, recent trades, per-listing book. */
-  live: 15,
-  /** Candles, listings, player profiles. */
-  near: 60,
-  /** Full trade/fill history crawls and the stats derived from them. */
-  aggregate: 300,
-  /** The ~20k-row open-order crawl. */
-  heavy: 900,
+  /** Order book summary, recent trades, per-listing book. 1 request each. */
+  live: 5,
+  /** Candles, listings, player profiles. 1 request each. */
+  near: 20,
+  /** Full trade/fill history crawls and the stats derived from them. ~39. */
+  aggregate: 90,
+  /** The ~20k-row open-order crawl. 104 requests, ~20 s. */
+  heavy: 300,
   /** Commands, API docs. */
-  static: 3600,
+  static: 900,
 } as const;
 
 /** Upstream returned a non-2xx. Carries the machine-readable `error.code`. */

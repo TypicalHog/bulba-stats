@@ -76,13 +76,20 @@ by the pages that genuinely need order-level detail.
 No Cache Components (`cacheComponents` is off), so the previous model applies:
 `fetch(url, { next: { revalidate, tags } })`.
 
-| Tier | Revalidate | Applies to |
-|---|---|---|
-| Live | 15 s | Order book summary, recent trades, per-listing book |
-| Near-live | 60 s | Candles, listings, player profiles |
-| Aggregate | 300 s | Full trade/fill history crawls, derived market stats |
-| Heavy | 900 s | Full open-order crawl |
-| Static | 3600 s | Commands, API docs |
+| Tier | Revalidate | Requests per refresh | Applies to |
+|---|---|---|---|
+| Live | 5 s | 1 | Order book summary, recent trades, per-listing book |
+| Near-live | 20 s | 1 | Candles, listings, player profiles |
+| Aggregate | 90 s | ~39 | Full trade/fill history crawls, derived market stats |
+| Heavy | 300 s | 104 | Full open-order crawl |
+| Static | 900 s | 1 | Commands, API docs |
+
+Sized against the 120 req/min allowance (§1.4). Sustained worst case — someone
+watching a page in every tier continuously — is roughly 26 + 21 + 12 + 3 ≈ 62
+req/min, leaving room for the hourly capture's 60 req/min burst to overlap
+without either side being throttled. These set the floor for *passive*
+freshness; wanting to see a trade the moment it lands is what Refresh is for,
+so the tiers are not priced for it.
 
 Pages stream: the shell and cheap tiles render immediately, expensive aggregates
 arrive behind `<Suspense>`.
