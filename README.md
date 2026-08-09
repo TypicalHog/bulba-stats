@@ -106,6 +106,33 @@ database. Two settings are non-default and worth understanding:
   timeout on a cold cache. 60 s is the Hobby-tier ceiling, so it is safe on any
   plan. Warm requests return from cache immediately.
 
+- **The capture will switch itself off unless you stop it.** GitHub disables
+  scheduled workflows in a public repository "when no repository activity has
+  occurred in 60 days". It never defines *repository activity*, and says
+  nothing about whether commits pushed with the built-in `GITHUB_TOKEN` count —
+  which is exactly what the capture does. Bot activity is second class
+  elsewhere (a `GITHUB_TOKEN` push cannot trigger another workflow), so assume
+  it does not count.
+
+  To make it durable, add a repository secret **`DATA_PUSH_TOKEN`** holding a
+  personal access token with write access to contents — classic `repo` scope,
+  or a fine-grained token with *Contents: Read and write* on this repository.
+  Both workflows use it when present and fall back to `GITHUB_TOKEN` when not.
+  With it set:
+
+  - snapshot commits are attributed to your account rather than the bot;
+  - `keepalive.yml` pushes an empty commit to the default branch on the 1st and
+    15th of each month — two resets inside every 60-day window — carrying
+    `[skip ci]` so Vercel ignores it.
+
+  **Give the token the longest expiry available**, or a classic token with no
+  expiry. A silently expired token is the one failure mode that looks exactly
+  like everything working until the capture stops.
+
+  If it does get disabled anyway, GitHub emails the repository owner and
+  re-enabling is one click in the Actions tab; the capture resumes with a gap
+  rather than losing what it already has.
+
 - **The `data` branch must never deploy.** The snapshot job pushes to it hourly,
   and each push would otherwise trigger a build. Deployment is disabled from
   both ends — `vercel.json` on `main` disables the branch by name, and the job

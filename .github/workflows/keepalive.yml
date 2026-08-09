@@ -1,0 +1,70 @@
+name: Keep-alive
+
+# Stops GitHub from switching the capture off.
+#
+# GitHub disables scheduled workflows in a public repository "when no
+# repository activity has occurred in 60 days". It does not define repository
+# activity anywhere, and says nothing about whether commits pushed by
+# GITHUB_TOKEN count — and the hourly capture pushes with exactly that. Bot
+# activity is treated as second class elsewhere (a GITHUB_TOKEN push cannot
+# trigger another workflow), so the safe assumption is that it does not count.
+#
+# This pushes an empty commit to the default branch twice a month, attributed
+# to a real account via DATA_PUSH_TOKEN. Two runs inside every 60-day window
+# leaves margin if one is delayed or skipped.
+#
+# Without DATA_PUSH_TOKEN it still runs, but the commit is bot-authored and
+# probably will not reset the clock. The job says so in its own log rather than
+# failing quietly.
+
+on:
+  schedule:
+    # 1st and 15th, offset from the hour like the capture.
+    - cron: "23 4 1,15 * *"
+  workflow_dispatch:
+
+concurrency:
+  group: keepalive
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    # `secrets` is not available in a step-level `if`, but it is at job level,
+    # so the presence of the token is resolved once into a plain string.
+    env:
+      HAS_TOKEN: ${{ secrets.DATA_PUSH_TOKEN != '' }}
+
+    steps:
+      - name: Warn when no real-account token is configured
+        if: env.HAS_TOKEN != 'true'
+        run: |
+          echo "::warning::DATA_PUSH_TOKEN is not set. This commit will be authored by github-actions[bot], which probably does not count as repository activity — the hourly capture may still be disabled after 60 quiet days."
+
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.DATA_PUSH_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Push an empty commit
+        env:
+          OWNER: ${{ github.repository_owner }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if [ "$HAS_TOKEN" = "true" ]; then
+            git config user.name "$OWNER"
+            git config user.email "$OWNER@users.noreply.github.com"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          fi
+          # An empty commit leaves no file churn, and [skip ci] stops Vercel
+          # rebuilding the site for a heartbeat that changes nothing.
+          git commit -q --allow-empty -m "chore: keep scheduled workflows alive [skip ci]"
+          git push -q origin "HEAD:$BRANCH"
+          echo "Pushed a keep-alive commit to $BRANCH (real-account token: $HAS_TOKEN)."

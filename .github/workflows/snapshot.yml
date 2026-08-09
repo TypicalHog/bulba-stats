@@ -25,6 +25,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
+    # Resolved once at job level: `secrets` is unavailable in step-level `if`.
+    env:
+      HAS_TOKEN: ${{ secrets.DATA_PUSH_TOKEN != '' }}
+
     steps:
       - name: Check out main
         uses: actions/checkout@v4
@@ -33,9 +37,13 @@ jobs:
         with:
           node-version: 22
 
+      # DATA_PUSH_TOKEN, when present, attributes these commits to a real
+      # account instead of the Actions bot. That is what keeps the schedule
+      # alive — see the keep-alive workflow and README "Keeping the capture
+      # running". Falls back to GITHUB_TOKEN so a fresh clone still works.
       - name: Check out the data branch
         env:
-          REMOTE: https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          REMOTE: https://x-access-token:${{ secrets.DATA_PUSH_TOKEN || secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
         run: |
           set -euo pipefail
           DAY="$(date -u +%Y-%m-%d)"
@@ -64,10 +72,17 @@ jobs:
 
       - name: Commit and push
         working-directory: data-branch
+        env:
+          OWNER: ${{ github.repository_owner }}
         run: |
           set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [ "$HAS_TOKEN" = "true" ]; then
+            git config user.name "$OWNER"
+            git config user.email "$OWNER@users.noreply.github.com"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          fi
           git add -A
           if git diff --staged --quiet; then
             echo "Nothing captured — not committing."

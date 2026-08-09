@@ -149,6 +149,16 @@ branch that *is* rewritten in place — at ~240 bytes a row a day stays a few
 kilobytes, so twenty-four rewrites cost a trivial amount of git object storage
 against the requests they save every reader.
 
+**The schedule needs keeping alive.** GitHub disables scheduled workflows in a
+public repository after 60 days with "no repository activity", a term it never
+defines — and it does not say whether `GITHUB_TOKEN`-authored commits count.
+The capture pushes with exactly that token, so a repository whose only activity
+*is* the capture may well be switched off. Both workflows therefore accept a
+`DATA_PUSH_TOKEN` secret and attribute their commits to a real account when it
+is set, and `keepalive.yml` pushes an empty `[skip ci]` commit to the default
+branch twice a month. See the README for setup; this is inference from how
+GitHub treats bot activity elsewhere, not documented behaviour.
+
 **It must degrade to nothing.** Until the workflow has been pushed and run the
 branch does not exist and every fetch 404s. That is the normal state of a fresh
 deployment, not an error: the reader resolves to an empty series, the book-history
