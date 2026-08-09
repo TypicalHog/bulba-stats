@@ -57,12 +57,9 @@ export function NetworkGraph({
    */
   const [selected, setSelected] = useState<string | null>(null);
   /* An edge, once clicked, opens the relationship behind it. */
-  const [pair, setPair] = useState<GraphEdge | null>(null);
+  const [pinnedPair, setPinnedPair] = useState<GraphEdge | null>(null);
   /* Which edge the pointer is currently over, so aim is visible before click. */
   const [hoverEdge, setHoverEdge] = useState<string | null>(null);
-
-  /** Pinned selection wins; hover is the transient preview. */
-  const active = selected ?? hover;
 
   const visible = useMemo(() => {
     const drop = new Set(hidden);
@@ -123,6 +120,33 @@ export function NetworkGraph({
   }, [visible.nodes]);
 
   const maxEdge = Math.max(...visible.edges.map((e) => e.volume), 1);
+
+  /*
+   * Pinned selection wins; hover is the transient preview. Neither may outlive
+   * the node actually being drawn.
+   *
+   * `visible` drops hidden accounts *and* any account left with no remaining
+   * edges, so both "hide the account you pinned" and "hide its last remaining
+   * counterparty" can strand a name that is no longer on screen. `neighbours`
+   * then collapses to that one absent name, dimming every surviving node and
+   * edge to 6–18% opacity, while the detail card — and the button that clears
+   * the selection — unmounts along with it. The panel's own caveat recommends
+   * hiding the market maker, which is exactly the move that triggered it.
+   *
+   * Deriving rather than clearing means un-hiding an account restores the pin
+   * it had, which is the behaviour the pin is for.
+   */
+  const active =
+    (selected != null && layout.pos.has(selected) ? selected : null) ??
+    (hover != null && layout.pos.has(hover) ? hover : null);
+
+  /* Likewise, an open relationship needs both of its endpoints still drawn. */
+  const pair =
+    pinnedPair &&
+    layout.pos.has(pinnedPair.a) &&
+    layout.pos.has(pinnedPair.b)
+      ? pinnedPair
+      : null;
 
   const neighbours = useMemo(() => {
     if (!active) return null;
@@ -221,7 +245,7 @@ export function NetworkGraph({
                     strokeLinecap="round"
                     pointerEvents="stroke"
                     style={{ cursor: "pointer" }}
-                    onClick={() => setPair(isPair ? null : e)}
+                    onClick={() => setPinnedPair(isPair ? null : e)}
                     onMouseEnter={() => setHoverEdge(key)}
                     onMouseLeave={() => setHoverEdge(null)}
                     aria-label={`${e.a} and ${e.b}`}
@@ -447,7 +471,7 @@ export function NetworkGraph({
             </Link>
             <button
               type="button"
-              onClick={() => setPair(null)}
+              onClick={() => setPinnedPair(null)}
               className="ml-auto cursor-pointer text-[10px] text-ink-3 hover:text-ink-2"
             >
               close
