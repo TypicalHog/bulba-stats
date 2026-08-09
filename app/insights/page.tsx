@@ -100,19 +100,22 @@ export default function InsightsPage() {
 /**
  * `makerMid` — the house's stored reference price.
  *
- * The upstream docs imply this is a mid computed from maker orders. It is not.
- * Tested against the live API: it matches no book-derived formula (house best
- * mid, quantity-weighted mid either side, microprice, all-order VWAP — the best
- * fit was 2 of 33 listings), it does not equal lifetime trade VWAP (1 of 27),
- * and it is **completely static** — unchanged across hours while the book moved
- * underneath it. Several unrelated items share suspiciously exact values: every
- * log reads 0.0625, exactly one sixteenth.
+ * The upstream docs imply this is a mid computed from maker orders. Whatever it
+ * is, it is not reproducible from the visible book: house best mid,
+ * quantity-weighted mid on either side, house microprice and all-order VWAP
+ * were each checked across all 33 listings carrying the field, and the best fit
+ * was 2 of 33. It is not lifetime trade VWAP either (1 of 27). Several
+ * unrelated items share suspiciously exact values — every log reads 0.0625,
+ * exactly one sixteenth — which points at a configured valuation.
  *
- * So it reads as a configured valuation rather than a computation: what the
- * house thinks a thing is worth, independent of what it currently trades for.
- * That makes the gap against mid worth showing — it is the market disagreeing
- * with the house — provided it is labelled as a fixed reference and never as a
- * second live price.
+ * It is **not** established that the value is static. An earlier check found it
+ * unchanged over two hours and read that as proof; the books had not moved in
+ * that window either, so the observation showed nothing. The hourly capture
+ * (SPEC §1.5) already records `makerMid`, so a few days of snapshots will
+ * settle whether it tracks anything or sits still.
+ *
+ * Until then the honest framing is a reference price of unknown provenance,
+ * shown beside mid and never used as a quote.
  */
 async function ReferencePrice() {
   const summary = await getOrderbookSummary();
@@ -183,12 +186,14 @@ async function ReferencePrice() {
       </Panel>
       <Caveat>
         The upstream field is <span className="font-mono">makerMid</span>, and
-        the docs imply it is a mid computed from maker orders. Testing against
-        the live API says otherwise: it matches no book-derived formula, is not
-        trade VWAP, and does not change while the book moves — several unrelated
-        items share exact values, with every log reading 0.0625. It behaves as a
-        stored valuation rather than a live quote, so it is shown as a fixed
-        reference and never used as a price. Its exact meaning is undocumented.
+        the docs imply it is a mid computed from maker orders. It is not
+        reproducible from the visible book: house best mid, quantity-weighted
+        mid on either side, house microprice and all-order VWAP all fail to
+        match, and it is not trade VWAP either. Several unrelated items share
+        exact values, every log reading 0.0625, which suggests a configured
+        valuation. Whether it moves at all is still unknown — the hourly
+        snapshot records it, so a few days of history will answer that. It is
+        shown beside mid and never used as a price.
       </Caveat>
     </div>
   );

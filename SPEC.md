@@ -449,14 +449,16 @@ each appears:
   live quantities.
 - **Niche variants** (odd enchant combinations) are hidden by default, per the
   upstream `niche` flag, with a toggle to reveal them.
-- **`makerMid` is a stored reference, not a computed mid.** The upstream docs
-  imply it is a mid over maker orders. Tested against the live API it matches
-  no book-derived formula (house best mid, quantity-weighted mid either side,
-  microprice, all-order VWAP — best fit 2 of 33 listings), does not equal
-  lifetime trade VWAP (1 of 27), and does not change while the book moves
-  beneath it; several unrelated items share exact values, every log reading
-  0.0625. It behaves as a configured valuation, so it is surfaced as a fixed
-  reference price and never used as a quote. Its exact meaning is undocumented.
+- **`makerMid` is a reference price of unknown provenance.** The upstream docs
+  imply it is a mid over maker orders. It is not reproducible from the visible
+  book — house best mid, quantity-weighted mid either side, house microprice and
+  all-order VWAP each match at most 2 of the 33 listings carrying it — nor is it
+  lifetime trade VWAP (1 of 27). Several unrelated items share exact values,
+  every log reading 0.0625, which points at a configured valuation. Whether it
+  is *static* is *not* established: an earlier check found it unchanged over two
+  hours, but the books had not moved in that window either, so the observation
+  showed nothing. The hourly capture (§1.5) records the field, so a few days of
+  snapshots will settle it. Surfaced beside mid, never used as a quote.
 - **The account roster is a floor, not a census.** There is no players index
   upstream, so accounts are discovered from the trade record, from anyone who
   has moved funds, and then transitively through shared-bank membership. An
