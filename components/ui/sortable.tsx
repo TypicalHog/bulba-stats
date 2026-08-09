@@ -66,8 +66,21 @@ export function SortableTable<T>({
   const [sortKey, setSortKey] = useState(initialSort ?? columns[0]?.key);
   const [desc, setDesc] = useState(initialDesc);
 
+  /*
+   * Columns come and go — the market table's per-unit column exists only while
+   * the price unit is not "single" — but `sortKey` is state, so it can outlive
+   * the column it names. `find` then returns undefined, the rows fall back to
+   * source order, and every header shows the inactive glyph: the table silently
+   * un-sorts with nothing on screen saying it has.
+   *
+   * Fall back to the default column rather than to no sort at all.
+   */
+  const activeKey = columns.some((c) => c.key === sortKey)
+    ? sortKey
+    : (initialSort ?? columns[0]?.key);
+
   const sorted = useMemo(() => {
-    const col = columns.find((c) => c.key === sortKey);
+    const col = columns.find((c) => c.key === activeKey);
     if (!col?.sort) return rows;
     const get = col.sort;
     return [...rows].sort((a, b) => {
@@ -84,11 +97,13 @@ export function SortableTable<T>({
           : (va as number) - (vb as number);
       return desc ? -cmp : cmp;
     });
-  }, [rows, columns, sortKey, desc]);
+  }, [rows, columns, activeKey, desc]);
 
   const onSort = (col: Column<T>) => {
     if (!col.sort) return;
-    if (col.key === sortKey) {
+    if (col.key === activeKey) {
+      /* Adopt the fallback as the real key, so the state stops being stale. */
+      setSortKey(col.key);
       setDesc((d) => !d);
     } else {
       setSortKey(col.key);
@@ -150,7 +165,7 @@ export function SortableTable<T>({
         <thead>
           <tr>
             {columns.map((col) => {
-              const active = col.key === sortKey;
+              const active = col.key === activeKey;
               return (
                 <th
                   key={col.key}
