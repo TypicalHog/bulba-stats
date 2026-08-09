@@ -46,7 +46,7 @@ jobs:
         run: |
           echo "::warning::DATA_PUSH_TOKEN is not set. This commit will be authored by github-actions[bot], which probably does not count as repository activity — the hourly capture may still be disabled after 60 quiet days."
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           token: ${{ secrets.DATA_PUSH_TOKEN || secrets.GITHUB_TOKEN }}
 
