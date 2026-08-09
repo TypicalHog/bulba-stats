@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { SortableTable, type Column } from "@/components/ui/sortable";
 import { breakEvenMove } from "@/lib/analytics/fees";
+import { WatchStar, useWatchlist } from "@/components/ui/watchlist";
 import { Badge, ItemLink } from "@/components/ui/entity";
 import { Sparkline } from "@/components/charts/sparkline";
 import { dateOnly, diamonds, duration, num, percent, price } from "@/lib/format";
@@ -75,6 +76,8 @@ export function MarketTable({
   const [onlyQuoted, setOnlyQuoted] = useState(false);
   const [onlyTraded, setOnlyTraded] = useState(false);
   const [unit, setUnit] = useState<PriceUnit>("single");
+  const [onlyWatched, setOnlyWatched] = useState(false);
+  const { ids: watched } = useWatchlist();
 
   /* Prices scale per row; ratios like spread% and totals like volume do not. */
   const mul = (r: MarketRow) => unitMultiplier(unit, r.stackAmount);
@@ -87,11 +90,12 @@ export function MarketTable({
       if (!showNiche && r.niche) return false;
       if (onlyQuoted && r.mid == null) return false;
       if (onlyTraded && r.trades === 0) return false;
+      if (onlyWatched && !watched.includes(r.listingId)) return false;
       if (!q) return true;
       const name = `${r.itemName ?? ""} ${r.variantName ?? ""}`.toLowerCase();
       return name.includes(q);
     });
-  }, [rows, query, showNiche, onlyQuoted, onlyTraded]);
+  }, [rows, query, showNiche, onlyQuoted, onlyTraded, onlyWatched, watched]);
 
   const nicheCount = rows.filter((r) => r.niche).length;
 
@@ -101,6 +105,7 @@ export function MarketTable({
       header: "Item",
       cell: (r) => (
         <span className="flex items-center gap-2">
+          <WatchStar listingId={r.listingId} label={r.itemName ?? undefined} />
           <ItemLink
             listingId={r.listingId}
             itemName={r.itemName}
@@ -339,6 +344,14 @@ export function MarketTable({
           label={`Show niche (${nicheCount})`}
           hint="Low-demand variants, hidden by default upstream"
         />
+        {watched.length > 0 && (
+          <Toggle
+            checked={onlyWatched}
+            onChange={setOnlyWatched}
+            label={`Watchlist (${watched.length})`}
+            hint="Only the listings you have starred, kept in this browser"
+          />
+        )}
 
         {/*
           Quote prices per item, per stack, or per shulker box. The multiplier

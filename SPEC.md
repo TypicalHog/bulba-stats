@@ -429,6 +429,12 @@ render instantly. Anything expensive (full-history aggregates, the open-order
 crawl, the counterparty graph) streams in behind its own `<Suspense>` boundary —
 nothing makes a visitor wait 20 seconds for a first paint.
 
+**The watchlist is per-browser, and says so.** There is no account system and
+the site never writes upstream, so starred listings can only live in
+localStorage. That limit is stated on the control rather than implied — a star
+that silently fails to follow you to another device is worse than one that
+tells you it won't.
+
 **Every ranked table exports.** CSV download is a single option on the shared
 table component rather than a per-page feature, so it applies uniformly and
 stays consistent as tables are added. Rows export in the order shown — the sort
