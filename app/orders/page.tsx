@@ -5,7 +5,9 @@ import {
   getOrderbookSummary,
 } from "@/lib/api/endpoints";
 import { groupBy, sum } from "@/lib/analytics/legs";
-import { orderAges, orderFlow } from "@/lib/analytics/book";
+import { orderAges, orderFlow, slippageCurve } from "@/lib/analytics/book";
+import { crossCheck, reconstructBooks } from "@/lib/analytics/reconstruct";
+import { SlippageMatrix, type SlippageRow } from "./slippage-matrix";
 import { median, quantile } from "@/lib/analytics/market";
 import { Panel, Caveat, SectionTitle } from "@/components/ui/panel";
 import { Stat } from "@/components/ui/stat";
@@ -57,10 +59,93 @@ export default function OrdersPage() {
       </Suspense>
 
       <Suspense
+        fallback={<PanelSkeleton height={420} label="Rebuilding every book…" />}
+      >
+        <Liquidity />
+      </Suspense>
+
+      <Suspense
         fallback={<PanelSkeleton height={280} label="Reading order history…" />}
       >
         <Lifecycle />
       </Suspense>
+    </div>
+  );
+}
+
+/* ----------------------------------------------------------- liquidity */
+
+/** Sizes to sweep, in units. Matches the item page's slippage curve. */
+const SWEEP_SIZES = [1, 10, 64, 256, 1024];
+
+/**
+ * How much size each book can actually absorb.
+ *
+ * Every book is rebuilt from the crawl this page already ran, so a
+ * catalog-wide matrix costs no upstream requests at all — the alternative,
+ * `/orderbook/:id` per listing, would be 118 against a 120/min budget.
+ */
+async function Liquidity() {
+  const [{ rows: orders }, summary] = await Promise.all([
+    getAllOpenOrders(),
+    getOrderbookSummary(),
+  ]);
+
+  const books = reconstructBooks(orders);
+  const check = crossCheck(books, summary);
+  const nameById = new Map(summary.map((s) => [s.listingId, s]));
+
+  const rows: SlippageRow[] = [...books.entries()]
+    .map(([listingId, book]) => {
+      const meta = nameById.get(listingId);
+      const curve = slippageCurve(book, SWEEP_SIZES);
+      return {
+        listingId,
+        itemName: meta?.itemName ?? null,
+        variantName: meta?.variantName ?? null,
+        mid: book.mid,
+        buy: curve.map((p) => ({
+          size: p.size,
+          pct: p.buySlipPct,
+          cost: p.buyAvg != null ? p.buyAvg * p.size : null,
+        })),
+        sell: curve.map((p) => ({
+          size: p.size,
+          pct: p.sellSlipPct,
+          cost: p.sellAvg != null ? p.sellAvg * p.size : null,
+        })),
+      };
+    })
+    // A book with no mid has only one side, so slippage against mid is undefined
+    // for every size — the row would be entirely dashes.
+    .filter((r) => r.mid != null);
+
+  return (
+    <div>
+      <SectionTitle hint={`${num(rows.length)} two-sided books`}>
+        Where size can actually trade
+      </SectionTitle>
+      <Panel
+        title="Slippage matrix"
+        subtitle="Cost to sweep a given number of units, against mid"
+      >
+        <SlippageMatrix rows={rows} sizes={SWEEP_SIZES} />
+        <Caveat>
+          Computed from the resting orders on this page rather than from 118
+          separate book requests. The reconstruction reproduces the official
+          best bid and ask on {num(check.matched)} of {num(check.checked)}{" "}
+          listings
+          {check.mismatches.length > 0 && (
+            <>
+              ; {num(check.mismatches.length)} disagree, which means the book
+              moved between the crawl and the quote and those rows may be
+              slightly stale
+            </>
+          )}
+          . Sweeping assumes the whole order goes through at once and that
+          nothing is cancelled in front of it.
+        </Caveat>
+      </Panel>
     </div>
   );
 }

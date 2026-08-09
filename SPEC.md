@@ -158,6 +158,10 @@ meaning. Everything below is computed in `lib/analytics/`.
 - **Book value**: total bid-side capital and ask-side inventory at mid, per
   listing and market-wide — the closest thing to a market cap
 - **Liquidity score** per listing: depth within ±5% of mid, normalized
+- **Slippage matrix**: cost to sweep 1 / 10 / 64 / 256 / 1024 units on every
+  two-sided book, buy side and sell side, as a single item × size grid. Answers
+  "where can size actually trade" in one glance, and costs no upstream requests
+  because it runs on the reconstructed books
 - **Spread distribution**: absolute and as % of mid; median, tightest, widest
 - **Movers**: 24h / 7d price change from candles, ranked
 - **Turnover**: volume ÷ book value — which items actually trade vs just sit
@@ -238,7 +242,7 @@ holder count), and implied stock valuation from the `bulba_stock` listing.
 | `/players` | Leaderboards across every ranking dimension |
 | `/players/[username]` | Player deep dive: P&L, holdings, orders, trades, counterparties |
 | `/trades` | Trade explorer — filter by item, player, venue, mechanism, side |
-| `/orders` | Open-order book explorer and order-flow analytics |
+| `/orders` | Open-order book explorer, catalog-wide slippage matrix, order-flow analytics |
 | `/treasury` | Pools, revenue, distributions, stock |
 | `/insights` | The cross-cutting analyses in §2.6 |
 | `/about` | Data sources, methodology, caveats, upstream API reference |
