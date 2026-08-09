@@ -15,6 +15,7 @@ import {
 import { SlippageMatrix, type SlippageRow } from "./slippage-matrix";
 import { OrganicBook, type OrganicRow } from "./organic-book";
 import { DaysOfSupply, type SupplyRow } from "./days-of-supply";
+import { Affordability, type AffordRow } from "./affordability";
 import { median, quantile } from "@/lib/analytics/market";
 import { Panel, Caveat, SectionTitle } from "@/components/ui/panel";
 import { Stat } from "@/components/ui/stat";
@@ -221,6 +222,29 @@ async function Liquidity() {
     };
   };
 
+  /*
+   * Ask ladders for the budget scanner, truncated at 40 levels. Both inputs
+   * recompute in the browser, so the ladder has to travel with the page — but
+   * nothing beyond the fortieth level is reachable by a realistic budget, and
+   * the market maker parks orders very far out.
+   */
+  const affordRows: AffordRow[] = [...books.entries()]
+    .filter(([, book]) => book.asks.length > 0)
+    .map(([listingId, book]) => ({
+      listingId,
+      itemName: nameById.get(listingId)?.itemName ?? null,
+      variantName: nameById.get(listingId)?.variantName ?? null,
+      mid: book.mid,
+      asks: book.asks
+        .slice(0, 25)
+        .map(
+          (level) =>
+            // Rounded because upstream prices carry float noise like
+            // 0.08499999999999999, and every extra digit ships to the browser.
+            [Number(level.price.toFixed(8)), level.quantity] as [number, number],
+        ),
+    }));
+
   const supplyRows: SupplyRow[] = [...books.entries()]
     .map(([listingId, book]) => ({
       listingId,
@@ -282,6 +306,22 @@ async function Liquidity() {
           nothing is cancelled in front of it.
         </Caveat>
       </Panel>
+
+      <div className="mt-4">
+        <Panel
+          title="What a budget buys"
+          subtitle="Fix the money rather than the size, and see what is actually reachable"
+        >
+          <Affordability rows={affordRows} />
+          <Caveat>
+            Both constraints bind at once: the budget, and a ceiling on how far
+            the average fill may sit above mid. The ceiling applies to the
+            average paid rather than the last level touched, so a deep sweep can
+            still qualify. Quantities are whole units — a partial item cannot be
+            bought.
+          </Caveat>
+        </Panel>
+      </div>
 
       <div className="mt-4">
         <Panel

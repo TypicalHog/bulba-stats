@@ -171,6 +171,10 @@ meaning. Everything below is computed in `lib/analytics/`.
   more expensive to trade than its spread alone suggests
 - **Movers**: 24h / 7d price change from candles, ranked
 - **Turnover**: volume ÷ book value — which items actually trade vs just sit
+- **Affordability**: given a budget and a ceiling on how far the average fill
+  may sit above mid, what each book could actually supply. Fixes the money and
+  reports the size, which is the question anyone with a balance is asking;
+  every other liquidity view fixes the size and reports the cost
 - **Days of supply**: units resting on the ask side ÷ units traded per day.
   Defaults to a lifetime average rather than a conventional 30-day window
   because most of this catalog trades a handful of times in total, so a short
