@@ -52,6 +52,9 @@ jobs:
         run: |
           set -euo pipefail
           DAY="$(date -u +%Y-%m-%d)"
+          # The capture stamps its own day from its own clock, minutes after
+          # this one — see the sparse-checkout note below.
+          NEXT_DAY="$(date -u -d '+1 day' +%Y-%m-%d)"
 
           if git ls-remote --exit-code --heads "$REMOTE" data >/dev/null 2>&1; then
             # Partial clone plus a sparse checkout: the branch accumulates
@@ -67,7 +70,16 @@ jobs:
             # working copy would be read as empty and the whole day's
             # accumulated rows overwritten with a single one. Cone mode adds
             # root files (latest.json, roster.json) automatically.
-            git sparse-checkout set "snapshots/$DAY" series
+            #
+            # Tomorrow's folder is materialised as well, because `$DAY` and the
+            # capture's own day key come from two clocks read minutes apart: this
+            # step runs before the clone and the Node setup, the script stamps
+            # `capturedAt` when it starts. A run beginning at 23:59Z writes into
+            # tomorrow, and a path outside the cone makes `git add -A` exit 1 —
+            # which, under `set -e`, aborts the commit and loses the hour
+            # entirely, snapshot and series row alike. The directory usually does
+            # not exist on the branch yet; naming it anyway is free.
+            git sparse-checkout set "snapshots/$DAY" "snapshots/$NEXT_DAY" series
             git checkout data
           else
             echo "No data branch yet — creating it."
