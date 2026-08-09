@@ -564,6 +564,17 @@ normal-vision ΔE 19.3 (≥15 floor), all slots ≥3:1 on surface.
 Assigned in fixed order, never cycled: `#3987e5` `#d95926` `#199e70` `#c98500`
 `#d55181` `#008300` `#9085e9` `#e66767`.
 
+**Fills that carry a label use a shorter ramp.** Contrast against a background
+is a V-shape in luminance: dark text improves as the fill lightens, light text
+improves as it darkens, and the two cross near luminance 0.17 — where *both*
+top out around 3.9:1, under the 4.5:1 AA floor for small text. `SEQUENTIAL[4]`
+(`#1279a6`) sits in exactly that dead zone, which is invisible until an 11px
+number is printed on it. The slippage matrix and the treemap therefore use
+`SEQUENTIAL_LABELLED`, six steps that skip the band; every step clears 4.5:1
+against the ink chosen for it, and lightness stays monotonic. The activity
+heatmap keeps the full ramp — its values live in a tooltip and an aria-label,
+never on the fill.
+
 ### 5.3 Direction / status
 
 Trading convention wins over the default diverging pair — traders read green as

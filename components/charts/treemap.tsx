@@ -2,7 +2,10 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { sequentialColor } from "@/lib/design";
+import {
+  sequentialLabelInk,
+  sequentialLabelledColor,
+} from "@/lib/design";
 import { diamondsCompact, num } from "@/lib/format";
 import { ItemIcon } from "@/components/ui/entity";
 
@@ -178,16 +181,17 @@ export function Treemap({
                   top: `${(rect.y / height) * 100}%`,
                   width: `${(rect.w / WIDTH) * 100}%`,
                   height: `${(rect.h / height) * 100}%`,
-                  background: sequentialColor(
+                  background: sequentialLabelledColor(
                     Math.sqrt(Math.max(0, value) / max),
                   ),
+                  color: sequentialLabelInk(Math.sqrt(Math.max(0, value) / max)),
                   // 2px of surface between touching fills, so adjacent tiles
                   // read as separate marks rather than one continuous block.
                   boxShadow: "inset 0 0 0 1px var(--panel)",
                 }}
               >
                 {showLabel && (
-                  <span className="flex items-center gap-1 p-1 text-[10px] leading-tight text-ink">
+                  <span className="flex items-center gap-1 p-1 text-[10px] leading-tight">
                     <ItemIcon itemName={rect.node.itemName} size={14} />
                     <span className="truncate">{rect.node.label}</span>
                   </span>

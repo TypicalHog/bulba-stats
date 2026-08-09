@@ -89,3 +89,43 @@ export function sequentialColor(t: number): string {
   const i = Math.round(Math.max(0, Math.min(1, t)) * (SEQUENTIAL.length - 1));
   return SEQUENTIAL[i];
 }
+
+/**
+ * The same ramp, minus the step no text can sit on.
+ *
+ * Contrast against a background is a V-shape in luminance: dark text improves
+ * as the fill lightens, light text improves as it darkens, and the two cross
+ * near luminance 0.17 — where *both* top out at about 3.9:1, under the 4.5:1
+ * WCAG AA floor for small text. `SEQUENTIAL[4]` (#1279a6) sits in exactly that
+ * dead zone, which is invisible until you print an 11px number on it.
+ *
+ * Fills that carry a label therefore use this six-step variant, which steps
+ * over the band. Fills that don't — the activity heatmap, which puts its value
+ * in a tooltip and an aria-label — keep the full ramp.
+ *
+ * Every step here clears 4.5:1 against the ink `textOn` returns for it.
+ */
+export const SEQUENTIAL_LABELLED = [
+  "#16202B",
+  "#173447",
+  "#164a67",
+  "#106187",
+  "#2b93bf",
+  "#55add4",
+] as const;
+
+export function sequentialLabelledColor(t: number): string {
+  if (!Number.isFinite(t)) return SEQUENTIAL_LABELLED[0];
+  const i = Math.round(
+    Math.max(0, Math.min(1, t)) * (SEQUENTIAL_LABELLED.length - 1),
+  );
+  return SEQUENTIAL_LABELLED[i];
+}
+
+/** Ink to place on `sequentialLabelledColor(t)`. Light below the crossover. */
+export function sequentialLabelInk(t: number): string {
+  const i = Math.round(
+    Math.max(0, Math.min(1, t)) * (SEQUENTIAL_LABELLED.length - 1),
+  );
+  return i >= 4 ? "#0B0F14" : INK.primary;
+}

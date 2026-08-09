@@ -1,7 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { sequentialColor } from "@/lib/design";
+import {
+  sequentialLabelInk,
+  sequentialLabelledColor,
+} from "@/lib/design";
 import { diamonds, num, percent } from "@/lib/format";
 import { ItemLink } from "@/components/ui/entity";
 
@@ -146,11 +149,11 @@ export function SlippageMatrix({
       <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-line pt-3 text-[10px] text-ink-3">
         <span>Cheap to cross</span>
         <div className="flex gap-[2px]" aria-hidden>
-          {Array.from({ length: 7 }, (_, i) => (
+          {Array.from({ length: 6 }, (_, i) => (
             <span
               key={i}
               className="h-2.5 w-4 rounded-[2px]"
-              style={{ background: sequentialColor(i / 6) }}
+              style={{ background: sequentialLabelledColor(i / 5) }}
             />
           ))}
         </div>
@@ -217,9 +220,10 @@ function Cell({
       }
       className={`px-2 py-1 text-right font-mono tabular-nums transition-[outline-color] ${
         active ? "outline outline-1 -outline-offset-1 outline-accent" : ""
-      } ${unfillable ? "text-ink-3" : t > 0.55 ? "text-[#0B0F14]" : "text-ink"}`}
+      } ${unfillable ? "text-ink-3" : ""}`}
       style={{
-        background: unfillable ? "transparent" : sequentialColor(t),
+        color: unfillable ? undefined : sequentialLabelInk(t),
+        background: unfillable ? "transparent" : sequentialLabelledColor(t),
         // A 2px surface gap between touching fills, so adjacent cells read as
         // separate marks rather than one continuous band.
         boxShadow: unfillable ? undefined : "inset 0 0 0 1px var(--panel)",
