@@ -386,6 +386,12 @@ never crossed the boundary.
 - Venue mix and taker-side mix over time, as a toggle on the same columns
 - Order lifecycle: fill rate, cancel rate, time-to-fill distribution
 - Price-level clustering — do traders round to whole diamonds?
+- **Notable events** — an anomaly feed derived from the whole trade record:
+  first-ever trades, outsized fills, price gaps and self-crosses. Thresholds
+  are relative to each item's own history rather than absolute, so a large
+  cobblestone trade and a large netherite trade both qualify on their own
+  terms. Derived rather than watched live, so the feed is complete from the
+  market's first day instead of from whenever the page was opened
 - Counterparty network, both as a ranked table and as an interactive
   node-and-edge graph
 - **Directional flow** between each pair: which account is the net receiver of

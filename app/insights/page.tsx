@@ -7,7 +7,7 @@ import {
   getPlayerDirectory,
 } from "@/lib/api/endpoints";
 import { affiliations, type BankNode } from "@/lib/analytics/house";
-import { buildTape, fresh, venueStats } from "@/lib/analytics/tape";
+import { anomalies, buildTape, fresh, venueStats } from "@/lib/analytics/tape";
 import { groupBy, sum, toLegs } from "@/lib/analytics/legs";
 import {
   activityHeatmap,
@@ -33,6 +33,7 @@ import { SplitBar } from "@/components/charts/bars";
 import { SERIES } from "@/lib/design";
 import { anchorNow } from "@/lib/time";
 import {
+  dateOnly,
   diamonds,
   diamondsCompact,
   MARKET_MAKER,
@@ -143,6 +144,7 @@ async function Tape() {
   ).length;
 
   const selfCrosses = rows.filter((r) => r.selfCross);
+  const events = anomalies(rows).slice(0, 20);
 
   return (
     <div>
@@ -261,6 +263,56 @@ async function Tape() {
             physical world shows up directly in the numbers.
           </Caveat>
         </Panel>
+      </div>
+
+      <div className="mt-4">
+        <Panel
+          title="Notable events"
+          subtitle="Firsts, outsized trades and price gaps, newest first"
+          bodyClassName="p-0"
+        >
+          {events.length ? (
+            <ul className="divide-y divide-line/60">
+              {events.map((e) => (
+                <li
+                  key={`${e.kind}-${e.row.tradeId}`}
+                  className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 text-[12px]"
+                >
+                  <Badge
+                    tone={
+                      e.kind === "price"
+                        ? "warn"
+                        : e.kind === "self-cross"
+                          ? "down"
+                          : "neutral"
+                    }
+                  >
+                    {e.label}
+                  </Badge>
+                  <ItemLink
+                    listingId={e.row.listingId}
+                    itemName={e.row.itemName}
+                    variantName={e.row.variantName}
+                    size={16}
+                  />
+                  <span className="text-ink-3">{e.detail}</span>
+                  <span className="ml-auto font-mono text-[11px] text-ink-3">
+                    {dateOnly(new Date(e.row.at).toISOString())}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <EmptyState>Nothing unusual on record.</EmptyState>
+          )}
+        </Panel>
+        <Caveat>
+          Thresholds are relative to each item&apos;s own history rather than
+          absolute, so a large cobblestone trade and a large netherite trade
+          both qualify on their own terms. Derived from the full trade record
+          rather than watched live, so the feed is complete from the market&apos;s
+          first day rather than from whenever the page was opened.
+        </Caveat>
       </div>
     </div>
   );
