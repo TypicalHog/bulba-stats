@@ -47,6 +47,16 @@ const OUT = opt("out", ".snapshot-out");
 const DRY_RUN = flag("dry-run");
 const WITH_DEPTH = !flag("no-depth");
 
+/**
+ * Exit code for "everything is written, but some of it is missing".
+ *
+ * Distinct from 1 so the workflow can still commit what was captured — a
+ * partial hour beats no hour — and then fail the run afterwards. A green check
+ * over a capture that lost every book is worse than a red one: nobody inspects
+ * a passing job, so the hole is found weeks later.
+ */
+const EXIT_DEGRADED = 2;
+
 // ---------------------------------------------------------------------------
 // fetching
 // ---------------------------------------------------------------------------
@@ -404,6 +414,16 @@ async function main() {
   );
 
   await writeBranchMeta();
+
+  // Every entry in `errors` is an endpoint that failed three attempts in a row;
+  // a 404 answers and returns before the catch, so it never lands here. That is
+  // rare enough to be worth a red run rather than a threshold to tune.
+  if (errors.length) {
+    console.error(
+      `\nDegraded: ${errors.length} request(s) failed after retries. Written, but incomplete.`,
+    );
+    process.exitCode = EXIT_DEGRADED;
+  }
 }
 
 /**

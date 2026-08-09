@@ -133,6 +133,14 @@ database. Two settings are non-default and worth understanding:
   re-enabling is one click in the Actions tab; the capture resumes with a gap
   rather than losing what it already has.
 
+- **A red snapshot run may still have committed.** If any endpoint fails every
+  retry, the capture writes what it got, the job pushes it, and *then* the run
+  is failed on purpose. A partial hour is worth keeping — it is the only record
+  of that moment there will ever be — but a green check over a capture that lost
+  every book is worse than a red one, because nobody inspects a passing job. The
+  snapshot's `meta.errors` lists what failed, and the series columns it affected
+  are `null` rather than `0`.
+
 - **The `data` branch must never deploy.** The snapshot job pushes to it hourly,
   and each push would otherwise trigger a build. Deployment is disabled from
   both ends — `vercel.json` on `main` disables the branch by name, and the job

@@ -89,8 +89,22 @@ jobs:
             git remote add origin "$REMOTE"
           fi
 
+      # Exit 2 means "written, but some endpoint failed after retries". The
+      # partial hour is still worth committing — it is the only record of this
+      # moment that will ever exist — so the failure is carried past the push
+      # and raised at the end instead of aborting here. Any other non-zero code
+      # means nothing usable was written, and fails the job immediately.
       - name: Capture
-        run: node scripts/snapshot.mjs --out data-branch
+        id: capture
+        run: |
+          set +e
+          node scripts/snapshot.mjs --out data-branch
+          code=$?
+          set -e
+          if [ "$code" -ne 0 ] && [ "$code" -ne 2 ]; then
+            exit "$code"
+          fi
+          echo "degraded=$([ "$code" -eq 2 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
       - name: Commit and push
         working-directory: data-branch
@@ -113,3 +127,12 @@ jobs:
           git commit -q -m "snapshot: $(date -u +%Y-%m-%dT%H:%MZ)"
           git push -q origin data
           echo "Pushed $(git rev-parse --short HEAD)."
+
+      # Raised after the push, so the incomplete capture is preserved and the
+      # run is still visibly red. Runs even if the push failed, so a degraded
+      # capture is never hidden behind an earlier failure.
+      - name: Fail a degraded capture
+        if: always() && steps.capture.outputs.degraded == 'true'
+        run: |
+          echo "::error::Capture was incomplete — one or more endpoints failed after retries. The snapshot's meta.errors lists them; affected series columns are null."
+          exit 1
