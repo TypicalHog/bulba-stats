@@ -160,6 +160,26 @@ async function PlayersBody() {
    */
   const automation = automationVerdicts([...openOrders, ...closedOrders]);
 
+  /*
+   * Registration cohorts, by the week each account was created. Included as
+   * asked and reported literally: nearly everyone arrived in the market's
+   * opening week, so this is close to a single bar, and that flatness is the
+   * observation rather than a fault in the chart.
+   */
+  const cohortMap = new Map<string, { joined: number; traded: number }>();
+  for (const account of accounts) {
+    const week = new Date(account.createdAt);
+    week.setUTCDate(week.getUTCDate() - week.getUTCDay());
+    const key = week.toISOString().slice(0, 10);
+    const entry = cohortMap.get(key) ?? { joined: 0, traded: 0 };
+    entry.joined++;
+    if (account.traded) entry.traded++;
+    cohortMap.set(key, entry);
+  }
+  const cohorts = [...cohortMap.entries()]
+    .map(([week, v]) => ({ week, ...v }))
+    .sort((a, b) => a.week.localeCompare(b.week));
+
   const holderRows = holders(directory, midByVariant);
   const giniAll = gini(holderRows.map((h) => h.total));
   const giniHumans = gini(
@@ -330,6 +350,36 @@ async function PlayersBody() {
             are counted but not valued, and that count travels with each row.
             With a population this small the Gini figure is indicative rather
             than rigorous: one account arriving moves it visibly.
+          </Caveat>
+        </Panel>
+      </div>
+
+      <div>
+        <SectionTitle hint="By the week the account was created">
+          Registration cohorts
+        </SectionTitle>
+        <Panel
+          title="When accounts arrived"
+          subtitle="And how many of each intake went on to trade"
+        >
+          <RankedBars
+            max={Math.max(...cohorts.map((c) => c.joined), 1)}
+            color={SERIES[0]}
+            rows={cohorts.map((c) => ({
+              key: c.week,
+              value: c.joined,
+              display: `${num(c.joined)} joined · ${num(c.traded)} traded`,
+              label: (
+                <span className="font-mono text-ink">Week of {c.week}</span>
+              ),
+            }))}
+          />
+          <Caveat>
+            Reported literally, and the shape is the finding: the exchange
+            opened to an existing community, so almost everyone registered in
+            the first week and there is little cohort structure to compare. A
+            retention curve needs arrivals spread over time, which this market
+            has not had yet.
           </Caveat>
         </Panel>
       </div>
