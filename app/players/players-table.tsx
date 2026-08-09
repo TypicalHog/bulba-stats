@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { SortableTable, type Column } from "@/components/ui/sortable";
-import { PlayerLink } from "@/components/ui/entity";
+import { Badge, PlayerLink } from "@/components/ui/entity";
 import {
   dateOnly,
   diamonds,
@@ -15,6 +15,8 @@ export type PlayerRow = {
   username: string;
   uuid: string;
   isMarketMaker: boolean;
+  /** Registered, and possibly funded or quoting, but has never traded. */
+  isNonTrading: boolean;
   volume: number;
   buyVolume: number;
   sellVolume: number;
@@ -40,21 +42,30 @@ export type PlayerRow = {
  */
 export function PlayersTable({ rows }: { rows: PlayerRow[] }) {
   const [includeMM, setIncludeMM] = useState(false);
+  const [includeQuiet, setIncludeQuiet] = useState(false);
   const [query, setQuery] = useState("");
+
+  const nonTrading = rows.filter((r) => r.isNonTrading).length;
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return rows.filter((r) => {
       if (!includeMM && r.isMarketMaker) return false;
+      if (!includeQuiet && r.isNonTrading) return false;
       return !q || r.username.toLowerCase().includes(q);
     });
-  }, [rows, includeMM, query]);
+  }, [rows, includeMM, includeQuiet, query]);
 
   const columns: Column<PlayerRow>[] = [
     {
       key: "player",
       header: "Trader",
-      cell: (r) => <PlayerLink username={r.username} uuid={r.uuid} />,
+      cell: (r) => (
+        <span className="flex items-center gap-1.5">
+          <PlayerLink username={r.username} uuid={r.uuid} />
+          {r.isNonTrading && <Badge>No trades</Badge>}
+        </span>
+      ),
       sort: (r) => r.username.toLowerCase(),
       descFirst: false,
     },
@@ -172,10 +183,12 @@ export function PlayersTable({ rows }: { rows: PlayerRow[] }) {
       align: "right",
       cell: (r) => (
         <span className="text-ink-3">
-          {dateOnly(new Date(r.lastTradeAt).toISOString())}
+          {r.lastTradeAt > 0
+            ? dateOnly(new Date(r.lastTradeAt).toISOString())
+            : "—"}
         </span>
       ),
-      sort: (r) => r.lastTradeAt,
+      sort: (r) => (r.lastTradeAt > 0 ? r.lastTradeAt : null),
     },
   ];
 
@@ -208,8 +221,27 @@ export function PlayersTable({ rows }: { rows: PlayerRow[] }) {
           {includeMM ? "Market maker included" : "Market maker excluded"}
         </button>
 
+        {nonTrading > 0 && (
+          <button
+            type="button"
+            role="switch"
+            aria-checked={includeQuiet}
+            onClick={() => setIncludeQuiet((v) => !v)}
+            title="Accounts that registered, and in some cases moved goods, but have never traded"
+            className={`cursor-pointer rounded border px-2.5 py-1.5 text-[11px] transition-colors duration-150 ${
+              includeQuiet
+                ? "border-accent/50 bg-accent/10 text-accent"
+                : "border-line text-ink-3 hover:border-ink-3 hover:text-ink-2"
+            }`}
+          >
+            {includeQuiet
+              ? `${num(nonTrading)} non-trading shown`
+              : `${num(nonTrading)} non-trading hidden`}
+          </button>
+        )}
+
         <span className="ml-auto font-mono text-[11px] text-ink-3">
-          {num(filtered.length)} traders
+          {num(filtered.length)} accounts
         </span>
       </div>
 

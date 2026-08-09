@@ -22,7 +22,7 @@ endpoints.
 | **Overview** | Market-wide volume, fees, breadth and concentration; movers; live trade ticker |
 | **Market** | All 184 listings — mid, spread, depth, turnover, sparklines; sortable and filterable |
 | **Item** | Candlesticks, order-book depth curve and ladder, VWAP, volatility, slippage curve, participants, fills |
-| **Players** | Leaderboards by volume, fees, maker share, inventory value, open-order capital |
+| **Players** | Leaderboards by volume, fees, maker share, inventory value, open-order capital; the funnel from registering to trading |
 | **Player** | Realized P&L by cost basis, holdings at mid, open orders, counterparty graph, activity |
 | **Trades** | Full trade explorer — filter by item, player, venue, mechanism, side |
 | **Orders** | Resting-order analytics: depth ownership by distance from mid, a catalog-wide slippage matrix, fill and cancel rates, time-to-fill |
@@ -91,7 +91,7 @@ database. Two settings are non-default and worth understanding:
   inferred from the upstream's `.uk` domain — if it is actually hosted
   elsewhere, change this to the nearest region and the cold-cache pages get
   proportionally faster.
-- **`maxDuration = 60` on `/market` and `/orders`.** Both depend on that crawl,
+- **`maxDuration = 60` on `/market`, `/orders` and `/players`.** All depend on that crawl,
   which takes ~20 s locally and would be killed by the default serverless
   timeout on a cold cache. 60 s is the Hobby-tier ceiling, so it is safe on any
   plan. Warm requests return from cache immediately.

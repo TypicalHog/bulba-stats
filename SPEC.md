@@ -207,6 +207,16 @@ meaning. Everything below is computed in `lib/analytics/`.
 Volume, trade count, fees paid, net flow, maker share, unique items traded,
 inventory value, open-order capital.
 
+Ranked over the **account population**, not the trade record. Accounts that
+registered and never traded are absent from `view=trades` entirely, so counting
+only traders answers "who trades" while appearing to answer "who is here". They
+are listed, badged and hidden behind a toggle rather than omitted.
+
+**The funnel** — registered → moved funds → wrote an order → traded → active
+lately — measures where accounts stop. Stages are cumulative, so the drop
+between them is the quantity of interest. "Active lately" is measured against
+the dataset's last event, per §4.
+
 ### 2.5 Treasury
 
 Pool balances and fill, revenue by day split by source, distribution history with
@@ -239,7 +249,7 @@ holder count), and implied stock valuation from the `bulba_stock` listing.
 | `/` | Overview: hero volume figure, KPI tiles, volume history, movers, most-traded, live ticker, market health |
 | `/market` | All listings — sortable, filterable, sparklines, spread, VWAP, volume; depth ownership streams separately |
 | `/market/[id]` | Item deep dive: candles, depth, ladder, stats, participants, fills |
-| `/players` | Leaderboards across every ranking dimension |
+| `/players` | Leaderboards across every ranking dimension, plus the account funnel |
 | `/players/[username]` | Player deep dive: P&L, holdings, orders, trades, counterparties |
 | `/trades` | Trade explorer — filter by item, player, venue, mechanism, side |
 | `/orders` | Open-order book explorer, catalog-wide slippage matrix, order-flow analytics |
@@ -326,6 +336,10 @@ each appears:
   live quantities.
 - **Niche variants** (odd enchant combinations) are hidden by default, per the
   upstream `niche` flag, with a toggle to reveal them.
+- **The account roster is a floor, not a census.** There is no players index
+  upstream, so accounts are discovered from the trade record, from anyone who
+  has moved funds, and then transitively through shared-bank membership. An
+  account that has done none of those three is unreachable and uncounted.
 
 ---
 
