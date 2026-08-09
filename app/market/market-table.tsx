@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { SortableTable, type Column } from "@/components/ui/sortable";
 import { Badge, ItemLink } from "@/components/ui/entity";
 import { Sparkline } from "@/components/charts/sparkline";
-import { dateOnly, diamonds, num, percent, price } from "@/lib/format";
+import { dateOnly, diamonds, duration, num, percent, price } from "@/lib/format";
 
 /**
  * How many items a price is quoted for.
@@ -16,6 +16,9 @@ import { dateOnly, diamonds, num, percent, price } from "@/lib/format";
 export type PriceUnit = "single" | "stack" | "shulker";
 
 const SHULKER_SLOTS = 27;
+
+/** Past this, an item reads as dormant rather than merely quiet. */
+const STALE_MS = 7 * 24 * 60 * 60 * 1000;
 
 /** Taker fee, charged on both sides of a trade. */
 const FEE = 0.04;
@@ -80,7 +83,14 @@ export type MarketRow = {
  * trade history). Depth-derived figures need a ~20 s order crawl, so they live
  * in a separately streamed panel instead of blocking this table.
  */
-export function MarketTable({ rows }: { rows: MarketRow[] }) {
+export function MarketTable({
+  rows,
+  anchor,
+}: {
+  rows: MarketRow[];
+  /** The market's most recent trade — ages are measured from here, not now. */
+  anchor: number;
+}) {
   const [query, setQuery] = useState("");
   const [showNiche, setShowNiche] = useState(false);
   const [onlyQuoted, setOnlyQuoted] = useState(false);
@@ -294,16 +304,27 @@ export function MarketTable({ rows }: { rows: MarketRow[] }) {
     },
     {
       key: "last",
-      header: "Last trade",
+      header: "Dormant for",
+      title:
+        "Time since this item last traded, measured from the market's most recent trade rather than the clock",
       align: "right",
-      cell: (r) => (
-        <span className="text-ink-3">
-          {r.lastTradeAt
-            ? dateOnly(new Date(r.lastTradeAt).toISOString())
-            : "—"}
-        </span>
-      ),
-      sort: (r) => r.lastTradeAt,
+      mono: true,
+      cell: (r) => {
+        if (!r.lastTradeAt) {
+          return <span className="text-ink-3">never traded</span>;
+        }
+        const age = Math.max(0, anchor - r.lastTradeAt);
+        return (
+          <span
+            className={age > STALE_MS ? "text-warn" : "text-ink-3"}
+            title={dateOnly(new Date(r.lastTradeAt).toISOString())}
+          >
+            {age < 60_000 ? "just now" : duration(age)}
+          </span>
+        );
+      },
+      // Never-traded sorts last rather than first: "no data" is not "oldest".
+      sort: (r) => (r.lastTradeAt ? anchor - r.lastTradeAt : null),
     },
   ];
 

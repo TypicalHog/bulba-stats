@@ -14,6 +14,7 @@ import { PanelSkeleton } from "@/components/ui/skeleton";
 import { MarketTable, type MarketRow } from "./market-table";
 import { DepthOwnership } from "./depth-ownership";
 import { diamondsCompact, num, percent } from "@/lib/format";
+import { anchorNow } from "@/lib/time";
 
 export const metadata = {
   title: "Market",
@@ -80,6 +81,10 @@ async function MarketBody() {
    */
   const legs = toLegs(trades).filter((l) => !l.isMaker);
   const legsByListing = groupBy(legs, (l) => l.listingId);
+
+  /* Dormancy is measured from the market's last trade, not the clock, so a
+     cached table reports the same age however old the cache is. */
+  const lastEventAt = legs.length ? legs[legs.length - 1].at : null;
 
   const rows: MarketRow[] = listings
     .filter((l) => l.isActive)
@@ -151,7 +156,7 @@ async function MarketBody() {
       </div>
 
       <Panel bodyClassName="p-0">
-        <MarketTable rows={rows} />
+        <MarketTable rows={rows} anchor={anchorNow(lastEventAt)} />
       </Panel>
     </div>
   );

@@ -171,6 +171,10 @@ meaning. Everything below is computed in `lib/analytics/`.
   more expensive to trade than its spread alone suggests
 - **Movers**: 24h / 7d price change from candles, ranked
 - **Turnover**: volume ÷ book value — which items actually trade vs just sit
+- **Dormancy**: time since each listing last traded, measured from the market's
+  most recent trade rather than the clock, so a cached table reports the same
+  age however old the cache is. Never-traded listings sort last rather than
+  first — "no data" is not "oldest"
 - **Breadth**: listings with a two-sided book, one-sided, or none at all
 - **Concentration**: Herfindahl index over per-player volume share, and the
   market-maker's share of resting liquidity
