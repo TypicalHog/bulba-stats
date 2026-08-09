@@ -42,8 +42,16 @@ import {
 export async function generateMetadata({
   params,
 }: PageProps<"/players/[username]">) {
-  const { username } = await params;
-  const name = decodeURIComponent(username);
+  /*
+   * No decode here, unlike the page body below — `params` is NOT delivered the
+   * same way to both. Verified against 16.3.0 in dev and in a production build:
+   * for a request to /players/a%2520b, generateMetadata receives "a%20b" while
+   * the page component receives the raw "a%2520b". Decoding here is therefore a
+   * second decode, which mangles any name containing a percent-escape and
+   * throws `URIError: URI malformed` outright on a bare one — /players/100%25
+   * arrives as "100%" and takes the whole metadata pass down with it.
+   */
+  const { username: name } = await params;
   return {
     title: name,
     description: `Trading statistics for ${name} on BulbaStore: volume, realized P&L, holdings, open orders and counterparties.`,
