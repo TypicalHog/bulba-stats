@@ -231,10 +231,23 @@ export function dailyFlow(
 
   if (!Number.isFinite(first)) return [];
 
+  /*
+   * Walk UTC midnights, not raw timestamps.
+   *
+   * `first` and `last` are the epoch-ms of real operations, so every step
+   * carried the first op's time of day. A bare `t <= last` then dropped the
+   * final day whenever the last op fell earlier in the day than the first, and
+   * the `+ 86_400_000` that compensated for it overshot in the opposite case —
+   * appending a day of zeroes past the end of the data roughly half the time.
+   * Anchoring both ends to midnight makes the range exact in both directions,
+   * and matches how `dailyActivity` does the same job.
+   */
+  const start = Date.parse(`${dayKey(first)}T00:00:00Z`);
+  const end = Date.parse(`${dayKey(last)}T00:00:00Z`);
+
   const out: FlowDay[] = [];
-  for (let t = first; t <= last + 86_400_000; t += 86_400_000) {
+  for (let t = start; t <= end; t += 86_400_000) {
     const key = dayKey(t);
-    if (out.length && out[out.length - 1].day === key) continue;
     out.push(
       byDay.get(key) ?? {
         day: key,
