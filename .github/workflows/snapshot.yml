@@ -1,0 +1,78 @@
+name: Snapshot
+
+# Captures market state hourly to the `data` branch.
+#
+# The upstream API exposes the order book only as it stands right now, so spread,
+# depth and balances over time are unrecoverable after the fact — this is the
+# only way that history ever comes to exist. See SPEC.md §1.5.
+
+on:
+  schedule:
+    # Offset from the hour: scheduled runs bunch up at :00 and get delayed.
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+# Runs must not overlap — two jobs pushing to `data` would race.
+concurrency:
+  group: snapshot
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Check out the data branch
+        env:
+          REMOTE: https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+        run: |
+          set -euo pipefail
+          DAY="$(date -u +%Y-%m-%d)"
+
+          if git ls-remote --exit-code --heads "$REMOTE" data >/dev/null 2>&1; then
+            # Partial clone plus a sparse checkout: the branch accumulates
+            # indefinitely, and neither a full clone nor a shallow one is
+            # workable — shallow clones can't push, full clones would download
+            # every snapshot ever taken. This fetches the commit graph without
+            # blobs, then materialises only the root files and today's folder.
+            git clone --filter=blob:none --no-checkout --single-branch --branch data "$REMOTE" data-branch
+            cd data-branch
+            git sparse-checkout init --cone
+            git sparse-checkout set "snapshots/$DAY"
+            git checkout data
+          else
+            echo "No data branch yet — creating it."
+            mkdir data-branch
+            cd data-branch
+            git init -q -b data
+            git remote add origin "$REMOTE"
+          fi
+
+      - name: Capture
+        run: node scripts/snapshot.mjs --out data-branch
+
+      - name: Commit and push
+        working-directory: data-branch
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --staged --quiet; then
+            echo "Nothing captured — not committing."
+            exit 0
+          fi
+          git commit -q -m "snapshot: $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q origin data
+          echo "Pushed $(git rev-parse --short HEAD)."

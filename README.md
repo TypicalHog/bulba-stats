@@ -55,7 +55,12 @@ To point at a different upstream, set `BULBA_API_BASE` (defaults to
 npm run build    # production build
 npm run start    # serve the production build
 npm run lint     # eslint
+npm run snapshot # capture one market snapshot into ./.snapshot-out
 ```
+
+`npm run snapshot` is what CI runs hourly; locally it is useful for inspecting
+the captured shape. Add `--no-depth` to skip the 118-book fan-out, or
+`--dry-run` to fetch and report without writing.
 
 ## How it works
 
@@ -66,6 +71,14 @@ the Socket.IO live feed. Results are cached with Next.js `revalidate` tiers
 view usually costs the upstream API nothing.
 
 Charts are hand-rolled SVG — no charting dependency.
+
+One thing is recorded rather than derived. The API exposes the order book only
+as it stands *right now*, so spread and depth over time cannot be recovered
+after the fact. A GitHub Action runs `npm run snapshot` hourly and commits the
+result to a separate **`data` branch** — roughly 25 KiB per snapshot covering
+every book, the treasury, and every bank balance. Nothing on the site reads it
+yet; it accrues so that the history exists when the views that need it do. See
+[SPEC.md §1.5](SPEC.md#15-captured-history).
 
 ## Deploying
 
@@ -82,6 +95,13 @@ database. Two settings are non-default and worth understanding:
   which takes ~20 s locally and would be killed by the default serverless
   timeout on a cold cache. 60 s is the Hobby-tier ceiling, so it is safe on any
   plan. Warm requests return from cache immediately.
+
+- **The `data` branch must never deploy.** The snapshot job pushes to it hourly,
+  and each push would otherwise trigger a build. Deployment is disabled from
+  both ends — `vercel.json` on `main` disables the branch by name, and the job
+  writes a `vercel.json` onto the `data` branch that opts it out directly, since
+  Vercel evaluates the config from the commit being pushed. If stray builds
+  appear anyway, set an Ignored Build Step in the project's Git settings.
 
 Vercel [Analytics](https://vercel.com/docs/analytics) and
 [Speed Insights](https://vercel.com/docs/speed-insights) are mounted in the root

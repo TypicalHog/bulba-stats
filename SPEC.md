@@ -94,6 +94,55 @@ inherently serial), fan-outs are bounded to 6 concurrent requests, and every
 crawl has a hard page cap so a runaway dataset can't spiral. All fetching happens
 server-side, so a page view costs the upstream API nothing when cached.
 
+The hourly capture job (§1.5) is the one sustained load. It paces itself to
+60 req/min — half the allowance — and so spends ~160 s per run, a 4% duty cycle.
+
+### 1.5 Captured history
+
+The API exposes the order book only **as it stands right now**. Spread, depth,
+balances and quote lifetime over time are therefore unrecoverable after the
+fact: no amount of later crawling reconstructs what the book looked like last
+Tuesday. The only way that history comes to exist is to record it as it happens.
+
+`scripts/snapshot.mjs`, run hourly by `.github/workflows/snapshot.yml`, does
+that. Output lands on a dedicated **`data` branch** — never on `main`, and with
+deployments disabled for it from both sides, since 24 pushes a day would
+otherwise be 24 rebuilds.
+
+| Path | Contents |
+|---|---|
+| `snapshots/<date>/<timestamp>Z.json` | One immutable snapshot |
+| `snapshots/<date>/index.json` | That day's filenames |
+| `latest.json` | Pointer to the most recent snapshot |
+| `roster.json` | Every account seen so far |
+
+Each snapshot carries, for all 118 quoted listings: mid, `makerMid`, best
+bid/ask, spread, tick size, and depth in both units and diamonds — total and
+within ±5% and ±10% of mid — plus the treasury, and balances for every bank
+account. ~25 KiB per snapshot.
+
+Four properties are deliberate:
+
+- **Snapshot files are immutable.** Git stores each blob exactly once, whereas
+  appending to a rolling daily file would store a fresh near-identical copy
+  every hour and grow the repository quadratically.
+- **`listings` is columnar.** Repeating 22 JSON keys across 118 rows, hourly and
+  forever, roughly triples the dataset for nothing. Consumers must read
+  `listings.columns` rather than assume field positions, which later `version`s
+  may extend.
+- **Balances are keyed by bank account, not by player.** A shared bank appears
+  identically on every member's profile, so storing per player would multiply
+  `BulbaTeam`'s holdings by its five members.
+- **Account discovery is self-healing and transitive.** A cold roster sweeps
+  full trade and bank-movement history; a warm one reads only the newest page.
+  Shared-bank membership is then followed as its own discovery channel — which
+  is the only way `ayayabot`, an account appearing in no trade and no bank
+  movement, is found at all.
+
+Nothing on the site renders from this yet; capture starts accruing before the
+views that consume it exist, because the alternative is a permanent hole in the
+record.
+
 ---
 
 ## 2. Derived statistics
@@ -360,7 +409,13 @@ lib/
   analytics/            all derived statistics
   format.ts             numbers, diamonds, dates, item names
   design.ts             palette tokens shared by TS and CSS
+scripts/
+  snapshot.mjs          hourly capture (§1.5); standalone, no lib/ imports
 ```
+
+`scripts/` deliberately shares no code with `lib/`. That client is `server-only`
+TypeScript built around Next's fetch cache, none of which exists in a bare Node
+process on CI; the overlap is a few constants and the pagination shape.
 
 Server Components fetch and compute; Client Components handle sorting,
 filtering, chart hover, and the live feed. No global state library.
@@ -381,4 +436,8 @@ Two boundary rules fall out of that split:
 - No writes. No API key, no order placement, no auth. BulbaStats is a viewer.
 - No mirroring of the official site's trading UI — this is the analysis layer
   beside it, not a replacement for it.
-- No database. Everything is derived on demand from the public API and cached.
+- No database. Everything the site renders is derived on demand from the public
+  API and cached. The single persisted dataset is the hourly snapshot (§1.5),
+  which lives on a git branch rather than in a datastore, is written by CI
+  rather than by the app, and is read by nothing at runtime today. It exists
+  because book history cannot be recovered any other way.

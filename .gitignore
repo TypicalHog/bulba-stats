@@ -36,6 +36,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# local output of `npm run snapshot`; the real thing lives on the data branch
+/.snapshot-out/
+/data-branch/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
