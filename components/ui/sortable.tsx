@@ -131,8 +131,16 @@ export function SortableTable<T>({
     const link = document.createElement("a");
     link.href = url;
     link.download = `${exportName}.csv`;
+    /*
+     * Append before clicking and revoke on a later task. Chromium starts the
+     * download synchronously and tolerates a detached anchor revoked in the
+     * same tick; Firefox does neither, and the download simply never happens.
+     */
+    link.style.display = "none";
+    document.body.appendChild(link);
     link.click();
-    URL.revokeObjectURL(url);
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 0);
   };
 
   if (!rows.length) {
