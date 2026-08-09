@@ -22,7 +22,7 @@ endpoints.
 | **Overview** | Market-wide volume, fees, breadth and concentration; movers; live trade ticker |
 | **Market** | All 184 listings — mid, spread, depth, turnover, sparklines; sortable and filterable |
 | **Item** | Candlesticks, order-book depth curve and ladder, VWAP, volatility, slippage curve, participants, fills |
-| **Recipes** | Buy it or build it — crafting, smelting and enchanting costs priced against the real book, with an optimal anvil order |
+| **Recipes** | Buy it or build it — crafting, smelting and enchanting costs priced against the real book, with an optimal anvil order; what each enchantment is worth alone |
 | **Supply** | What enters the exchange and what leaves it — deposits, withdrawals, net float per item, and the goods that arrived and never traded |
 | **Players** | Leaderboards by volume, fees, maker share, inventory value, open-order capital; the funnel from registering to trading |
 | **Player** | Realized P&L by cost basis, holdings at mid, open orders, counterparty graph, activity |

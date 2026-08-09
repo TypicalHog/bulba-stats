@@ -262,6 +262,27 @@ Measured live: 47 recipes, 20 with both sides priceable, **building is cheaper
 on 15 of those 20**, the widest being `elytra:max` at 7.05 to build against
 60.00 to buy.
 
+**The enchantment market.** Books price enchantments singly while tools sell
+them in bundles, so the pieces can be priced against the whole:
+
+- A **standalone price** for each of the 24 enchantments sold as a book.
+- An **assembly premium** per tool: finished price less the books it carries.
+  Measured against books only, not books plus base — plain tools are barely
+  quoted, so including the base nulls every row rather than sharpening it, and
+  it matches the buy-or-build default of assuming the tool is owned. Computable
+  on 11 of 23 tools, every one positive, the widest being `elytra:max` at 55
+  over its books.
+- **Coverage gaps**, both directions: 4 enchantments sold as books that no
+  listed tool carries, and 6 on tools that no book supplies. A tool in the
+  second group cannot be built from parts at any price, which is why it never
+  appears in the buy-or-build table.
+
+Value comes from the book listing plus a residual rather than from regressing
+tool prices on their enchantment sets: ~23 enchanted listings against 24
+distinct enchantments is underdetermined, and the coefficients would be noise.
+The residual therefore absorbs everything the books don't explain — experience,
+anvil work, convenience, and any mispricing.
+
 ### 2.7 Supply & flow
 
 Every other statistic here measures value changing hands *between accounts*.

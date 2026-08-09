@@ -2,6 +2,12 @@ import { Suspense } from "react";
 import { getAllOpenOrders, getListings } from "@/lib/api/endpoints";
 import { reconstructBooks } from "@/lib/analytics/reconstruct";
 import { priceRecipes } from "@/lib/analytics/recipes";
+import {
+  assemblyPremiums,
+  coverageGaps,
+  enchantPrices,
+} from "@/lib/analytics/enchants";
+import { EnchantMarket } from "./enchant-market";
 import { Panel, Caveat, SectionTitle } from "@/components/ui/panel";
 import { Stat } from "@/components/ui/stat";
 import { PanelSkeleton } from "@/components/ui/skeleton";
@@ -97,6 +103,30 @@ async function RecipesBody() {
       </div>
 
       <RecipeTable rows={rows} />
+
+      <div>
+        <SectionTitle hint="Books price enchantments singly; tools sell them in bundles">
+          The enchantment market
+        </SectionTitle>
+        <EnchantMarket
+          enchants={enchantPrices(listings, books)}
+          premiums={assemblyPremiums(listings, books).map((p) => ({
+            listingId: p.listingId,
+            itemName: p.itemName,
+            variantName: p.variantName,
+            niche: p.niche,
+            toolAsk: p.toolAsk,
+            baseAsk: p.baseAsk,
+            booksCost: p.booksCost,
+            premium: p.premium,
+            premiumPct: p.premiumPct,
+            anvilLevels: p.anvilLevels,
+            enchantCount: p.enchants.length,
+            missing: p.missing,
+          }))}
+          gaps={coverageGaps(listings)}
+        />
+      </div>
 
       <div>
         <SectionTitle>How these are priced</SectionTitle>
