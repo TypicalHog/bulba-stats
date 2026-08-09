@@ -111,7 +111,7 @@ otherwise be 24 rebuilds.
 
 | Path | Contents |
 |---|---|
-| `snapshots/<date>/<timestamp>Z.json` | One immutable snapshot |
+| `snapshots/<date>/<YYYY-MM-DDTHHMMSS>Z.json` | One immutable snapshot |
 | `snapshots/<date>/index.json` | That day's filenames |
 | `latest.json` | Pointer to the most recent snapshot |
 | `series/<date>.json` | That day's captures, reduced to market-wide scalars |
