@@ -1,10 +1,11 @@
 import { Suspense } from "react";
 import {
   getAllOpenOrders,
+  getAllTrades,
   getClosedOrders,
   getOrderbookSummary,
 } from "@/lib/api/endpoints";
-import { groupBy, sum } from "@/lib/analytics/legs";
+import { groupBy, sum, toLegs } from "@/lib/analytics/legs";
 import { orderAges, orderFlow, slippageCurve } from "@/lib/analytics/book";
 import {
   crossCheck,
@@ -13,6 +14,7 @@ import {
 } from "@/lib/analytics/reconstruct";
 import { SlippageMatrix, type SlippageRow } from "./slippage-matrix";
 import { OrganicBook, type OrganicRow } from "./organic-book";
+import { DaysOfSupply, type SupplyRow } from "./days-of-supply";
 import { median, quantile } from "@/lib/analytics/market";
 import { Panel, Caveat, SectionTitle } from "@/components/ui/panel";
 import { Stat } from "@/components/ui/stat";
@@ -23,7 +25,7 @@ import { RankedBars, SplitBar } from "@/components/charts/bars";
 import { SERIES } from "@/lib/design";
 import { diamondsCompact, duration, num, percent } from "@/lib/format";
 import { isHouseOrder, partitionByHouse } from "@/lib/analytics/house";
-import { requestTime } from "@/lib/time";
+import { anchorNow, DAY_MS, requestTime } from "@/lib/time";
 import { DeepestBooks } from "./deepest-books";
 import { BANDS, bandKey } from "./bands";
 
@@ -184,14 +186,50 @@ const SWEEP_SIZES = [1, 10, 64, 256, 1024];
  * `/orderbook/:id` per listing, would be 118 against a 120/min budget.
  */
 async function Liquidity() {
-  const [{ rows: orders }, summary] = await Promise.all([
+  const [{ rows: orders }, summary, trades] = await Promise.all([
     getAllOpenOrders(),
     getOrderbookSummary(),
+    getAllTrades(),
   ]);
 
   const books = reconstructBooks(orders);
   const check = crossCheck(books, summary);
   const nameById = new Map(summary.map((s) => [s.listingId, s]));
+
+  /*
+   * Demand per day, per listing, over three windows.
+   *
+   * Anchored to the dataset's last trade rather than the clock so a cached
+   * figure doesn't drift, and averaged from each item's own first trade for the
+   * lifetime window — dividing a month-old item's volume by the market's whole
+   * life would understate it.
+   */
+  const takerLegs = toLegs(trades).filter((l) => !l.isMaker);
+  const anchor = anchorNow(takerLegs.at(-1)?.at);
+  const legsByListing = groupBy(takerLegs, (l) => l.listingId);
+
+  const ratesFor = (listingId: number) => {
+    const legs = legsByListing.get(listingId) ?? [];
+    if (!legs.length) return { lifetime: 0, d30: 0, d7: 0 };
+    const since = (ms: number) =>
+      legs.filter((l) => anchor - l.at <= ms).reduce((a, l) => a + l.amount, 0);
+    const lifeDays = Math.max(1, (anchor - legs[0].at) / DAY_MS);
+    return {
+      lifetime: legs.reduce((a, l) => a + l.amount, 0) / lifeDays,
+      d30: since(30 * DAY_MS) / 30,
+      d7: since(7 * DAY_MS) / 7,
+    };
+  };
+
+  const supplyRows: SupplyRow[] = [...books.entries()]
+    .map(([listingId, book]) => ({
+      listingId,
+      itemName: nameById.get(listingId)?.itemName ?? null,
+      variantName: nameById.get(listingId)?.variantName ?? null,
+      askUnits: book.asks.reduce((a, level) => a + level.quantity, 0),
+      perDay: ratesFor(listingId),
+    }))
+    .filter((r) => r.askUnits > 0);
 
   const rows: SlippageRow[] = [...books.entries()]
     .map(([listingId, book]) => {
@@ -244,6 +282,23 @@ async function Liquidity() {
           nothing is cancelled in front of it.
         </Caveat>
       </Panel>
+
+      <div className="mt-4">
+        <Panel
+          title="Days of supply"
+          subtitle="How long the resting ask side would last at recent demand"
+        >
+          <DaysOfSupply rows={supplyRows} />
+          <Caveat>
+            Lifetime is the default window because most of this catalog trades a
+            handful of times in total — over 7 or 30 days the denominator is
+            usually zero, and the row reads &ldquo;no demand&rdquo; rather than
+            claiming an infinite supply. Each item&apos;s lifetime is measured
+            from its own first trade, not the market&apos;s, so a recently
+            listed item isn&apos;t penalised for the months before it existed.
+          </Caveat>
+        </Panel>
+      </div>
     </div>
   );
 }

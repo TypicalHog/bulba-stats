@@ -171,6 +171,12 @@ meaning. Everything below is computed in `lib/analytics/`.
   more expensive to trade than its spread alone suggests
 - **Movers**: 24h / 7d price change from candles, ranked
 - **Turnover**: volume ÷ book value — which items actually trade vs just sit
+- **Days of supply**: units resting on the ask side ÷ units traded per day.
+  Defaults to a lifetime average rather than a conventional 30-day window
+  because most of this catalog trades a handful of times in total, so a short
+  window divides by zero on nearly every row; each item's lifetime runs from
+  its *own* first trade, so a recently listed item isn't penalised for the
+  months before it existed
 - **Dormancy**: time since each listing last traded, measured from the market's
   most recent trade rather than the clock, so a cached table reports the same
   age however old the cache is. Never-traded listings sort last rather than
