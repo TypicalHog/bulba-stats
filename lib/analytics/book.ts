@@ -153,6 +153,37 @@ export function participants(book: OrderBook): Participant[] {
 }
 
 /**
+ * Depth-weighted mid — the "microprice".
+ *
+ * Mid sits halfway between the quotes regardless of how much is behind each.
+ * When one side is far thicker the next trade is likelier to happen against the
+ * thin side, so the microprice leans toward the *thicker* one by weighting each
+ * quote with the opposite side's size.
+ *
+ * Reported alongside mid on the item page and nowhere else. It never feeds
+ * valuations, P&L or net worth: swapping the basis under those would change
+ * every figure on the site without the reader asking for it.
+ */
+export function microprice(book: OrderBook): number | null {
+  const bids = book.bids.filter((l) => l.quantity > 0);
+  const asks = book.asks.filter((l) => l.quantity > 0);
+  if (!bids.length || !asks.length) return null;
+
+  const bestBid = Math.max(...bids.map((l) => l.price));
+  const bestAsk = Math.min(...asks.map((l) => l.price));
+  const bidQty = bids
+    .filter((l) => l.price === bestBid)
+    .reduce((a, l) => a + l.quantity, 0);
+  const askQty = asks
+    .filter((l) => l.price === bestAsk)
+    .reduce((a, l) => a + l.quantity, 0);
+
+  const total = bidQty + askQty;
+  if (total <= 0) return null;
+  return (bestBid * askQty + bestAsk * bidQty) / total;
+}
+
+/**
  * Cost to sweep `size` units, expressed as slippage against mid.
  *
  * Computed locally from the book rather than via `/price` so a whole curve

@@ -17,7 +17,12 @@ import {
   turnover,
   volatility,
 } from "@/lib/analytics/item";
-import { bookMetrics, participants, slippageCurve } from "@/lib/analytics/book";
+import {
+  bookMetrics,
+  microprice,
+  participants,
+  slippageCurve,
+} from "@/lib/analytics/book";
 import { Panel, Caveat } from "@/components/ui/panel";
 import { Stat } from "@/components/ui/stat";
 import { PanelSkeleton } from "@/components/ui/skeleton";
@@ -238,6 +243,7 @@ async function DepthPanel({ listingId }: { listingId: number }) {
   if (!view) return null;
 
   const book = bookMetrics(view.orderBook);
+  const micro = microprice(view.orderBook);
   const sizes = [1, 10, 64, 256, 1024];
   const slip = slippageCurve(view.orderBook, sizes);
 
@@ -266,6 +272,21 @@ async function DepthPanel({ listingId }: { listingId: number }) {
           value={
             book.imbalance != null
               ? `${book.imbalance > 0 ? "bid" : "ask"}-heavy ${percent(Math.abs(book.imbalance) * 100, 0)}`
+              : "—"
+          }
+        />
+        <Fact
+          label="Microprice"
+          value={
+            micro != null
+              ? `${price(micro)}${
+                  book.mid != null && book.mid > 0
+                    ? ` (${micro >= book.mid ? "+" : "−"}${percent(
+                        Math.abs(((micro - book.mid) / book.mid) * 100),
+                        2,
+                      )})`
+                    : ""
+                }`
               : "—"
           }
         />
