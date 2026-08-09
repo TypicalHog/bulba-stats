@@ -182,13 +182,20 @@ export function StackedBars({
                   const v = p.values[s.key] ?? 0;
                   if (v <= 0) return null;
                   const h = baseline - geom.y(v);
-                  // 2px surface gap between touching segments.
-                  const drawH = Math.max(
-                    h - (cursor === baseline ? 0 : 2),
-                    0.5,
-                  );
-                  const top = cursor - drawH;
-                  cursor = top - (cursor === baseline ? 0 : 0);
+                  /*
+                   * 2px surface gap between touching segments, shaved off this
+                   * segment's bottom edge — the edge that meets the one below.
+                   *
+                   * `cursor` still advances by the segment's full height, so
+                   * the gap costs the stack nothing: the top of the last
+                   * segment stays at the true cumulative total. Advancing by
+                   * the drawn height instead loses 2px at every boundary, and
+                   * putting the gap on the top edge would just move the seam.
+                   */
+                  const gap = cursor === baseline ? 0 : 2;
+                  const top = cursor - h;
+                  const drawH = Math.max(h - gap, 0.5);
+                  cursor = top;
                   const isTop = si === lastNonZero(p, series);
                   return (
                     <rect
