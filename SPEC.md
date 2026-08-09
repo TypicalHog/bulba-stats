@@ -87,6 +87,18 @@ No Cache Components (`cacheComponents` is off), so the previous model applies:
 Pages stream: the shell and cheap tiles render immediately, expensive aggregates
 arrive behind `<Suspense>`.
 
+**Every read also carries an `upstream` cache tag**, applied centrally in
+`apiGet`/`crawl` so a new endpoint cannot forget it. The Refresh control in the
+header calls a Server Action that `updateTag`s it, which expires every tier at
+once and re-renders the current route with fresh data in the same response.
+
+`updateTag`, not `revalidateTag`: the latter's `"max"` profile serves the stale
+copy while refetching behind it, so the click would appear to do nothing. This
+is the read-your-own-writes case — you have just traded and want to see it —
+which is what `updateTag` is for. The trade-off is that it expires the cache for
+everyone, since there is no per-user cache to scope it to, and that the next
+visit to a heavy page pays a cold crawl.
+
 ### 1.4 Etiquette
 
 Read tier is 120 req/min per IP. Crawls are sequential (cursor pagination is

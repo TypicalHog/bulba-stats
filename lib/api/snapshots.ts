@@ -1,6 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { TTL } from "./client";
+import { UPSTREAM_TAG } from "./constants";
 
 /**
  * Reader for the captured history on the `data` branch.
@@ -48,7 +49,7 @@ async function fetchDay(day: string): Promise<MarketSample[]> {
   try {
     const res = await fetch(`${DATA_BASE}/series/${day}.json`, {
       // Today's file is still being appended to; older ones never change.
-      next: { revalidate: TTL.aggregate, tags: ["snapshots"] },
+      next: { revalidate: TTL.aggregate, tags: [UPSTREAM_TAG, "snapshots"] },
     });
     if (!res.ok) return [];
     const parsed = await res.json();

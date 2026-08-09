@@ -43,6 +43,11 @@ traders have actually found each other.
 Statistics are computed over the **complete** dataset, not a sample — the market
 opened 2026-07-12, so full history still fits in a cached server-side aggregation.
 
+Everything is served from a short server-side cache, so a figure can be a little
+behind the market. **Refresh** in the header discards every cached read and
+refetches the page you are on — the thing to press after you have just traded
+and want to see it land.
+
 ## Quick start
 
 ```bash

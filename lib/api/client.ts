@@ -1,5 +1,5 @@
 import "server-only";
-import { SITE_ORIGIN } from "./constants";
+import { SITE_ORIGIN, UPSTREAM_TAG } from "./constants";
 
 /**
  * Low-level client for the public BulbaStore API.
@@ -67,7 +67,9 @@ export async function apiGet<T>(
   const url = `${API_BASE}${path}`;
   const res = await fetch(url, {
     headers: { accept: "application/json" },
-    next: { revalidate, ...(tags ? { tags } : {}) },
+    // Every read carries UPSTREAM_TAG so one action can expire the lot — see
+    // the note on the constant.
+    next: { revalidate, tags: [UPSTREAM_TAG, ...(tags ?? [])] },
   });
 
   const text = await res.text();

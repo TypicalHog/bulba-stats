@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SITE_ORIGIN } from "@/lib/api/constants";
+import { RefreshButton } from "./refresh";
 
 const LINKS = [
   { href: "/", label: "Overview" },
@@ -64,6 +65,10 @@ export function SiteNav() {
             </Link>
           ))}
         </nav>
+
+        {/* Kept visible at every width, unlike the BulbaStore link — every
+            page it sits above serves cached figures. */}
+        <RefreshButton />
 
         <a
           href={SITE_ORIGIN}
