@@ -28,6 +28,7 @@ endpoints.
 | **Player** | Realized P&L by cost basis, holdings at mid, open orders, counterparty graph, activity |
 | **Trades** | Full trade explorer — filter by item, player, venue, mechanism, side |
 | **Orders** | Resting-order analytics: depth ownership by distance from mid, a catalog-wide slippage matrix, the book with the house stripped out, fill and cancel rates, time-to-fill |
+| **House** | The market maker's position, the inventory it has absorbed, how fast it re-prices, and who operates it |
 | **Treasury** | Pool balances, daily fee revenue by source, distribution history, stock ownership |
 | **Insights** | Activity heatmaps, price clustering, liquidity coverage, an interactive trading-network graph, and who operates the house |
 

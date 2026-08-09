@@ -398,6 +398,7 @@ never crossed the boundary.
 | `/treasury` | Pools, revenue, distributions, stock |
 | `/recipes` | Buy it or build it — the analyses in §2.6 |
 | `/supply` | What enters the exchange and what leaves it — the analyses in §2.7 |
+| `/house` | The market maker: position, inventory absorbed, quoting behaviour, operators |
 | `/insights` | The cross-cutting analyses in §2.8 |
 | `/about` | Data sources, methodology, caveats, upstream API reference |
 

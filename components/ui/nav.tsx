@@ -12,6 +12,7 @@ const LINKS = [
   { href: "/players", label: "Players" },
   { href: "/trades", label: "Trades" },
   { href: "/orders", label: "Orders" },
+  { href: "/house", label: "House" },
   { href: "/treasury", label: "Treasury" },
   { href: "/insights", label: "Insights" },
   { href: "/about", label: "About" },
@@ -41,7 +42,7 @@ export function SiteNav() {
         </Link>
 
         {/*
-          Horizontal scroll on the nav strip itself, so ten destinations fit a
+          Horizontal scroll on the nav strip itself, so eleven destinations fit a
           375px viewport without the page body ever scrolling sideways.
         */}
         <nav
