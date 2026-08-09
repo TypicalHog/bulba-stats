@@ -58,6 +58,8 @@ export function NetworkGraph({
   const [selected, setSelected] = useState<string | null>(null);
   /* An edge, once clicked, opens the relationship behind it. */
   const [pair, setPair] = useState<GraphEdge | null>(null);
+  /* Which edge the pointer is currently over, so aim is visible before click. */
+  const [hoverEdge, setHoverEdge] = useState<string | null>(null);
 
   /** Pinned selection wins; hover is the transient preview. */
   const active = selected ?? hover;
@@ -132,6 +134,9 @@ export function NetworkGraph({
     return set;
   }, [active, visible.edges]);
 
+  const aimedEdge =
+    visible.edges.find((e) => `${e.a}-${e.b}` === hoverEdge) ?? null;
+
   const activeNode = active ? layout.pos.get(active)?.node : null;
   const activeEdges = active
     ? visible.edges
@@ -189,27 +194,60 @@ export function NetworkGraph({
               const pa = layout.pos.get(e.a);
               const pb = layout.pos.get(e.b);
               if (!pa || !pb) return null;
+              const key = `${e.a}-${e.b}`;
               const lit = !active || e.a === active || e.b === active;
               const isPair = pair?.a === e.a && pair?.b === e.b;
+              const aimed = hoverEdge === key;
+              const width = 1 + Math.sqrt(e.volume / maxEdge) * 4;
+
               return (
-                <line
-                  key={`${e.a}-${e.b}`}
-                  x1={pa.x}
-                  y1={pa.y}
-                  x2={pb.x}
-                  y2={pb.y}
-                  onClick={() => setPair(isPair ? null : e)}
-                  stroke={isPair ? "var(--accent)" : lit ? SERIES[0] : INK.muted}
-                  strokeWidth={1 + Math.sqrt(e.volume / maxEdge) * 4}
-                  strokeLinecap="round"
-                  opacity={active ? (lit ? 0.75 : 0.06) : 0.28}
-                  /* Fat invisible hit area: a 2px line is nearly unclickable. */
-                  style={{ cursor: "pointer" }}
-                >
-                  <title>
-                    {e.a} ↔ {e.b}
-                  </title>
-                </line>
+                <g key={key}>
+                  {/*
+                    The click target is a separate, invisible stroke ~16px
+                    wide. Edge width encodes volume, so the thinnest edges are
+                    barely a pixel — and those are exactly the small
+                    relationships worth inspecting. Widening the visible line
+                    would destroy the encoding, so the hit area is decoupled
+                    from it: `pointer-events: stroke` makes a transparent
+                    stroke catch the pointer while drawing nothing.
+                  */}
+                  <line
+                    x1={pa.x}
+                    y1={pa.y}
+                    x2={pb.x}
+                    y2={pb.y}
+                    stroke="transparent"
+                    strokeWidth={Math.max(16, width + 12)}
+                    strokeLinecap="round"
+                    pointerEvents="stroke"
+                    style={{ cursor: "pointer" }}
+                    onClick={() => setPair(isPair ? null : e)}
+                    onMouseEnter={() => setHoverEdge(key)}
+                    onMouseLeave={() => setHoverEdge(null)}
+                    aria-label={`${e.a} and ${e.b}`}
+                  />
+
+                  {/* The mark itself never intercepts the pointer. */}
+                  <line
+                    x1={pa.x}
+                    y1={pa.y}
+                    x2={pb.x}
+                    y2={pb.y}
+                    stroke={
+                      isPair || aimed
+                        ? "var(--accent)"
+                        : lit
+                          ? SERIES[0]
+                          : INK.muted
+                    }
+                    // Thicken on aim so it is obvious which edge a click lands
+                    // on when several converge on the same node.
+                    strokeWidth={isPair || aimed ? width + 2 : width}
+                    strokeLinecap="round"
+                    opacity={aimed ? 0.95 : active ? (lit ? 0.75 : 0.06) : 0.28}
+                    pointerEvents="none"
+                  />
+                </g>
               );
             })}
 
@@ -370,6 +408,26 @@ export function NetworkGraph({
           )}
         </div>
       </div>
+
+      {/*
+        Aim readout rather than a native tooltip. SVG <title> is not an option
+        — React 19 strips its children, so every one rendered empty — and the
+        heatmap already established that the browser's own tooltip, with its
+        one-second delay, is unusable for scanning a dense chart.
+      */}
+      <p className="mt-1 h-4 text-[11px] text-ink-3">
+        {aimedEdge ? (
+          <>
+            <span className="font-mono text-ink">{aimedEdge.a}</span>
+            {" ↔ "}
+            <span className="font-mono text-ink">{aimedEdge.b}</span>
+            {" — "}
+            {diamonds(aimedEdge.volume)} traded · click to open
+          </>
+        ) : (
+          "Hover an edge to see the pair; click it to open the relationship."
+        )}
+      </p>
 
       {pair && (
         <div className="mt-3 rounded border border-accent/40 bg-panel-2 p-3">
