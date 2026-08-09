@@ -26,6 +26,7 @@ import { Panel, Caveat, SectionTitle } from "@/components/ui/panel";
 import { Stat } from "@/components/ui/stat";
 import { PanelSkeleton } from "@/components/ui/skeleton";
 import { RankedBars } from "@/components/charts/bars";
+import { PagedBars } from "@/components/charts/paged-bars";
 import { PlayerLink } from "@/components/ui/entity";
 import { PlayersTable, type PlayerRow } from "./players-table";
 import { SERIES } from "@/lib/design";
@@ -202,10 +203,19 @@ async function PlayersBody() {
   const totalFees = rows.reduce((a, r) => a + r.feesPaid, 0);
   const edges = counterpartyEdges(legs);
 
-  const topVolume = [...humans].sort((a, b) => b.volume - a.volume).slice(0, 8);
+  /*
+   * Capped well past the first page rather than at it: the leaderboards page,
+   * so the tail is reachable, but every row ships a rendered PlayerLink in the
+   * RSC payload and nobody is paging to rank 200.
+   */
+  const LEADERBOARD_ROWS = 40;
+
+  const topVolume = [...humans]
+    .sort((a, b) => b.volume - a.volume)
+    .slice(0, LEADERBOARD_ROWS);
   const topPnl = [...humans]
     .sort((a, b) => b.realizedPnl - a.realizedPnl)
-    .slice(0, 8);
+    .slice(0, LEADERBOARD_ROWS);
   /*
    * Anyone who has traded at all is eligible. The previous 3-trade floor was
    * there to stop a single resting fill showing as a perfect 100% maker, but it
@@ -215,7 +225,7 @@ async function PlayersBody() {
   const topMakers = [...humans]
     .filter((r) => r.trades >= 1)
     .sort((a, b) => b.makerShare - a.makerShare || b.trades - a.trades)
-    .slice(0, 8);
+    .slice(0, LEADERBOARD_ROWS);
 
   return (
     <div className="flex flex-col gap-5">
@@ -277,7 +287,7 @@ async function PlayersBody() {
         <SectionTitle hint="Market maker excluded">Leaderboards</SectionTitle>
         <div className="grid gap-4 lg:grid-cols-3">
           <Panel title="By volume" subtitle="Total value traded, both sides">
-            <RankedBars
+            <PagedBars
               rows={topVolume.map((r) => ({
                 key: r.username,
                 value: r.volume,
@@ -294,7 +304,7 @@ async function PlayersBody() {
             title="By realized P&L"
             subtitle="Weighted-average cost basis over market trades"
           >
-            <RankedBars
+            <PagedBars
               max={Math.max(...topPnl.map((r) => Math.abs(r.realizedPnl)), 1)}
               rows={topPnl.map((r) => ({
                 key: r.username,
@@ -317,7 +327,7 @@ async function PlayersBody() {
             title="By maker share"
             subtitle="Liquidity providers — filled while resting"
           >
-            <RankedBars
+            <PagedBars
               max={1}
               rows={topMakers.map((r) => ({
                 key: r.username,
