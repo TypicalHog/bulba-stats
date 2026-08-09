@@ -18,6 +18,7 @@
  *   node scripts/snapshot.mjs --out ./data-branch
  *   node scripts/snapshot.mjs --out /tmp/x --dry-run   # fetch, report, write nothing
  *   node scripts/snapshot.mjs --out /tmp/x --no-depth  # skip the 118-book fan-out
+ *   node scripts/snapshot.mjs --out /tmp/x --budget-ms 60000  # cap the wall clock
  */
 
 import { mkdir, readFile, writeFile } from "node:fs/promises";
@@ -46,6 +47,25 @@ const opt = (name, fallback) => {
 const OUT = opt("out", ".snapshot-out");
 const DRY_RUN = flag("dry-run");
 const WITH_DEPTH = !flag("no-depth");
+
+/**
+ * Wall-clock budget for the whole capture, in ms.
+ *
+ * The workflow allows the job 20 minutes. Without a deadline the retry
+ * arithmetic can blow straight past that: three attempts at a 30 s request
+ * timeout plus backoff is 93 s for a single path, and depth is one sequential
+ * request per listing, so a hanging upstream reaches roughly three hours. Even
+ * a mild wobble — one timeout each on half the listings — lands at ~33 minutes.
+ * The runner is then destroyed mid-capture, the commit step never runs, and the
+ * hour is lost with most of the data already fetched.
+ *
+ * 15 minutes leaves room for the checkout, the commit and the push inside the
+ * 20-minute ceiling. Past it the capture stops fetching and writes what it has,
+ * which is a degraded run (exit 2) rather than nothing at all.
+ */
+const BUDGET_MS = Math.max(60_000, Number(opt("budget-ms", 15 * 60_000)) || 0);
+const STARTED_AT = Date.now();
+const budgetLeft = () => BUDGET_MS - (Date.now() - STARTED_AT);
 
 /**
  * Exit code for "everything is written, but some of it is missing".
@@ -86,12 +106,19 @@ const throttle = rateLimiter(RATE_PER_MIN);
  */
 async function get(path, { attempts = 3 } = {}) {
   for (let attempt = 1; ; attempt++) {
+    // Out of time: record it and give up rather than spending a budget the job
+    // does not have. Everything already fetched still gets written.
+    if (budgetLeft() <= 0) {
+      errors.push(`${path}: time budget exhausted`);
+      return null;
+    }
     await throttle();
     requestCount++;
     try {
       const res = await fetch(`${API_BASE}${path}`, {
         headers: { accept: "application/json" },
-        signal: AbortSignal.timeout(30_000),
+        // Never wait past the budget for a single response.
+        signal: AbortSignal.timeout(Math.min(30_000, Math.max(1_000, budgetLeft()))),
       });
       if (res.status === 404) return null;
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -112,13 +139,17 @@ async function crawl(buildPath, { maxPages = 20, limit = 200 } = {}) {
   const rows = [];
   let before = null;
   for (let page = 0; page < maxPages; page++) {
+    if (budgetLeft() <= 0) {
+      errors.push(`${buildPath(before)}: time budget exhausted`);
+      return { rows, complete: false };
+    }
     await throttle();
     requestCount++;
     let body;
     try {
       const res = await fetch(`${API_BASE}${buildPath(before)}`, {
         headers: { accept: "application/json" },
-        signal: AbortSignal.timeout(30_000),
+        signal: AbortSignal.timeout(Math.min(30_000, Math.max(1_000, budgetLeft()))),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       body = await res.json();
@@ -273,6 +304,14 @@ async function main() {
   const books = new Map();
   if (WITH_DEPTH) {
     for (const summary of summaries) {
+      // The one loop long enough to run away — stop it explicitly rather than
+      // letting 118 already-doomed calls each log their own failure.
+      if (budgetLeft() <= 0) {
+        errors.push(
+          `depth: time budget exhausted after ${books.size}/${summaries.length} listings`,
+        );
+        break;
+      }
       const detail = await get(`/orderbook/${summary.listingId}`);
       if (detail?.orderBook) books.set(summary.listingId, detail.orderBook);
     }
