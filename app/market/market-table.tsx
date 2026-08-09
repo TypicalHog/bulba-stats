@@ -399,6 +399,13 @@ export function MarketTable({
         rowKey={(r) => r.listingId}
         exportName="bulbastats-market"
         emptyMessage="No items match those filters."
+        /*
+         * Without a height cap the table's scroll container is exactly as tall
+         * as its content, so it never scrolls and the `sticky top-0` header
+         * scrolls away with the page — on the longest table on the site. Tall
+         * enough to show a useful run of the ~180 listings at once.
+         */
+        maxHeight={900}
       />
     </div>
   );

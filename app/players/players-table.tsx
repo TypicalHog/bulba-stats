@@ -259,6 +259,9 @@ export function PlayersTable({ rows }: { rows: PlayerRow[] }) {
         rowKey={(r) => r.username}
         exportName="bulbastats-players"
         emptyMessage="No traders match that search."
+        /* Without a cap the container never scrolls, so the sticky header
+           scrolls away with the page — see the note on the market table. */
+        maxHeight={900}
       />
     </div>
   );
