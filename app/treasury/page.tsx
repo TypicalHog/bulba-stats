@@ -7,6 +7,7 @@ import {
   getTreasuryRevenue,
 } from "@/lib/api/endpoints";
 import { dailyActivity } from "@/lib/analytics/market";
+import { stockYield } from "@/lib/analytics/stock";
 import { Panel, Caveat, SectionTitle } from "@/components/ui/panel";
 import { Stat, Meter } from "@/components/ui/stat";
 import { PanelSkeleton } from "@/components/ui/skeleton";
@@ -111,6 +112,17 @@ async function TreasuryBody() {
     stock && stockQuote?.mid != null
       ? stockQuote.mid * stock.sharesOutstanding
       : null;
+
+  /*
+   * The stock has a bid and an ask but has never traded, so the dividend is
+   * computed against all three prices rather than implying that one of them is
+   * "the" price.
+   */
+  const yields = {
+    bid: stockYield(treasury, distributions, stockQuote?.bestBid ?? null),
+    mid: stockYield(treasury, distributions, stockQuote?.mid ?? null),
+    ask: stockYield(treasury, distributions, stockQuote?.bestAsk ?? null),
+  };
 
   // Cross-check the treasury's own revenue figure against fees observed in
   // trade history — two independent paths to the same number.
@@ -357,11 +369,126 @@ async function TreasuryBody() {
               <div className="px-3 pb-3">
                 <Caveat>
                   Implied cap values every share at the current mid. With a thin
-                  book, that mid can move a long way on a single order, so treat
-                  it as an indication rather than a valuation.
+                  book, that mid can move a long way on a single order — and
+                  this one has <strong>never printed a trade</strong>, so no
+                  price here has ever been tested by a buyer meeting a seller.
+                  Treat it as an indication rather than a valuation.
                 </Caveat>
               </div>
             </Panel>
+
+            {yields.mid && (
+              <Panel
+                title="Dividend"
+                subtitle={`Half of every distribution goes to the stock pool${
+                  yields.mid.intervalHours
+                    ? `, on a ${Math.round(yields.mid.intervalHours / 24)}-day schedule`
+                    : ""
+                }`}
+              >
+                <div className="grid grid-cols-2 gap-4 text-[11px] sm:grid-cols-4">
+                  <div>
+                    <p className="text-ink-3">Last paid to holders</p>
+                    <p className="font-mono text-[18px] text-ink">
+                      {yields.mid.lastDistribution != null
+                        ? diamonds(yields.mid.lastDistribution)
+                        : "—"}
+                    </p>
+                    {yields.mid.growthPct != null && (
+                      <p className="text-ink-3">
+                        <span
+                          className={
+                            yields.mid.growthPct >= 0 ? "text-up" : "text-down"
+                          }
+                        >
+                          {yields.mid.growthPct >= 0 ? "▲" : "▼"}{" "}
+                          {percent(Math.abs(yields.mid.growthPct), 0)}
+                        </span>{" "}
+                        on the previous one
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-ink-3">Per float share</p>
+                    <p className="font-mono text-[18px] text-ink">
+                      {yields.mid.perFloatShare != null
+                        ? diamonds(yields.mid.perFloatShare)
+                        : "—"}
+                    </p>
+                    <p className="text-ink-3">
+                      {num(yields.mid.float)} of{" "}
+                      {num(yields.mid.sharesOutstanding)} shares
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-ink-3">Yield per period</p>
+                    <p className="font-mono text-[18px] text-ink">
+                      {yields.mid.periodYieldPct != null
+                        ? percent(yields.mid.periodYieldPct)
+                        : "—"}
+                    </p>
+                    <p className="text-ink-3">at mid</p>
+                  </div>
+                  <div>
+                    <p className="text-ink-3">Payback</p>
+                    <p className="font-mono text-[18px] text-ink">
+                      {yields.mid.paybackPeriods != null
+                        ? `${num(Math.round(yields.mid.paybackPeriods))} periods`
+                        : "—"}
+                    </p>
+                    <p className="text-ink-3">at the current rate</p>
+                  </div>
+                </div>
+
+                <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 border-t border-line pt-3 text-[11px]">
+                  <span className="text-ink-3">
+                    Yield at bid{" "}
+                    <span className="font-mono text-ink-2">
+                      {yields.bid?.periodYieldPct != null
+                        ? percent(yields.bid.periodYieldPct)
+                        : "—"}
+                    </span>
+                  </span>
+                  <span className="text-ink-3">
+                    at mid{" "}
+                    <span className="font-mono text-ink-2">
+                      {yields.mid.periodYieldPct != null
+                        ? percent(yields.mid.periodYieldPct)
+                        : "—"}
+                    </span>
+                  </span>
+                  <span className="text-ink-3">
+                    at ask{" "}
+                    <span className="font-mono text-ink-2">
+                      {yields.ask?.periodYieldPct != null
+                        ? percent(yields.ask.periodYieldPct)
+                        : "—"}
+                    </span>
+                  </span>
+                  <span className="text-ink-3">
+                    Per outstanding share{" "}
+                    <span className="font-mono text-ink-2">
+                      {yields.mid.perOutstandingShare != null
+                        ? diamonds(yields.mid.perOutstandingShare)
+                        : "—"}
+                    </span>
+                  </span>
+                </div>
+
+                <Caveat>
+                  Quoted per <strong>float</strong> share, excluding the{" "}
+                  {num(yields.mid.treasuryShares)} the treasury holds itself —
+                  paying a dividend to the treasury from the treasury is
+                  circular, and counting those shares would understate what a
+                  holder receives. The per-outstanding figure is shown beside it
+                  so the choice is visible. Every yield here divides by a share
+                  price that <strong>has never printed a trade</strong>, which is
+                  why all three of bid, mid and ask are given rather than one
+                  number. Distributions are also growing fast, so the last period
+                  is not a run rate.
+                </Caveat>
+              </Panel>
+            )}
           </div>
         </div>
       )}

@@ -261,6 +261,19 @@ Pool balances and fill, revenue by day split by source, distribution history wit
 per-pool allocation, stock ownership (shares outstanding, treasury shares, float,
 holder count), and implied stock valuation from the `bulba_stock` listing.
 
+**Dividend yield.** Half of every distribution goes to the stock pool, so
+divided by the shares that can receive it that is a dividend — the one
+genuinely financial metric the data supports, and one the API leaves
+uncomputed. Quoted **per float share**, excluding treasury-held shares: paying
+a dividend to the treasury from the treasury is circular, and counting those
+shares understates what a holder receives. The per-outstanding figure sits
+beside it so the choice is visible.
+
+Two caveats travel with every figure. `bulba_stock` **has never printed a
+trade**, so yield is shown at bid, mid *and* ask rather than implying one of
+them is the price; and distributions are growing fast, so the last period is
+not a run rate.
+
 ### 2.6 Recipe economics
 
 Buy the finished item, or buy the parts and make it. Both sides are priced at
