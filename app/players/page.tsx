@@ -206,9 +206,15 @@ async function PlayersBody() {
   const topPnl = [...humans]
     .sort((a, b) => b.realizedPnl - a.realizedPnl)
     .slice(0, 8);
+  /*
+   * Anyone who has traded at all is eligible. The previous 3-trade floor was
+   * there to stop a single resting fill showing as a perfect 100% maker, but it
+   * also hid every genuine small liquidity provider, and `trades` is shown
+   * beside the share so a thin sample is visible rather than disguised.
+   */
   const topMakers = [...humans]
-    .filter((r) => r.trades >= 3)
-    .sort((a, b) => b.makerShare - a.makerShare)
+    .filter((r) => r.trades >= 1)
+    .sort((a, b) => b.makerShare - a.makerShare || b.trades - a.trades)
     .slice(0, 8);
 
   return (
@@ -309,14 +315,16 @@ async function PlayersBody() {
 
           <Panel
             title="By maker share"
-            subtitle="Liquidity providers — filled while resting, 3+ trades"
+            subtitle="Liquidity providers — filled while resting"
           >
             <RankedBars
               max={1}
               rows={topMakers.map((r) => ({
                 key: r.username,
                 value: r.makerShare,
-                display: percent(r.makerShare * 100, 0),
+                /* Trade count alongside the share, so a 100% maker on a single
+                   fill is not mistaken for a standing liquidity provider. */
+                display: `${percent(r.makerShare * 100, 0)} · ${num(r.trades)}`,
                 color: SERIES[0],
                 label: (
                   <PlayerLink username={r.username} uuid={r.uuid} size={16} />
