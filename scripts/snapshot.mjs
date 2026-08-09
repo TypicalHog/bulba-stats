@@ -200,6 +200,12 @@ const LISTING_COLUMNS = [
   "askLevels",
 ];
 
+/** Median of an already-sorted array; averages the two middles on even counts. */
+function medianOf(sorted) {
+  const i = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[i] : (sorted[i - 1] + sorted[i]) / 2;
+}
+
 /** Cumulative units and diamond value on one side, optionally within a band. */
 function sideDepth(levels, mid, band) {
   let units = 0;
@@ -528,9 +534,9 @@ function marketRow(capturedAt, snapshot) {
     listings: rows.length,
     quoted,
     twoSided,
-    medianSpreadPct: spreads.length
-      ? r(spreads[Math.floor(spreads.length / 2)])
-      : null,
+    // True median — the mean of the two middle values on an even count. The
+    // app's `median` does the same; this script cannot import it.
+    medianSpreadPct: spreads.length ? r(medianOf(spreads)) : null,
     bidValue: depthComplete ? r(bidValue) : null,
     askValue: depthComplete ? r(askValue) : null,
     bidValueNearMid: depthComplete ? r(bidNear) : null,

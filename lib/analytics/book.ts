@@ -1,5 +1,6 @@
 import type { BookLevel, LimitOrder, OrderBook } from "../api/types";
 import { sum } from "./legs";
+import { median } from "./market";
 
 /** A point on the cumulative depth curve. */
 export type DepthPoint = {
@@ -267,8 +268,13 @@ export function orderFlow(orders: LimitOrder[]): OrderFlowStats {
     .map((o) => o.filledAmount / o.originalAmount)
     .sort((a, b) => a - b);
 
-  const mid = <T,>(arr: T[]): T | null =>
-    arr.length ? arr[Math.floor(arr.length / 2)] : null;
+  /*
+   * A true median — the mean of the two middle values on an even count. Taking
+   * the upper middle instead biases both figures upward, worst on the small
+   * samples where the difference actually shows.
+   */
+  const mid = (arr: number[]): number | null =>
+    arr.length ? median(arr) : null;
 
   return {
     total,

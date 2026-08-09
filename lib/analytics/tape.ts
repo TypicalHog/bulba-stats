@@ -1,4 +1,5 @@
 import type { Trade } from "../api/types";
+import { median } from "./market";
 
 /**
  * Per-trade analysis against a contemporaneous reference price.
@@ -145,9 +146,12 @@ export function venueStats(rows: readonly TapeRow[]): VenueStats[] {
       meanPremiumPct: priced.length
         ? priced.reduce((a, r) => a + (r.premiumPct ?? 0), 0) / priced.length
         : null,
-      medianSettlementMs: settlements.length
-        ? settlements[Math.floor(settlements.length / 2)]
-        : null,
+      /*
+       * True median, not the upper middle value. The physical venue can have
+       * very few trades, and there the two differ sharply: settlements of
+       * [3000, 200000] reported 200.0s where the median is 101.5s.
+       */
+      medianSettlementMs: settlements.length ? median(settlements) : null,
     };
   });
 }
