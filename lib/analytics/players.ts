@@ -42,7 +42,11 @@ export type PlayerStats = {
   feesPaid: number;
   /** Share of their volume done as a resting order, 0..1. */
   makerShare: number;
-  /** Diamonds out minus diamonds in, fees included — cash flow, not profit. */
+  /**
+   * Diamonds in minus diamonds out, fees included — cash flow, not profit.
+   * Positive means they have received more than they have paid: buying
+   * subtracts the cost, selling adds the proceeds net of fee.
+   */
   netFlow: number;
   realizedPnl: number;
   unbackedUnits: number;
