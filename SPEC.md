@@ -163,6 +163,12 @@ meaning. Everything below is computed in `lib/analytics/`.
   "where can size actually trade" in one glance, and costs no upstream requests
   because it runs on the reconstructed books
 - **Spread distribution**: absolute and as % of mid; median, tightest, widest
+- **Break-even move**: how far mid must rise before buying an item and later
+  selling it breaks even, after crossing the spread twice and paying the 4%
+  taker fee on both legs. On a tight book the fee dominates completely — a
+  zero-spread item still needs an 8.3% move, and a 20% spread needs 32.4% —
+  which reframes every spread figure beside it: most of this catalog is far
+  more expensive to trade than its spread alone suggests
 - **Movers**: 24h / 7d price change from candles, ranked
 - **Turnover**: volume ÷ book value — which items actually trade vs just sit
 - **Breadth**: listings with a two-sided book, one-sided, or none at all

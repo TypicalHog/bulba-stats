@@ -84,6 +84,16 @@ export default function AboutPage() {
             Membership is shown on Insights.
           </Method>
 
+          <Method title="Break-even move">
+            Buying means paying the ask <em>and</em> the 4% fee; selling later
+            means receiving the bid <em>less</em> the fee. A round trip
+            therefore starts under water by the spread plus two fees, and the
+            break-even column is how far mid must rise to make that back. It
+            assumes both legs cross the spread as a taker — resting a limit
+            order instead avoids paying the spread, and patient traders should
+            read it as a ceiling.
+          </Method>
+
           <Method title="Both sides are counted">
             One trade produces a taker leg and one maker leg per resting order
             matched. Per-player volume counts a player&apos;s own legs, so

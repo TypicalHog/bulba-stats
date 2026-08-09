@@ -17,6 +17,29 @@ export type PriceUnit = "single" | "stack" | "shulker";
 
 const SHULKER_SLOTS = 27;
 
+/** Taker fee, charged on both sides of a trade. */
+const FEE = 0.04;
+
+/**
+ * How far mid must move before a round trip breaks even.
+ *
+ * Buying means paying the ask plus the fee; selling later means receiving the
+ * bid less the fee. So the position starts under water by the spread *and* by
+ * two fees, and the price has to make up both before the trade is worth doing.
+ *
+ * On a tight book the fee dominates completely — a zero-spread item still needs
+ * an 8.3% move — which reframes every spread figure next to it: most of this
+ * catalog is far more expensive to trade than its spread alone suggests.
+ */
+export function breakEvenMove(spreadPct: number | null): number | null {
+  if (spreadPct == null || !Number.isFinite(spreadPct)) return null;
+  const half = spreadPct / 200;
+  if (half >= 1) return null;
+  const buy = (1 + half) * (1 + FEE);
+  const sell = (1 - half) * (1 - FEE);
+  return (buy / sell - 1) * 100;
+}
+
 export function unitMultiplier(unit: PriceUnit, stackAmount: number): number {
   const stack = stackAmount > 0 ? stackAmount : 1;
   if (unit === "single") return 1;
@@ -172,6 +195,24 @@ export function MarketTable({ rows }: { rows: MarketRow[] }) {
         </span>
       ),
       sort: (r) => r.spreadPct,
+      descFirst: false,
+    },
+    {
+      key: "breakeven",
+      header: "Break-even",
+      title:
+        "How far mid must rise before buying and later selling this item breaks even, after crossing the spread twice and paying the 4% taker fee on both legs",
+      align: "right",
+      mono: true,
+      cell: (r) => {
+        const move = breakEvenMove(r.spreadPct);
+        return (
+          <span className={move != null && move > 25 ? "text-down" : "text-ink-2"}>
+            {move != null ? percent(move) : "—"}
+          </span>
+        );
+      },
+      sort: (r) => breakEvenMove(r.spreadPct),
       descFirst: false,
     },
     {
