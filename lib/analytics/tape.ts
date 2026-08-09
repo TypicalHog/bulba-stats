@@ -214,8 +214,20 @@ export function anomalies(rows: readonly TapeRow[]): Anomaly[] {
     const sizes = sizesByListing.get(row.listingId) ?? [];
     if (sizes.length >= 4) {
       const sorted = [...sizes].sort((a, b) => a - b);
-      const p90 = sorted[Math.floor(sorted.length * 0.9)];
-      if (row.amount > p90 * 2 && row.amount === Math.max(...sizes)) {
+      const largest = sorted[sorted.length - 1];
+      /*
+       * Take the percentile over the OTHER trades, not all of them.
+       *
+       * `Math.floor(n * 0.9)` is `n - 1` for every n from 4 to 10, so `p90` was
+       * the maximum itself. Paired with the "is the largest" check below, the
+       * test reduced to `x > 2x` — unsatisfiable — and the rule could not fire
+       * at all until a listing had 11 trades, which most never reach. Dropping
+       * the largest value makes the comparison "against the rest", which is
+       * what outsized means.
+       */
+      const rest = sorted.slice(0, -1);
+      const p90 = rest[Math.floor(rest.length * 0.9)];
+      if (row.amount > p90 * 2 && row.amount === largest) {
         out.push({
           kind: "size",
           label: "Outsized trade",
