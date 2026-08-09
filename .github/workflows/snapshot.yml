@@ -62,7 +62,12 @@ jobs:
             git clone --filter=blob:none --no-checkout --single-branch --branch data "$REMOTE" data-branch
             cd data-branch
             git sparse-checkout init --cone
-            git sparse-checkout set "snapshots/$DAY"
+            # `series` must be materialised too, not just today's snapshots:
+            # the day's series file is appended to on every run, so a missing
+            # working copy would be read as empty and the whole day's
+            # accumulated rows overwritten with a single one. Cone mode adds
+            # root files (latest.json, roster.json) automatically.
+            git sparse-checkout set "snapshots/$DAY" series
             git checkout data
           else
             echo "No data branch yet — creating it."
