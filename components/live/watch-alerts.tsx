@@ -60,7 +60,11 @@ export function WatchAlerts() {
   const { ids } = useWatchlist();
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const watchedRef = useRef<number[]>(ids);
-  watchedRef.current = ids;
+
+  /* Refs are written in an effect, never during render. */
+  useEffect(() => {
+    watchedRef.current = ids;
+  }, [ids]);
 
   const watching = ids.length > 0;
 
