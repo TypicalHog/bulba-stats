@@ -390,11 +390,39 @@ async function Ladder({ listingId }: { listingId: number }) {
   });
   if (!view) return null;
 
+  /*
+   * Tick size is the smallest price increment this book allows. It varies by
+   * item (0.1 down to 0.0001), and it bounds how tight the spread can ever get
+   * — a book already quoting one tick wide is as competitive as the exchange
+   * permits, however wide that looks as a percentage.
+   */
+  const tick =
+    view.orderBook.bids[0]?.tick ?? view.orderBook.asks[0]?.tick ?? null;
+  const spread = view.orderBook.spread ?? null;
+  const ticksWide =
+    tick != null && tick > 0 && spread != null ? Math.round(spread / tick) : null;
+
   return (
     <Panel
       title="Order book"
       subtitle="Asks above, bids below — position carries the side, not just color"
       bodyClassName="p-0"
+      action={
+        tick != null ? (
+          <span
+            className="font-mono text-[10px] text-ink-3"
+            title="Smallest price increment this book allows"
+          >
+            tick {price(tick)}
+            {ticksWide != null && ticksWide > 0 && (
+              <span className={ticksWide === 1 ? " text-up" : ""}>
+                {" "}
+                · spread {ticksWide} tick{ticksWide === 1 ? "" : "s"}
+              </span>
+            )}
+          </span>
+        ) : undefined
+      }
     >
       <OrderLadder book={view.orderBook} />
     </Panel>
