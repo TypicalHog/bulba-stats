@@ -189,6 +189,13 @@ meaning. Everything below is computed in `lib/analytics/`.
   unchanged. It also produces the **organic book**: the same aggregation with
   house-posted orders removed, which the API cannot express because it
   aggregates levels before anyone sees them.
+- **Organic book**: best bid and ask written by anyone other than the house,
+  beside the published quote. The house writes 92.6% of resting orders but not
+  most of the coverage — 115 of 118 books carry a non-house order and 106 are
+  two-sided without it, because a couple of accounts ladder across nearly the
+  whole catalog. The concentration is in *who*: only 37 books have more than
+  one non-house quoter, so most organic prices are one person's opinion rather
+  than a market's
 
 ### 2.2 Per item
 

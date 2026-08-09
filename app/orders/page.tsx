@@ -6,8 +6,13 @@ import {
 } from "@/lib/api/endpoints";
 import { groupBy, sum } from "@/lib/analytics/legs";
 import { orderAges, orderFlow, slippageCurve } from "@/lib/analytics/book";
-import { crossCheck, reconstructBooks } from "@/lib/analytics/reconstruct";
+import {
+  crossCheck,
+  reconstructBooks,
+  reconstructOrganicBooks,
+} from "@/lib/analytics/reconstruct";
 import { SlippageMatrix, type SlippageRow } from "./slippage-matrix";
+import { OrganicBook, type OrganicRow } from "./organic-book";
 import { median, quantile } from "@/lib/analytics/market";
 import { Panel, Caveat, SectionTitle } from "@/components/ui/panel";
 import { Stat } from "@/components/ui/stat";
@@ -65,10 +70,103 @@ export default function OrdersPage() {
       </Suspense>
 
       <Suspense
+        fallback={<PanelSkeleton height={380} label="Stripping out the house…" />}
+      >
+        <Organic />
+      </Suspense>
+
+      <Suspense
         fallback={<PanelSkeleton height={280} label="Reading order history…" />}
       >
         <Lifecycle />
       </Suspense>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------- organic */
+
+/**
+ * What the book looks like with house liquidity removed.
+ *
+ * The house writes ~92% of resting orders, so the published book is largely one
+ * participant quoting itself a spread. The API cannot express this view — it
+ * aggregates price levels before anyone sees who wrote them — but the crawl
+ * carries the owner of every order, so the same rows rebuild both books.
+ */
+async function Organic() {
+  const [{ rows: orders }, summary] = await Promise.all([
+    getAllOpenOrders(),
+    getOrderbookSummary(),
+  ]);
+
+  const full = reconstructBooks(orders);
+  const organic = reconstructOrganicBooks(orders);
+  const meta = new Map(summary.map((s) => [s.listingId, s]));
+
+  const spread = (bid: number | null, ask: number | null) =>
+    bid != null && ask != null && bid + ask > 0
+      ? ((ask - bid) / ((ask + bid) / 2)) * 100
+      : null;
+
+  const rows: OrganicRow[] = [...organic.entries()]
+    .map(([listingId, book]) => {
+      const fullBook = full.get(listingId);
+      const info = meta.get(listingId);
+      const organicBid = book.bids[0]?.price ?? null;
+      const organicAsk = book.asks[0]?.price ?? null;
+      const owners = new Set<string>();
+      for (const side of [book.bids, book.asks]) {
+        for (const level of side) {
+          for (const order of level.orders ?? []) owners.add(order.username);
+        }
+      }
+      return {
+        listingId,
+        itemName: info?.itemName ?? null,
+        variantName: info?.variantName ?? null,
+        fullBid: fullBook?.bids[0]?.price ?? null,
+        fullAsk: fullBook?.asks[0]?.price ?? null,
+        fullSpreadPct: spread(
+          fullBook?.bids[0]?.price ?? null,
+          fullBook?.asks[0]?.price ?? null,
+        ),
+        organicBid,
+        organicAsk,
+        organicSpreadPct: spread(organicBid, organicAsk),
+        quoters: owners.size,
+        organicOrders: book.orderCount,
+      };
+    })
+    .sort((a, b) => b.quoters - a.quoters || b.organicOrders - a.organicOrders);
+
+  const twoSided = rows.filter(
+    (r) => r.organicBid != null && r.organicAsk != null,
+  ).length;
+  const contested = rows.filter((r) => r.quoters > 1).length;
+  const quotedBooks = full.size;
+
+  return (
+    <div>
+      <SectionTitle hint={`${num(rows.length)} of ${num(quotedBooks)} books`}>
+        The market without the house
+      </SectionTitle>
+      <Panel
+        title="Organic book"
+        subtitle="Best bid and ask written by someone other than the house market maker"
+        bodyClassName="p-0"
+      >
+        <OrganicBook rows={rows} />
+      </Panel>
+      <Caveat>
+        The house writes most of the resting orders, but not most of the
+        coverage: {num(rows.length)} of {num(quotedBooks)} books carry an order
+        from someone else, and {num(twoSided)} are two-sided without it. The
+        concentration is in <em>who</em> — only {num(contested)} books have more
+        than one non-house quoter, so most organic prices here are one person&apos;s
+        opinion rather than a market&apos;s. The API cannot show any of this: it
+        aggregates price levels before anyone sees who wrote them.
+      </Caveat>
     </div>
   );
 }
