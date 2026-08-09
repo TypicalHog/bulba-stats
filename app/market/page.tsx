@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import {
+  getAllBankOps,
   getAllOpenOrders,
   getAllTrades,
   getListings,
@@ -12,8 +13,9 @@ import { Panel, Caveat } from "@/components/ui/panel";
 import { Stat } from "@/components/ui/stat";
 import { PanelSkeleton } from "@/components/ui/skeleton";
 import { MarketTable, type MarketRow } from "./market-table";
+import { Treemap } from "@/components/charts/treemap";
 import { DepthOwnership } from "./depth-ownership";
-import { diamondsCompact, num, percent } from "@/lib/format";
+import { diamondsCompact, itemLabel, num, percent } from "@/lib/format";
 import { anchorNow } from "@/lib/time";
 
 export const metadata = {
@@ -50,6 +52,12 @@ export default function MarketPage() {
         Depth ownership needs the full ~20k-row resting-order crawl, so it
         streams separately rather than holding up the quote table.
       */}
+      <Suspense
+        fallback={<PanelSkeleton height={420} label="Laying out the market…" />}
+      >
+        <MarketMap />
+      </Suspense>
+
       <Suspense
         fallback={
           <PanelSkeleton
@@ -275,6 +283,100 @@ async function DepthPanel() {
           most recent orders rather than the entire book.
         </Caveat>
       )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------ treemap */
+
+/**
+ * The whole catalog as one picture.
+ *
+ * Three metrics, one toggle: what is worth the most resting, what actually
+ * changes hands, and what has piled up on the exchange. They produce almost
+ * unrelated pictures, which is the point — the market table can only be sorted
+ * one way at a time, and the difference between these orderings is the finding.
+ */
+async function MarketMap() {
+  const [listings, summary, trades, bankOps] = await Promise.all([
+    getListings(),
+    getOrderbookSummary(),
+    getAllTrades(),
+    getAllBankOps(),
+  ]);
+
+  const midByListing = new Map(summary.map((s) => [s.listingId, s.mid]));
+  const volumes = new Map(volumeByItem(trades).map((v) => [v.listingId, v]));
+
+  const floatByVariant = new Map<number, number>();
+  for (const op of bankOps) {
+    const variantId = op.item?.variantId;
+    if (!variantId || op.item?.itemName === "diamond") continue;
+    if (op.type === "deposit") {
+      floatByVariant.set(variantId, (floatByVariant.get(variantId) ?? 0) + op.amount);
+    } else if (op.type === "withdraw") {
+      floatByVariant.set(variantId, (floatByVariant.get(variantId) ?? 0) - op.amount);
+    }
+  }
+
+  const nodes = listings
+    .filter((l) => l.isActive && !l.niche)
+    .map((listing) => {
+      const mid = midByListing.get(listing.id) ?? null;
+      const vol = volumes.get(listing.id);
+      const float =
+        listing.variantId != null
+          ? Math.max(0, floatByVariant.get(listing.variantId) ?? 0)
+          : 0;
+      return {
+        key: String(listing.id),
+        label: itemLabel(listing),
+        itemName: listing.itemName,
+        href: `/market/${listing.id}`,
+        values: {
+          value: mid != null ? float * mid : 0,
+          volume: vol?.volume ?? 0,
+          float,
+        },
+      };
+    });
+
+  return (
+    <div>
+      <Panel
+        title="The market at a glance"
+        subtitle="Every listing sized by one measure at a time"
+      >
+        <Treemap
+          nodes={nodes}
+          metrics={[
+            {
+              key: "value",
+              label: "Value on exchange",
+              hint: "Units held here, valued at current mid",
+              format: "diamonds",
+            },
+            {
+              key: "volume",
+              label: "Traded volume",
+              hint: "Lifetime value changing hands",
+              format: "diamonds",
+            },
+            {
+              key: "float",
+              label: "Units on exchange",
+              hint: "Deposited less withdrawn, in raw units",
+              format: "units",
+            },
+          ]}
+        />
+        <Caveat>
+          Niche variants are excluded so the picture stays legible. Value and
+          volume are almost unrelated orderings — bulk blocks dominate what is
+          held, a handful of items dominate what actually trades — which is
+          easier to see here than in any sorted column.
+        </Caveat>
+      </Panel>
     </div>
   );
 }
