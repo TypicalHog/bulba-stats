@@ -65,6 +65,23 @@ jobs:
           fi
           # An empty commit leaves no file churn, and [skip ci] stops Vercel
           # rebuilding the site for a heartbeat that changes nothing.
-          git commit -q --allow-empty -m "chore: keep scheduled workflows alive [skip ci]"
-          git push -q origin "HEAD:$BRANCH"
-          echo "Pushed a keep-alive commit to $BRANCH (real-account token: $HAS_TOKEN)."
+          #
+          # Retried, because anything pushed to the default branch between the
+          # checkout and here makes this a non-fast-forward and the whole job
+          # fails over a heartbeat. The commit carries no content, so there is
+          # nothing to merge: discard it, take the new tip, and make a fresh
+          # one. Reset rather than rebase — actions/checkout clones shallow,
+          # where rebasing onto a refetched tip is the fussier of the two.
+          for attempt in 1 2 3; do
+            git commit -q --allow-empty -m "chore: keep scheduled workflows alive [skip ci]"
+            if git push -q origin "HEAD:$BRANCH"; then
+              echo "Pushed a keep-alive commit to $BRANCH (real-account token: $HAS_TOKEN)."
+              exit 0
+            fi
+            echo "Push rejected on attempt $attempt — refetching $BRANCH and retrying."
+            git fetch -q origin "$BRANCH"
+            git reset -q --hard "origin/$BRANCH"
+          done
+
+          echo "::error::Keep-alive push failed three times. The 60-day window has room for a missed run, but check the branch is not protected against this token."
+          exit 1
