@@ -458,8 +458,12 @@ async function main() {
   // a 404 answers and returns before the catch, so it never lands here. That is
   // rare enough to be worth a red run rather than a threshold to tune.
   if (errors.length) {
+    // Listed in full here, not just counted: the summary above is printed
+    // before the files are written, so anything that goes wrong during the
+    // write — an unreadable series file, say — is not in it, and is not in the
+    // snapshot's own `meta.errors` either, since that was serialised first.
     console.error(
-      `\nDegraded: ${errors.length} request(s) failed after retries. Written, but incomplete.`,
+      `\nDegraded: ${errors.length} problem(s). Written, but incomplete.\n  ${errors.join("\n  ")}`,
     );
     process.exitCode = EXIT_DEGRADED;
   }
@@ -555,9 +559,25 @@ async function appendSeries(day, row) {
   let rows = [];
   try {
     const parsed = JSON.parse(await readFile(path, "utf8"));
-    if (Array.isArray(parsed)) rows = parsed;
-  } catch {
-    /* first capture of the day */
+    if (!Array.isArray(parsed)) throw new Error("not a JSON array");
+    rows = parsed;
+  } catch (err) {
+    /*
+     * Only a genuinely absent file means "first capture of the day". Anything
+     * else — a truncated write, a permission error, a working copy that was
+     * never materialised — means rows exist that this process cannot see, and
+     * the unconditional write below would replace the day's accumulated
+     * captures with this single one. In a diff that is indistinguishable from
+     * an ordinary append, so it would never be noticed.
+     *
+     * Leave the file alone and let the run go red instead. This hour's row is
+     * lost, but the hours already recorded are not, and the per-snapshot file
+     * still holds everything needed to rebuild it.
+     */
+    if (err.code !== "ENOENT") {
+      errors.push(`series/${day}.json: unreadable (${err.message}) — left as is`);
+      return;
+    }
   }
 
   if (!rows.some((existing) => existing.at === row.at)) rows.push(row);
