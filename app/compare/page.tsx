@@ -28,11 +28,20 @@ export default async function ComparePage({
   const params = await searchParams;
   const raw = Array.isArray(params.ids) ? params.ids[0] : params.ids;
 
-  const ids = (raw ?? "")
-    .split(",")
-    .map((part) => Number(part.trim()))
-    .filter((id) => Number.isInteger(id) && id > 0)
-    .slice(0, MAX_ITEMS);
+  /*
+   * Deduplicated before the cap, not after. `?ids=2,2,2` rendered the same
+   * listing as three identical columns and emitted `key="2"` three times in
+   * the same row — for the header and every body row — and duplicates also ate
+   * the MAX_ITEMS budget, so `?ids=2,2,2,2,6` silently dropped listing 6.
+   */
+  const ids = [
+    ...new Set(
+      (raw ?? "")
+        .split(",")
+        .map((part) => Number(part.trim()))
+        .filter((id) => Number.isInteger(id) && id > 0),
+    ),
+  ].slice(0, MAX_ITEMS);
 
   return (
     <div className="flex flex-col gap-4">
