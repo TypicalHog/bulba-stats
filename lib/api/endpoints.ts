@@ -1,6 +1,6 @@
 import "server-only";
 import { cache } from "react";
-import { apiGet, apiGetOrNull, apiGetSoft, crawl, TTL } from "./client";
+import { apiGet, apiGetOrNull, apiGetSoft, crawl, mapLimit, TTL } from "./client";
 import {
   BANK_TYPES,
   TRADE_TYPES,
@@ -166,6 +166,51 @@ export const getAllBankOps = cache(async (): Promise<Fill[]> => {
     { maxPages: 40, revalidate: TTL.aggregate, tags: ["bankops"] },
   );
   return rows;
+});
+
+/**
+ * Every account the public data mentions, with its banks.
+ *
+ * There is no players index upstream, so the roster is assembled: taker and
+ * maker names from the trade record, plus anyone who has moved funds — accounts
+ * that deposited and never traded exist, and are invisible in the trade tape.
+ *
+ * Shared-bank membership is then followed transitively, because an account can
+ * belong to a bank while appearing in no feed at all. `ayayabot` is only
+ * reachable this way.
+ *
+ * Costs one profile request per account (~22) on top of two crawls both cached
+ * for other pages, so it earns the aggregate tier rather than a heavier one.
+ */
+export const getPlayerDirectory = cache(async (): Promise<Player[]> => {
+  const [trades, bankOps] = await Promise.all([getAllTrades(), getAllBankOps()]);
+
+  const seed = new Set<string>();
+  for (const trade of trades) {
+    if (trade.taker?.username) seed.add(trade.taker.username);
+    for (const maker of trade.makers) seed.add(maker.username);
+  }
+  for (const op of bankOps) if (op.player?.username) seed.add(op.player.username);
+
+  const resolved = new Map<string, Player>();
+  let queue = [...seed];
+
+  for (let pass = 0; pass < 3 && queue.length; pass++) {
+    const found = await mapLimit(queue, 6, (username) => getPlayer(username));
+    const discovered = new Set<string>();
+    for (const player of found) {
+      if (!player || resolved.has(player.username)) continue;
+      resolved.set(player.username, player);
+      for (const bank of player.bankAccounts ?? []) {
+        for (const member of bank.members ?? []) discovered.add(member.username);
+      }
+    }
+    queue = [...discovered].filter((name) => !resolved.has(name));
+  }
+
+  return [...resolved.values()].sort((a, b) =>
+    a.username.localeCompare(b.username),
+  );
 });
 
 export const getTrades = cache(

@@ -6,6 +6,7 @@ import {
   getOrderbookSummary,
 } from "@/lib/api/endpoints";
 import { groupBy, sum, toLegs } from "@/lib/analytics/legs";
+import { isHouseOrder } from "@/lib/analytics/house";
 import { volumeByItem } from "@/lib/analytics/market";
 import { Panel, Caveat } from "@/components/ui/panel";
 import { Stat } from "@/components/ui/stat";
@@ -202,9 +203,7 @@ async function DepthPanel() {
         rows.filter((o) => o.side === "sell"),
         (o) => o.limitPrice * o.remainingAmount,
       );
-      const mmOrders = rows.filter(
-        (o) => o.player?.username === "BulbaStore",
-      ).length;
+      const mmOrders = rows.filter(isHouseOrder).length;
       return {
         listingId,
         itemName: rows[0].listing?.itemName ?? null,

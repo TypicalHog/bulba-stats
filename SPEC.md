@@ -208,6 +208,12 @@ holder count), and implied stock valuation from the `bulba_stock` listing.
   node-and-edge graph
 - **Directional flow** between each pair: which account is the net receiver of
   diamonds and which the net payer, not just the gross traded between them
+- **Bank affiliations** — which accounts operate the house, and which traders
+  share a treasury. Membership is public on every profile but visible only one
+  player at a time, so the structure is invisible without joining the whole
+  directory. It is also a discovery channel: `ayayabot` belongs to a shared
+  bank while appearing in no trade and no bank movement, so nothing else finds
+  it.
 
 ---
 
@@ -288,6 +294,17 @@ each appears:
   because the combined figure describes neither population: quote distance from
   mid (the MM ladders quotes far out by design) and order lifecycle (its ~99%
   cancel rate is requoting to track price, not failed trades).
+- **"The house" is a set of banks, and attribution differs by record type.**
+  The exchange operates through `market_maker`, `bot_supply`, `bulba_revenue`,
+  `bulba_reserve` and `bulba_stock_pool`, and more than one account has access
+  to them. Every resting order carries `bankAccount`, so **order** statistics
+  attribute house liquidity by bank and are exact. **Trades carry no bank** —
+  `view=trades` exposes usernames only, and `view=fills` populates
+  `playerBankAccount` on roughly a tenth of rows, never on the storage-limit
+  fills where the house sits — so trade statistics fall back to the operating
+  account. An account posting house liquidity is therefore house in the order
+  tables and human in the volume tables. This is a limit of the upstream data,
+  stated wherever it applies, not a modelling choice.
 - **Windowed statistics are anchored to the dataset's last event**, not the wall
   clock, so a cached aggregate yields the same figure however old the cache is.
   Order age and book staleness do use request time, since those are genuinely

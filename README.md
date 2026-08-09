@@ -27,7 +27,7 @@ endpoints.
 | **Trades** | Full trade explorer — filter by item, player, venue, mechanism, side |
 | **Orders** | Resting-order analytics: depth ownership by distance from mid, fill and cancel rates, time-to-fill |
 | **Treasury** | Pool balances, daily fee revenue by source, distribution history, stock ownership |
-| **Insights** | Activity heatmaps, price clustering, liquidity coverage, and an interactive trading-network graph |
+| **Insights** | Activity heatmaps, price clustering, liquidity coverage, an interactive trading-network graph, and who operates the house |
 
 Several views offer a toggle that **reframes** the data rather than filtering
 it: prices per single / stack / shulker (stack size is a per-item property),

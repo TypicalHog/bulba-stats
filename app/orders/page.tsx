@@ -14,13 +14,8 @@ import { DataTable, Td, Th, Tr } from "@/components/ui/table";
 import { PlayerLink } from "@/components/ui/entity";
 import { RankedBars, SplitBar } from "@/components/charts/bars";
 import { SERIES } from "@/lib/design";
-import {
-  diamondsCompact,
-  duration,
-  MARKET_MAKER,
-  num,
-  percent,
-} from "@/lib/format";
+import { diamondsCompact, duration, num, percent } from "@/lib/format";
+import { isHouseOrder, partitionByHouse } from "@/lib/analytics/house";
 import { requestTime } from "@/lib/time";
 import { DeepestBooks } from "./deepest-books";
 import { BANDS, bandKey } from "./bands";
@@ -113,9 +108,7 @@ async function RestingBook() {
       .sort((a, b) => a - b);
 
   const distances = collect(orders);
-  const humanDistances = collect(
-    orders.filter((o) => o.player?.username !== MARKET_MAKER),
-  );
+  const humanDistances = collect(partitionByHouse(orders).organic);
 
   /* Histogram buckets for the distance chart — distinct from the imported
      filter BANDS used by the deepest-books table. */
@@ -145,6 +138,9 @@ async function RestingBook() {
       orders: rows.length,
       value: sum(rows, (o) => o.limitPrice * o.remainingAmount),
       listings: new Set(rows.map((o) => o.listing?.id)).size,
+      // An account can post from more than one bank, so house-ness is a share
+      // of their book rather than a property of the name.
+      houseShare: rows.filter(isHouseOrder).length / rows.length,
     }))
     .sort((a, b) => b.orders - a.orders);
 
@@ -262,7 +258,7 @@ async function RestingBook() {
               key: p.username,
               value: p.orders,
               display: `${num(p.orders)} · ${diamondsCompact(p.value)}`,
-              color: p.username === "BulbaStore" ? SERIES[3] : SERIES[2],
+              color: p.houseShare > 0.5 ? SERIES[3] : SERIES[2],
               label: (
                 <PlayerLink username={p.username} uuid={p.uuid} size={16} />
               ),
@@ -431,8 +427,7 @@ async function Lifecycle() {
    * Report both populations rather than one blended number that describes
    * neither.
    */
-  const mmOrders = closed.filter((o) => o.player?.username === MARKET_MAKER);
-  const humanOrders = closed.filter((o) => o.player?.username !== MARKET_MAKER);
+  const { house: mmOrders, organic: humanOrders } = partitionByHouse(closed);
   const flow = orderFlow(closed);
   const humanFlow = orderFlow(humanOrders);
   const mmFlow = orderFlow(mmOrders);

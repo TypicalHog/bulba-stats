@@ -4,7 +4,9 @@ import {
   getAllTrades,
   getListings,
   getOrderbookSummary,
+  getPlayerDirectory,
 } from "@/lib/api/endpoints";
+import { affiliations, type BankNode } from "@/lib/analytics/house";
 import { groupBy, sum, toLegs } from "@/lib/analytics/legs";
 import {
   activityHeatmap,
@@ -19,10 +21,10 @@ import {
   playerStats,
   type CounterpartyEdge,
 } from "@/lib/analytics/players";
-import { Panel, Caveat, SectionTitle } from "@/components/ui/panel";
+import { Panel, Caveat, EmptyState, SectionTitle } from "@/components/ui/panel";
 import { PanelSkeleton } from "@/components/ui/skeleton";
 import { DataTable, Rank, Td, Th, Tr } from "@/components/ui/table";
-import { ItemLink, PlayerLink } from "@/components/ui/entity";
+import { Badge, ItemLink, PlayerLink } from "@/components/ui/entity";
 import { ActivityHeatmap } from "@/components/charts/heatmap";
 import { NetworkGraph } from "./network-graph";
 import { MovingLately } from "./moving-lately";
@@ -77,7 +79,129 @@ export default function InsightsPage() {
       >
         <Network />
       </Suspense>
+
+      <Suspense
+        fallback={<PanelSkeleton height={280} label="Reading bank membership…" />}
+      >
+        <Affiliations />
+      </Suspense>
     </div>
+  );
+}
+
+/* --------------------------------------------------------- affiliations */
+
+/**
+ * Who has access to what.
+ *
+ * Bank membership is public on every player profile but visible only one player
+ * at a time, so the structure it describes — which accounts operate the house,
+ * and which traders share a treasury — is invisible without joining the whole
+ * directory together.
+ */
+async function Affiliations() {
+  const players = await getPlayerDirectory();
+  const { shared, houseMembers } = affiliations(players);
+
+  const houseBanks = shared.filter((b) => b.isHouse);
+  const otherShared = shared.filter((b) => !b.isHouse);
+
+  return (
+    <div>
+      <SectionTitle hint="From public player profiles">
+        Who runs the market
+      </SectionTitle>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Panel
+          title="House banks"
+          subtitle="The accounts the exchange itself operates through"
+        >
+          <BankList banks={houseBanks} />
+          <Caveat>
+            Resting orders name the bank they were posted from, so order-level
+            statistics attribute house liquidity exactly. Trades do not carry a
+            bank, so trade-level statistics fall back to the{" "}
+            <span className="font-mono">{MARKET_MAKER}</span> account — a member
+            posting house liquidity is house in the order tables and human in
+            the volume tables. That is a limit of the upstream data.
+          </Caveat>
+        </Panel>
+
+        <Panel
+          title="Shared banks"
+          subtitle="Treasuries more than one account can draw on"
+        >
+          {otherShared.length ? (
+            <BankList banks={otherShared} />
+          ) : (
+            <EmptyState>No shared banks outside the house.</EmptyState>
+          )}
+          <Caveat>
+            Holdings in a shared bank appear identically on every member&apos;s
+            profile. They belong to the bank, not to each member, and are never
+            summed into personal totals.
+          </Caveat>
+        </Panel>
+      </div>
+
+      {houseMembers.length > 0 && (
+        <div className="mt-4">
+          <Panel
+            title="Accounts with house access"
+            subtitle="Membership of one or more house banks"
+          >
+            <ul className="flex flex-col gap-2">
+              {houseMembers.map((m) => (
+                <li
+                  key={m.username}
+                  className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px]"
+                >
+                  <PlayerLink username={m.username} uuid={m.uuid} size={18} />
+                  <span className="font-mono text-[11px] text-ink-3">
+                    {m.banks.join(" · ")}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <Caveat>
+              Access is not evidence of anything beyond access — an account here
+              can hold house permissions and still trade for itself, and its own
+              trading is counted as human throughout the site.
+            </Caveat>
+          </Panel>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BankList({ banks }: { banks: BankNode[] }) {
+  if (!banks.length) return <EmptyState>Nothing to show.</EmptyState>;
+
+  return (
+    <ul className="flex flex-col divide-y divide-line/60">
+      {banks.map((bank) => (
+        <li key={bank.id} className="flex flex-col gap-1.5 py-2 first:pt-0 last:pb-0">
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-[12px] text-ink">{bank.name}</span>
+            {bank.isHouse && <Badge tone="warn">House</Badge>}
+            <span className="ml-auto text-[11px] text-ink-3">
+              {num(bank.members.length)}{" "}
+              {bank.members.length === 1 ? "member" : "members"}
+            </span>
+          </div>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            {bank.members.map((m) => (
+              <span key={m.username} className="flex items-center gap-1">
+                <PlayerLink username={m.username} uuid={m.uuid} size={16} />
+                {m.isOwner && <Badge>Owner</Badge>}
+              </span>
+            ))}
+          </div>
+        </li>
+      ))}
+    </ul>
   );
 }
 

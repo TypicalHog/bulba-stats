@@ -68,6 +68,22 @@ export default function AboutPage() {
             cancel rate reflects requoting to track price, not failed trades.
           </Method>
 
+          <Method title="What counts as the house">
+            The exchange operates through named bank accounts —{" "}
+            <span className="font-mono">market_maker</span>,{" "}
+            <span className="font-mono">bot_supply</span>,{" "}
+            <span className="font-mono">bulba_revenue</span>,{" "}
+            <span className="font-mono">bulba_reserve</span> and{" "}
+            <span className="font-mono">bulba_stock_pool</span> — and more than
+            one account has access to them. Every resting order names the bank
+            it was posted from, so <strong>order</strong> statistics attribute
+            house liquidity by bank, exactly. Trades carry no bank, so{" "}
+            <strong>trade</strong> statistics fall back to the operating
+            account. The same person can therefore be house in one table and
+            human in another; that is what the data supports, not a judgement.
+            Membership is shown on Insights.
+          </Method>
+
           <Method title="Both sides are counted">
             One trade produces a taker leg and one maker leg per resting order
             matched. Per-player volume counts a player&apos;s own legs, so
