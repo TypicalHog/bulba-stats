@@ -6,6 +6,7 @@ import "./globals.css";
 import { Suspense } from "react";
 import { SiteNav } from "@/components/ui/nav";
 import { CommandPalette } from "@/components/ui/search";
+import { WatchAlerts } from "@/components/live/watch-alerts";
 import { buildIndex } from "@/lib/search-index";
 import { getAllTrades, getListings } from "@/lib/api/endpoints";
 import { SiteFooter } from "@/components/ui/footer";
@@ -54,6 +55,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Suspense fallback={null}>
           <SearchIndex />
         </Suspense>
+        <WatchAlerts />
         <main className="mx-auto w-full max-w-[1600px] flex-1 px-3 py-4 sm:px-5 sm:py-6">
           {children}
         </main>

@@ -349,7 +349,7 @@ export function MarketTable({
             checked={onlyWatched}
             onChange={setOnlyWatched}
             label={`Watchlist (${watched.length})`}
-            hint="Only the listings you have starred, kept in this browser"
+            hint="Only the listings you have starred. Kept in this browser, and alerts fire only while a tab is open."
           />
         )}
 
