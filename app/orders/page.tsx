@@ -17,14 +17,15 @@ import { OrganicBook, type OrganicRow } from "./organic-book";
 import { DaysOfSupply, type SupplyRow } from "./days-of-supply";
 import { Affordability, type AffordRow } from "./affordability";
 import { median, quantile } from "@/lib/analytics/market";
+import { houseCadence } from "@/lib/analytics/cadence";
 import { Panel, Caveat, SectionTitle } from "@/components/ui/panel";
 import { Stat } from "@/components/ui/stat";
 import { PanelSkeleton } from "@/components/ui/skeleton";
 import { DataTable, Td, Th, Tr } from "@/components/ui/table";
-import { PlayerLink } from "@/components/ui/entity";
+import { ItemLink, PlayerLink } from "@/components/ui/entity";
 import { RankedBars, SplitBar } from "@/components/charts/bars";
 import { SERIES } from "@/lib/design";
-import { diamondsCompact, duration, num, percent } from "@/lib/format";
+import { dateOnly, diamondsCompact, duration, num, percent } from "@/lib/format";
 import { isHouseOrder, partitionByHouse } from "@/lib/analytics/house";
 import { anchorNow, DAY_MS, requestTime } from "@/lib/time";
 import { DeepestBooks } from "./deepest-books";
@@ -697,7 +698,8 @@ function DistanceBlock({
 /* ----------------------------------------------------------- lifecycle */
 
 async function Lifecycle() {
-  const { rows: closed, complete } = await getClosedOrders(25);
+  const { rows: closed, complete } = await getClosedOrders(45);
+  const cadence = houseCadence(closed);
 
   /*
    * The recent-order window is overwhelmingly the market maker requoting
@@ -755,6 +757,52 @@ async function Lifecycle() {
               `${percent((mmFlow.total / flow.total) * 100, 0)} of the recent window is the market maker cancelling and requoting, which is how it tracks price rather than a sign of failed trades. `}
             {!complete &&
               `Based on the most recent ${num(flow.total)} completed orders rather than the full archive — the crawl is capped to keep this page responsive.`}
+          </Caveat>
+        </Panel>
+
+        <Panel
+          title="How fast the house re-prices"
+          subtitle="Median time a house quote rests before being pulled and reposted"
+        >
+          {cadence.books.length ? (
+            <ul className="flex flex-col gap-1.5">
+              {cadence.books.slice(0, 10).map((b) => (
+                <li
+                  key={b.listingId}
+                  className="flex flex-wrap items-center gap-2 text-[12px]"
+                >
+                  <ItemLink
+                    listingId={b.listingId}
+                    itemName={b.itemName}
+                    variantName={b.variantName}
+                    size={16}
+                  />
+                  <span className="ml-auto font-mono text-ink">
+                    {b.medianLifetimeMs != null
+                      ? duration(b.medianLifetimeMs)
+                      : "—"}
+                  </span>
+                  <span className="w-20 text-right font-mono text-[11px] text-ink-3">
+                    {num(b.orders)} quotes
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-[12px] text-ink-3">No house quotes in the window.</p>
+          )}
+          <Caveat>
+            The house&apos;s cancel rate is requoting, not failure, so the
+            useful measure is how long a quote rests — the closest thing to its
+            attention. Fastest books first.{" "}
+            {cadence.windowFrom != null && cadence.windowTo != null && (
+              <>
+                Covers {num(cadence.sampled)} house quotes between{" "}
+                {dateOnly(new Date(cadence.windowFrom).toISOString())} and{" "}
+                {dateOnly(new Date(cadence.windowTo).toISOString())}; the crawl
+                is capped, so this is a window rather than all history.
+              </>
+            )}
           </Caveat>
         </Panel>
 
