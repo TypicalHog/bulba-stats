@@ -661,7 +661,8 @@ async function Counterparties({ username }: { username: string }) {
         </DataTable>
       ) : (
         <p className="px-3 py-6 text-center text-[12px] text-ink-3">
-          No named counterparties — their fills swept multiple makers at once.
+          No counterparties yet — nothing they traded has settled against a
+          named account.
         </p>
       )}
     </Panel>

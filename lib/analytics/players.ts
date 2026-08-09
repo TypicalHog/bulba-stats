@@ -284,19 +284,41 @@ export function counterpartiesFor(
   const uuids = uuidIndex(legs);
   const out = new Map<string, CounterpartyRow>();
 
-  for (const leg of legs) {
-    if (leg.username !== username || !leg.counterparty) continue;
-    const row = out.get(leg.counterparty);
+  const add = (other: string, value: number) => {
+    const row = out.get(other);
     if (row) {
-      row.volume += leg.value;
+      row.volume += value;
       row.trades++;
     } else {
-      out.set(leg.counterparty, {
-        username: leg.counterparty,
-        uuid: uuids.get(leg.counterparty) ?? null,
-        volume: leg.value,
+      out.set(other, {
+        username: other,
+        uuid: uuids.get(other) ?? null,
+        volume: value,
         trades: 1,
       });
+    }
+  };
+
+  /*
+   * Walk maker legs only, from both directions — the same trick that makes
+   * `counterpartyEdges` correct.
+   *
+   * A taker leg names a counterparty only when the sweep matched exactly one
+   * maker (see `toLegs`), because there is no single name to give otherwise.
+   * Reading the player's own legs therefore dropped every multi-maker fill
+   * entirely: the value landed on no counterparty at all, understating this
+   * ranking and disagreeing with the network graph built from the same legs.
+   *
+   * A maker leg has no such ambiguity — it names its taker, and carries its own
+   * `fillAmount * price`. So a sweep across three makers contributes three
+   * exact rows rather than being skipped.
+   */
+  for (const leg of legs) {
+    if (!leg.isMaker) continue;
+    if (leg.username === username) {
+      if (leg.counterparty) add(leg.counterparty, leg.value);
+    } else if (leg.counterparty === username) {
+      add(leg.username, leg.value);
     }
   }
 
