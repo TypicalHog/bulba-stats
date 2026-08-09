@@ -131,6 +131,17 @@ export default function AboutPage() {
             the distance bands on the orders page separate depth you could
             realistically hit from a market maker&apos;s ladder.
           </Method>
+
+          <Method title="Trends, and where they're missing">
+            Stat tiles built from the trade record carry a sparkline and a
+            change against the prior period. The book-structure tiles —
+            two-sided books, median spread — carry <strong>neither on purpose</strong>
+            : the API exposes the order book only as it stands right now, so
+            there is no history behind them and a trend line would be invented.
+            Changes in a share are given in <strong>percentage points</strong>,
+            because a share moving from 40% to 43% has risen three points, not
+            3%.
+          </Method>
         </div>
       </div>
 

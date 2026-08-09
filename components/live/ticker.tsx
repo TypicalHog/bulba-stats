@@ -48,58 +48,69 @@ export function LiveTicker({ seed }: { seed: TickerRow[] }) {
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
-    const socket = io(SITE_ORIGIN, {
-      path: WS_PATH,
-      /*
-       * Try the WebSocket first for latency, but keep polling as a fallback.
-       * Pinning transports to websocket alone means a blocked or failed upgrade
-       * — a proxy, a corporate network, a handshake torn down early — kills the
-       * feed outright instead of degrading to long-polling, which this upstream
-       * also serves.
-       */
-      transports: ["websocket", "polling"],
-      // This is a read-only tape; a failed connection degrades to the seeded
-      // rows rather than retrying forever.
-      reconnectionAttempts: 5,
-      reconnectionDelay: 2000,
-    });
-    socketRef.current = socket;
+    let socket: Socket | null = null;
+    let cancelled = false;
 
-    const subscribe = () => {
-      setStatus("live");
-      // Subscriptions are per-connection and must be re-sent on reconnect.
-      socket.emit("subscribe", { type: "Trade" });
-    };
+    /*
+     * Connect on the next tick rather than synchronously.
+     *
+     * React mounts, tears down and remounts effects in development. Opening the
+     * socket immediately means that first throwaway instance is always closed
+     * while its handshake is still in flight, which the browser reports as
+     * "WebSocket is closed before the connection is established". Deferring by a
+     * tick lets the discarded mount finish before any connection is attempted,
+     * so no socket is opened only to be abandoned.
+     */
+    const timer = setTimeout(() => {
+      if (cancelled) return;
 
-    socket.on("connect", subscribe);
-    socket.io.on("reconnect", subscribe);
-    socket.on("disconnect", () => setStatus("offline"));
-    socket.on("connect_error", () => setStatus("offline"));
+      socket = io(SITE_ORIGIN, {
+        path: WS_PATH,
+        /*
+         * WebSocket first for latency, polling kept as a fallback. Pinning to
+         * websocket alone means a blocked upgrade — a proxy, a restrictive
+         * network — kills the feed outright instead of degrading to
+         * long-polling, which this upstream also serves.
+         */
+        transports: ["websocket", "polling"],
+        // A read-only tape: a failed connection degrades to the seeded rows
+        // rather than retrying forever.
+        reconnectionAttempts: 5,
+        reconnectionDelay: 2000,
+      });
+      socketRef.current = socket;
 
-    socket.on("broadcast", (msg: BroadcastMsg) => {
-      if (msg.model !== "Trade" || !msg.data) return;
-      const row = toRow(msg.data);
-      if (!row) return;
-      setRows((prev) =>
-        prev.some((r) => r.id === row.id)
-          ? prev
-          : [row, ...prev].slice(0, MAX_ROWS),
-      );
-      setFlash(row.id);
-    });
+      const subscribe = () => {
+        setStatus("live");
+        // Subscriptions are per-connection and must be re-sent on reconnect.
+        socket?.emit("subscribe", { type: "Trade" });
+      };
+
+      socket.on("connect", subscribe);
+      socket.io.on("reconnect", subscribe);
+      socket.on("disconnect", () => setStatus("offline"));
+      socket.on("connect_error", () => setStatus("offline"));
+
+      socket.on("broadcast", (msg: BroadcastMsg) => {
+        if (msg.model !== "Trade" || !msg.data) return;
+        const row = toRow(msg.data);
+        if (!row) return;
+        setRows((prev) =>
+          prev.some((r) => r.id === row.id)
+            ? prev
+            : [row, ...prev].slice(0, MAX_ROWS),
+        );
+        setFlash(row.id);
+      });
+    }, 0);
 
     return () => {
-      /*
-       * Tearing down mid-handshake is normal — React runs effects twice in
-       * development, and any navigation can unmount before the upgrade
-       * completes. Drop our listeners first so the teardown can't flip state on
-       * an unmounted component; the browser may still log "closed before the
-       * connection is established", which is the socket being cancelled on
-       * purpose rather than a failure.
-       */
-      socket.removeAllListeners();
-      socket.io.removeAllListeners();
-      socket.disconnect();
+      cancelled = true;
+      clearTimeout(timer);
+      // Listeners go first so a teardown can't set state on an unmounted tree.
+      socket?.removeAllListeners();
+      socket?.io.removeAllListeners();
+      socket?.disconnect();
       socketRef.current = null;
     };
   }, []);

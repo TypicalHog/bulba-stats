@@ -194,9 +194,18 @@ than just hiding rows:
 |---|---|---|
 | Market table | Single / Stack / Shulker | Stack size is a per-item property (1, 16 or 64), so a stack price is a per-row multiplier, not a constant |
 | Daily volume | By venue / by side | Both partition the same total, so column heights stay comparable and only the split changes |
+| What's moving | 1d / 7d / 30d / all time | Re-bucketed in the browser from one flat list of taker legs, so no window costs a request |
 | Deepest books | All / ±25% / ±10% / ±5% of mid | Total resting value largely measures how far a market maker has laddered; the bands isolate depth that could actually fill |
 | Leaderboards | Market maker in / out | It sits on one side of most trades |
-| Network graph | Hide any account | Hiding the house reveals which traders found each other directly |
+| Network graph | Select or hide any account | Hiding the house reveals which traders found each other directly |
+
+**Trends are shown only where history exists.** Stat tiles derived from the
+trade record carry a sparkline and a change against the prior period. The
+book-structure tiles (two-sided books, median spread) deliberately carry
+neither: the API exposes the order book only as it stands right now, so there
+is no history behind them and a sparkline would be invented. Share deltas are
+expressed in **percentage points**, since a share moving 40% → 43% has risen
+three points, not 3%.
 
 Concretely, the market table is built from four upstream requests and renders
 immediately; the depth-ownership panel below it needs the ~20,700-row order

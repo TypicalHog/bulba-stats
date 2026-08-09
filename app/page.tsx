@@ -5,7 +5,6 @@ import {
   getListings,
   getOrderbookSummary,
   getRecentTrades,
-  getTreasury,
 } from "@/lib/api/endpoints";
 import {
   bookHealth,
@@ -246,7 +245,7 @@ async function MarketHeader() {
           value={percent(totals.buyShare * 100)}
           delta={buyShare7.delta}
           deltaUnit="pp"
-          deltaLabel="7d vs prior"
+          deltaLabel="vs prior 7d"
           spark={shareSeries((d) => d.buy)}
         />
         <Stat
@@ -254,14 +253,14 @@ async function MarketHeader() {
           value={percent(totals.physicalShare * 100)}
           delta={physicalShare7.delta}
           deltaUnit="pp"
-          deltaLabel="7d vs prior"
+          deltaLabel="vs prior 7d"
           spark={shareSeries((d) => d.physical)}
         />
         <Stat
           label="Trades / day"
           value={num(totals.trades / marketAgeDays, 1)}
           delta={tradesDelta}
-          deltaLabel="7d vs prior"
+          deltaLabel="vs prior 7d"
           spark={last7.map((d) => d.trades)}
         />
       </div>
@@ -477,10 +476,9 @@ async function TopTraders() {
 /* ----------------------------------------------------------- structure */
 
 async function MarketStructure() {
-  const [trades, summary, treasury] = await Promise.all([
+  const [trades, summary] = await Promise.all([
     getAllTrades(),
     getOrderbookSummary(),
-    getTreasury(),
   ]);
 
   const stats = playerStats(toLegs(trades));
@@ -552,16 +550,6 @@ async function MarketStructure() {
         title="Widest spreads"
         subtitle="Where a market order costs the most"
         bodyClassName="p-0"
-        action={
-          treasury?.stock ? (
-            <Link
-              href="/treasury"
-              className="text-[11px] text-ink-3 hover:text-accent"
-            >
-              Treasury →
-            </Link>
-          ) : undefined
-        }
       >
         <SpreadList rows={widest} />
       </Panel>
