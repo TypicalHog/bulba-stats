@@ -9,6 +9,7 @@ import { CommandPalette } from "@/components/ui/search";
 import { WatchAlerts } from "@/components/live/watch-alerts";
 import { buildIndex } from "@/lib/search-index";
 import { getAllTrades, getListings } from "@/lib/api/endpoints";
+import { BULBA_ICON } from "@/lib/format";
 import { SiteFooter } from "@/components/ui/footer";
 
 /**
@@ -51,6 +52,27 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${firaSans.variable} ${firaCode.variable} h-full`}
     >
       <body className="flex min-h-full flex-col bg-bg text-ink antialiased">
+        {/*
+          Any icon that fails to load falls back to the Bulba mark.
+
+          Item art and player heads both come from third parties, so a rename
+          upstream or an mc-heads outage would otherwise paint a broken-image
+          glyph into every row of a table. A CSS background behind the <img>
+          does not work — the browser draws the broken glyph over it — and
+          `onError` would mean turning `ItemIcon` into a Client Component and
+          hydrating hundreds of table cells. One delegated listener does the
+          same job for the whole page at no hydration cost.
+
+          Capture phase, because `error` does not bubble. First child of
+          <body>, so it is registered before the parser reaches any <img> and
+          therefore before any of them can start failing. The guard stops a
+          loop if the fallback itself ever 404s.
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `addEventListener("error",function(e){var t=e.target;if(t&&t.tagName==="IMG"&&t.src.indexOf("${BULBA_ICON}")<0){t.src="${BULBA_ICON}"}},true)`,
+          }}
+        />
         {/*
           The palette trigger is passed into the header rather than rendered
           beside it. As a direct child of this column flex container it was

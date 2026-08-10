@@ -147,13 +147,35 @@ function roman(n: number): string {
   return out;
 }
 
+/**
+ * The stand-in for anything with no art of its own.
+ *
+ * Served from `public/` rather than upstream. It is the one image that must
+ * never fail — a fallback that 404s is just a second broken icon — and it also
+ * keeps a third-party origin off the critical path, since the nav renders it
+ * in the header of every page.
+ */
+export const BULBA_ICON = "/bulba-icon.webp";
+
+/**
+ * Items upstream has no icon for.
+ *
+ * `bulba_stock` is BulbaStore's own share — listing #1, and the only listing
+ * that is not a Minecraft block, so there is no item art to serve. It 404s, and
+ * a 404 renders as a broken-image glyph on every row it appears in. Their own
+ * site uses the Bulba mark for it, so this does too.
+ *
+ * Checked against all 137 catalog icons: this is the only one missing.
+ */
+const NO_ICON_UPSTREAM = new Set(["bulba_stock"]);
+
 export function itemIconUrl(itemName: string | null | undefined): string {
-  if (!itemName) return `${SITE_ORIGIN}/img/mc-icons/bulba_icon.webp`;
+  if (!itemName || NO_ICON_UPSTREAM.has(itemName)) return BULBA_ICON;
   return `${SITE_ORIGIN}/img/mc-icons/${itemName}.webp`;
 }
 
 export function avatarUrl(uuid: string | null | undefined, size = 32): string {
-  if (!uuid) return `${SITE_ORIGIN}/img/mc-icons/bulba_icon.webp`;
+  if (!uuid) return BULBA_ICON;
   return `https://mc-heads.net/avatar/${uuid}/${Math.min(size * 2, 128)}`;
 }
 

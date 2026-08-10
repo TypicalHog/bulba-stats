@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SITE_ORIGIN } from "@/lib/api/constants";
+import { BULBA_ICON } from "@/lib/format";
 import { RefreshButton } from "./refresh";
 
 const LINKS = [
@@ -40,7 +41,7 @@ export function SiteNav({ search }: { search?: ReactNode }) {
           */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={`${SITE_ORIGIN}/img/mc-icons/bulba_icon.webp`}
+            src={BULBA_ICON}
             alt=""
             width={20}
             height={20}

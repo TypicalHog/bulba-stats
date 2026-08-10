@@ -837,6 +837,31 @@ rendered `image-rendering: pixelated`, with the Bulba icon as fallback. Player
 avatars: `https://mc-heads.net/avatar/<uuid>/<size>`. Both are plain `<img>` —
 `next/image` optimization is pointless for 32px pixel art.
 
+**The Bulba mark is served from `public/`, not upstream.** It is the one image
+that must never fail, and a fallback that 404s is just a second broken icon. It
+is also the nav logo on every page, so hosting it locally keeps a third-party
+origin off the critical path — cross-origin, it arrived late enough to shift the
+whole page (§6).
+
+**Nothing renders as a broken image.** Two layers, because the art comes from
+two third parties:
+
+- `bulba_stock` — listing #1, BulbaStore's own share — is the one catalog entry
+  with no icon upstream; it is not a Minecraft block, so there is nothing to
+  draw, and the URL 404s. `itemIconUrl` maps it to the Bulba mark on the server,
+  as BulbaStore's own site does. All 137 other catalog icons were checked and
+  resolve.
+- Anything else that fails — a rename upstream, an mc-heads outage — is caught
+  by one delegated `error` listener in the shell, which swaps the `src` to the
+  Bulba mark. It is a capture-phase listener because `error` does not bubble,
+  and it sits as the first child of `<body>` so it is registered before the
+  parser reaches any `<img>`. A CSS background behind the image does not work:
+  the browser paints the broken glyph over it. `onError` would work but would
+  make `ItemIcon` a Client Component and hydrate hundreds of table cells for it.
+
+  Verified by blocking both third-party origins outright and loading `/market`:
+  206 images, 0 broken, 64 swapped to the mark.
+
 **The site mark is a brilliant-cut diamond**, drawn in `app/icon.svg` from the
 palette tokens. ◇ is the unit every figure here is denominated in, so the mark
 is the currency rather than a chart glyph — and deliberately *not* BulbaStore's
