@@ -7,6 +7,15 @@
 
 export const SITE_ORIGIN = "https://webstore.bulbastore.uk";
 
+/**
+ * This deployment's own canonical origin — *not* `SITE_ORIGIN`, which is
+ * BulbaStore upstream. Read by `robots.ts` and `sitemap.ts`, which have to emit
+ * absolute URLs and must name production even when a preview build renders
+ * them. Hardcoded deliberately: `VERCEL_URL` would make every preview publish a
+ * sitemap for its own throwaway hostname.
+ */
+export const SELF_ORIGIN = "https://bulba-stats.io";
+
 /** Socket.IO handshake path. Must match exactly or the handshake 404s. */
 export const WS_PATH = "/api/ws";
 

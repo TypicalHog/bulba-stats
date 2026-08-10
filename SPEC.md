@@ -586,6 +586,20 @@ never crossed the boundary.
 | `/compare` | Two to four listings side by side, selection in the URL |
 | `/insights` | The cross-cutting analyses in §2.8 |
 | `/about` | Data sources, methodology, caveats, upstream API reference |
+| `/robots.txt` | Open to every crawler; `/compare` disallowed |
+| `/sitemap.xml` | The fixed routes, every active listing, every trader who has traded |
+
+**Open to crawlers, with one exception.** The whole site is a public read-only
+view of a public API, so `robots.txt` allows everything — search engines and AI
+agents alike. Only `/compare` is disallowed, and not for privacy: its content is
+entirely a `?ids=` query string, a combinatorial URL space of near-duplicates of
+listings already indexed individually under `/market/<id>`.
+
+Sitemap entries carry a **real** `lastModified` — the last time that item or
+trader actually traded, taken from the trade record. A page's figures cannot
+change otherwise, and stamping everything with the build time is the lie that
+teaches crawlers to ignore the field. It is built from the same two cached reads
+as the search palette, and soft-fails to the fixed routes if upstream is down.
 
 **Progressive disclosure.** Overview and item pages lead with what matters and
 render instantly. Anything expensive (full-history aggregates, the open-order
