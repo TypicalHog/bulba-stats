@@ -7,13 +7,16 @@ import { UPSTREAM_TAG } from "@/lib/api/constants";
  * Drop every cached upstream read and re-render the current route with fresh
  * data.
  *
- * Every figure on this site is served from a cache tier measured against
- * upstream cost — 15s for the order book, 60s for listings and profiles, 5min
- * for the trade-history crawls, 15min for the ~20k-row open-order crawl (see
- * `TTL` in `lib/api/client.ts`). That is right for a page nobody is watching,
- * and wrong for the moment you have just traded and want to see it: the tables
- * and charts keep showing the pre-trade world until the tier lapses, with
- * nothing on screen admitting it.
+ * Every figure on this site is served from a cache measured against upstream
+ * cost — a tier for the cheap reads, and for the expensive ones a key derived
+ * from the data itself (see `TTL` and `crawlSplit` in `lib/api/client.ts`).
+ * That is right for a page nobody is watching, and wrong for the moment you
+ * have just traded and want to see it: the tables and charts keep showing the
+ * pre-trade world until the tier lapses, with nothing on screen admitting it.
+ *
+ * Content-addressing does not remove the need for this. It makes a *stale*
+ * crawl impossible to serve once the probe has noticed, but the probe is itself
+ * on a 90-second tier, so the pre-trade world can still survive a page load.
  *
  * `updateTag`, not `revalidateTag`. `revalidateTag(tag, "max")` marks the entry
  * stale and serves the stale copy while refetching behind it, so the click

@@ -174,9 +174,9 @@ async function MarketBody() {
 /**
  * Who owns the resting liquidity, market-wide.
  *
- * Derived from one full order crawl (cached 15 minutes) rather than 118
- * per-listing book requests — the same data, an eighth of the requests, and it
- * carries per-player ownership the summary endpoint doesn't expose.
+ * Derived from one full order crawl rather than 118 per-listing book requests —
+ * the same data, an eighth of the requests, and it carries per-player ownership
+ * neither `/orderbook` nor `/orders/summary` exposes.
  */
 async function DepthPanel() {
   const [{ rows: orders, complete }, summary] = await Promise.all([

@@ -176,9 +176,11 @@ export default function AboutPage() {
             Every figure is read server-side and cached, so a page view usually
             costs the upstream API nothing. The window depends on what it costs
             to fetch: {TTL.live}s for the order book, {TTL.near}s for listings
-            and profiles, {TTL.aggregate}s for the full trade-history crawls,{" "}
-            {TTL.heavy}s for the ~20,000-row open-order crawl. A number can
-            therefore sit behind the market by up to its tier, which is the
+            and candles, {TTL.aggregate}s for trade history and profiles. The
+            22,000-row order crawl is not on a timer at all — it is keyed to a
+            one-request digest of the book, so it is re-read when the book
+            actually moves rather than every {TTL.heavy}s regardless. A number
+            can therefore sit behind the market by up to its tier, which is the
             wrong trade exactly once —{" "}
             <strong>when you have just traded and want to see it</strong>. The
             Refresh control in the header discards every cached read and

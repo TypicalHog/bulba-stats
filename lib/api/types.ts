@@ -242,6 +242,35 @@ export type LimitOrder = {
   bankAccount: BankRef | null;
 };
 
+/**
+ * A row of `GET /orders/summary` — resting orders folded to one row per
+ * (side, listing, bank account).
+ *
+ * Undocumented but live and public, found by probing alongside the documented
+ * routes. It answers in one request what the `/orders` crawl answers in a
+ * hundred, which is why it is the change signal for both order crawls. It is
+ * not a substitute for them: price is collapsed to `minPrice`/`maxPrice`, so a
+ * book cannot be rebuilt from it, and the grouping is by bank account rather
+ * than by player, so it cannot attribute an order in a shared bank to whoever
+ * actually wrote it.
+ */
+export type OrderSummaryGroup = {
+  side: "buy" | "sell";
+  listing: ListingRef | null;
+  bankAccount: BankRef | null;
+  /** Orders folded into this row. */
+  count: number;
+  totalAmount: number;
+  filledAmount: number;
+  remainingAmount: number;
+  remainingValue: number;
+  minPrice: number;
+  maxPrice: number;
+  statuses: OrderStatus[];
+  /** Highest order id in the group. */
+  latestId: number;
+};
+
 export type Balance = VariantFields & {
   /** All units held, free or locked. */
   total: number;

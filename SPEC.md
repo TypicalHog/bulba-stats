@@ -34,6 +34,7 @@ auth. BulbaStats never writes.
 | `GET /transactions?view=trades` | One row per taker action, with a `makers[]` array and `fee` |
 | `GET /transactions?view=fills` | One row per transaction record, incl. bank operations |
 | `GET /orders` | Limit orders, all statuses, cursor-paginated |
+| `GET /orders/summary` | Resting orders folded per (side, listing, bank) — the whole book in one call |
 | `GET /players/:username` | Profile, banks, per-variant balances |
 | `GET /treasury` | Pools, distribution schedule, stock (shares outstanding / holders) |
 | `GET /treasury/revenue?days=N` | Daily fee revenue split by `physical_fees` / `storage_fees` |
@@ -51,45 +52,125 @@ depends on them.
 unauthenticated): `/treasury`, `/treasury/revenue`, `/treasury/distributions`,
 `/lending/*`. These power the Treasury section.
 
+`/orders/summary` is undocumented too, found by probing the routes around the
+documented ones. It answers in one request what the `/orders` crawl answers in a
+hundred and eleven, and it accepts the same `listingId` / `status` / `username`
+filters. It is **not** a replacement for the crawl — price collapses to
+`minPrice`/`maxPrice`, so no book can be rebuilt from it, and rows group by bank
+account rather than by player, so an order written from a shared bank cannot be
+attributed to whoever actually wrote it. What it is good for is knowing whether
+anything changed, which is exactly how §1.3 uses it.
+
+Two behaviours of the live API that the caching model depends on, both verified
+against the host rather than taken from the docs:
+
+- **Unknown query parameters are ignored, not rejected.** `?sort=`, `?fields=`
+  and `?updatedAfter=` all return the byte-identical response, same `ETag`.
+- **`before` and `after` are plain exclusive id bounds** (`id < n` and `id > n`),
+  and accept any integer rather than only a cursor the API itself issued.
+  `after` is implemented on `/transactions` only; `/orders` accepts it and
+  silently ignores it.
+
 ### 1.2 Observed data volumes
 
 Measured against the live API. These drive the caching strategy.
 
 | Dataset | Rows | Pages @200 | Wall time |
 |---|---|---|---|
-| Taker trades (`view=trades`) | ~200 | 2 | ~1.2 s |
-| Trade fills (`view=fills`) | ~3,900 | 20 | ~5 s |
-| Bank operations (deposit/withdraw/transfer/pay) | ~3,400 | 17 | ~3.5 s |
-| Open limit orders | ~20,700 | 104 | ~20 s |
+| Taker trades (`view=trades`) | ~225 | 2 | ~1.3 s |
+| Trade fills (`view=fills`) | ~3,965 | 20 | ~4.8 s |
+| Bank operations (deposit/withdraw/transfer/pay) | ~3,548 | 18 | ~4.9 s |
+| Open limit orders | ~22,144 | 111 | ~21.3 s |
+| Closed limit orders | ~247,000 | ~1,236 | not crawlable |
 | Listings / order books | 184 / 118 | 1 each | <1 s |
 
 The market opened 2026-07-12, so full history is small enough to aggregate
 **exhaustively on the server** rather than sampling — every statistic on this site
 is computed over the complete dataset, not an estimate.
 
-The one exception is the open-order crawl (~20,700 rows, 92% of them from the
-`BulbaStore` market-maker). It gets its own long cache window and is only pulled
-by the pages that genuinely need order-level detail.
+Two datasets are exceptions, and they are different kinds of exception.
+
+The open-order crawl (~22,144 rows, 92% of them from the `BulbaStore`
+market-maker) is merely expensive: it is complete, it is just 111 sequential
+requests, so only the pages that need order-level detail pull it.
+
+The closed-order set is genuinely out of reach. Order ids run to ~269,600
+against ~22,100 still open, so roughly **247,000 orders have closed** — some
+1,236 pages, growing by thousands a day and never shrinking. Nothing this site
+does reads all of it. `getClosedOrders` takes the newest 45 pages, which is
+about five days, and the fill-rate and time-to-fill panels say so rather than
+implying whole-history coverage. That window narrows in calendar terms as the
+market gets busier, which no amount of caching fixes; only an aggregate endpoint
+upstream would.
+
+The payload is repetitive rather than large. 46% of an order row is its embedded
+`listing` object (36% is the `nbt` array alone) and 82% of a taker-trade row is
+`makers[]`, mostly the same account's uuid and username over and over. gzip
+compresses an order page 52.8×, so **the wire is not the constraint — request
+count is**, and the caching below is built around that.
 
 ### 1.3 Caching
 
 No Cache Components (`cacheComponents` is off), so the previous model applies:
 `fetch(url, { next: { revalidate, tags } })`.
 
-| Tier | Revalidate | Requests per refresh | Applies to |
-|---|---|---|---|
-| Live | 5 s | 1 | Order book summary, recent trades, per-listing book |
-| Near-live | 20 s | 1 | Candles, listings, player profiles |
-| Aggregate | 90 s | ~39 | Full trade/fill history crawls, derived market stats |
-| Heavy | 300 s | 104 | Full open-order crawl |
-| Static | 900 s | 1 | Commands, API docs |
+| Tier | Revalidate | Applies to |
+|---|---|---|
+| Live | 5 s | Order book summary, recent trades, per-listing book |
+| Near-live | 20 s | Candles, listings |
+| Aggregate | 90 s | History crawls, player profiles, the two change probes |
+| Heavy | 300 s | Order crawls, when they cannot be pinned |
+| Frozen | 3600 s | Anchored history, pinned crawl pages — a backstop, not the mechanism |
+| Static | 900 s | Commands, API docs |
 
-Sized against the 120 req/min allowance (§1.4). Sustained worst case — someone
-watching a page in every tier continuously — is roughly 26 + 21 + 12 + 3 ≈ 62
-req/min, leaving room for the hourly capture's 60 req/min burst to overlap
-without either side being throttled. These set the floor for *passive*
-freshness; wanting to see a trade the moment it lands is what Refresh is for,
-so the tiers are not priced for it.
+A tier alone is a poor instrument: it cannot tell "five minutes have passed"
+apart from "something happened", and the measured book routinely sits unchanged
+for hours — during one observation the newest order was 2 h 45 m old. Under a
+tier alone the site re-read 22,144 rows twelve times an hour to rediscover it.
+
+So the expensive reads are not paced by the clock. Two mechanisms replace it,
+both leaning on API behaviour verified in §1.1.
+
+**History is split at an anchor.** A `before` chain is deterministic, but each
+page's URL comes from the previous page's cursor, so one new row at the front
+shifts every cursor behind it — and under a URL-keyed cache that re-fetches all
+of history to discover two new fills. `crawlSplit` cuts the timeline at an id
+rounded down to the nearest 1,000: everything below it is a fixed window of the
+past whose pages stay cached until the anchor moves (roughly every three days at
+observed rates), and everything above is fetched forward with `after`, which is
+at most a couple of pages. One shared probe finds the anchor for all three
+transaction crawls. It rests on transactions being append-only; the one mutation
+that exists, a `pending` row reaching `success`, was measured settling in ~50 ms
+against an anchor that trails by days.
+
+**Order crawls are content-addressed.** `/orders/summary` returns the whole
+resting book folded to 326 rows in one request. Digesting its `count`,
+`remainingAmount` and `latestId` per group gives a token that changes exactly
+when the book does — a fill moves `remainingAmount`, a cancel moves `count`, a
+new order raises `latestId`, and price cannot be amended in place, so a requote
+moves two of the three. That token rides along on every crawl page URL as `&v=`,
+which the API ignores and the fetch cache does not. While the book holds still
+the crawl is served from cache for the price of that one request; the moment it
+moves, every URL changes and the crawl runs for real. `TTL.frozen` caps how long
+a wrong digest could go unnoticed.
+
+Measured by prerendering every route twice, the second time with every tier
+expired: **424 upstream requests and 34.4 MB before, 80 requests and 1.74 MB
+after** — 81% fewer requests, 95% less data. Not one page of either order crawl
+ran; both were served whole from their pinned keys.
+
+What remains is mostly the thing neither mechanism can help with. Of those 80
+requests, 44 are the 22 profile fetches behind the player directory, because
+there is no accounts index upstream (§1.1) and a profile has no cheap change
+signal. History crawling is down to a shared anchor probe plus five head pages.
+
+Sustained worst case falls from ~102 req/min to ~47 against the 120 allowance
+(§1.4) while the book is still, and rises toward the old figure when it is
+continuously active — but then the crawl is running because the book moved,
+which is the only reason it should.
+
+These set the floor for *passive* freshness; wanting to see a trade the moment it
+lands is what Refresh is for, so the tiers are not priced for it.
 
 Pages stream: the shell and cheap tiles render immediately, expensive aggregates
 arrive behind `<Suspense>`.

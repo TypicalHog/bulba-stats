@@ -80,9 +80,27 @@ nothing to show.
 Server Components fetch from the upstream API and run the aggregation in
 `lib/analytics/`; Client Components handle sorting, filtering, chart hover, and
 the Socket.IO live feed. Results are cached with Next.js `revalidate` tiers
-(5 s for live book data up to 5 min for the full open-order crawl), so a page
-view usually costs the upstream API nothing. Every cached read also carries a
-shared tag, which is what **Refresh** expires.
+(5 s for live book data upward), so a page view usually costs the upstream API
+nothing. Every cached read also carries a shared tag, which is what **Refresh**
+expires.
+
+The two expensive reads are not paced by the clock at all, because a timer
+cannot tell *time passed* from *something changed* — and the order book measurably
+sits still for hours. Instead:
+
+- **Transaction history is split at an anchor.** Everything below a rounded-off
+  id is a fixed window of the past and stays cached; everything above it is
+  fetched forward with `after`, which is a page or two. Rebuilding history takes
+  about three days at current rates.
+- **The order crawls are content-addressed.** One request to `/orders/summary`
+  digests the whole resting book; that digest keys the crawl's cache. An
+  unchanged book costs one request instead of 111.
+
+Prerendering every route with all caches expired: **424 upstream requests and
+34.4 MB before this, 80 requests and 1.74 MB after** — 81% fewer requests and
+95% less data, with no change to any figure on the site. The split crawl was
+checked against the plain one row by row: same rows, same order, no gaps and no
+duplicates. See [SPEC.md §1.3](SPEC.md#13-caching).
 
 Charts are hand-rolled SVG — no charting dependency.
 
@@ -105,15 +123,17 @@ Deploys to Vercel as a standard Next.js app — no environment variables, no
 database. Two settings are non-default and worth understanding:
 
 - **`vercel.json` pins the region to `lhr1` (London).** Every page proxies to
-  `webstore.bulbastore.uk`, and a cold order crawl is ~104 *sequential*
+  `webstore.bulbastore.uk`, and a cold order crawl is ~111 *sequential*
   requests, so round-trip time dominates rather than compute. The region is
   inferred from the upstream's `.uk` domain — if it is actually hosted
   elsewhere, change this to the nearest region and the cold-cache pages get
   proportionally faster.
 - **`maxDuration = 60` on `/market`, `/orders`, `/players` and `/recipes`.** All depend on that crawl,
-  which takes ~20 s locally and would be killed by the default serverless
+  which takes ~21 s locally and would be killed by the default serverless
   timeout on a cold cache. 60 s is the Hobby-tier ceiling, so it is safe on any
-  plan. Warm requests return from cache immediately.
+  plan. Warm requests return from cache immediately — and stay warm across a
+  revalidation now that the crawl is keyed by the book's content rather than by
+  a timer, so paying that cold cost twice in a row takes a change in the book.
 
 - **The capture will switch itself off unless you stop it.** GitHub disables
   scheduled workflows in a public repository "when no repository activity has

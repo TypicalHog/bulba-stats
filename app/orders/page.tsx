@@ -39,10 +39,12 @@ export const metadata = {
 };
 
 /**
- * The resting-order crawl is ~104 sequential upstream requests and takes about
- * 20 s locally, which is past the default serverless timeout — a cold cache
+ * The resting-order crawl is ~111 sequential upstream requests and takes about
+ * 21 s locally, which is past the default serverless timeout — a cold cache
  * would be killed mid-crawl. 60 s is the ceiling on Vercel's Hobby tier, so it
- * is safe on any plan. Warm requests still return from cache immediately.
+ * is safe on any plan. Warm requests still return from cache immediately, and
+ * the crawl is keyed to the book's contents, so a revalidation only pays that
+ * cost again if the book has actually changed.
  */
 export const maxDuration = 60;
 

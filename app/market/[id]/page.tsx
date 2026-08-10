@@ -159,6 +159,32 @@ export default async function ItemPage({
   );
 }
 
+/**
+ * The one book read this page makes.
+ *
+ * Four panels need this book, and they used to ask for it two ways —
+ * `includePlayers` on for the ladder and the participant table, off for the
+ * tiles and the depth curve. The fetch cache is keyed by URL, so that was two
+ * upstream requests for the same book, one of them a strict subset of the
+ * other. Asking once with players on costs a few KB the tiles ignore and saves
+ * a whole sequential round trip, which is the expensive half.
+ *
+ * `trades=1` because nothing here reads `view.trades` — the tape comes from the
+ * trade crawl, which carries maker attribution the fills view doesn't. It is
+ * the minimum the parameter accepts.
+ */
+const itemBook = (listingId: number) =>
+  getOrderbookView(listingId, { includePlayers: true, trades: 1 });
+
+/**
+ * Candle window, shared by the tiles and the chart.
+ *
+ * These asked for 400 and 300 of the same series, which is two upstream
+ * requests for one dataset. One number, one request; the tiles need the wider
+ * of the two for the 7-day change, so the wider one wins.
+ */
+const CANDLE_LIMIT = 400;
+
 /* ---------------------------------------------------------------- tiles */
 
 async function QuoteTiles({
@@ -169,9 +195,9 @@ async function QuoteTiles({
   interval: CandleInterval;
 }) {
   const [view, trades, candles] = await Promise.all([
-    getOrderbookView(listingId, { includePlayers: false, trades: 1 }),
+    itemBook(listingId),
     getAllTrades(),
-    getCandles(listingId, interval, 400),
+    getCandles(listingId, interval, CANDLE_LIMIT),
   ]);
 
   const stats = itemStats(trades, listingId);
@@ -239,7 +265,7 @@ async function PriceHistory({
   listingId: number;
   interval: CandleInterval;
 }) {
-  const candles = await getCandles(listingId, interval, 300);
+  const candles = await getCandles(listingId, interval, CANDLE_LIMIT);
 
   return (
     <Panel
@@ -261,10 +287,7 @@ async function PriceHistory({
 /* --------------------------------------------------------------- depth */
 
 async function DepthPanel({ listingId }: { listingId: number }) {
-  const view = await getOrderbookView(listingId, {
-    includePlayers: false,
-    trades: 1,
-  });
+  const view = await itemBook(listingId);
   if (!view) return null;
 
   const book = bookMetrics(view.orderBook);
@@ -409,10 +432,7 @@ function Fact({
 /* -------------------------------------------------------------- ladder */
 
 async function Ladder({ listingId }: { listingId: number }) {
-  const view = await getOrderbookView(listingId, {
-    includePlayers: true,
-    trades: 1,
-  });
+  const view = await itemBook(listingId);
   if (!view) return null;
 
   /*
@@ -457,10 +477,7 @@ async function Ladder({ listingId }: { listingId: number }) {
 /* -------------------------------------------------------- participants */
 
 async function Participants({ listingId }: { listingId: number }) {
-  const [view, trades] = await Promise.all([
-    getOrderbookView(listingId, { includePlayers: true, trades: 1 }),
-    getAllTrades(),
-  ]);
+  const [view, trades] = await Promise.all([itemBook(listingId), getAllTrades()]);
 
   const resting = view ? participants(view.orderBook) : [];
   const makers = itemMakers(toLegs(trades), listingId).slice(0, 8);

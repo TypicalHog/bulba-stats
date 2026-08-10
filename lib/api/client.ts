@@ -29,7 +29,7 @@ export const API_BASE =
 export const TTL = {
   /** Order book summary, recent trades, per-listing book. 1 request each. */
   live: 5,
-  /** Candles, listings, player profiles. 1 request each. */
+  /** Candles, listings. 1 request each. */
   near: 20,
   /** Full trade/fill history crawls and the stats derived from them. ~39. */
   aggregate: 90,
@@ -37,6 +37,18 @@ export const TTL = {
   heavy: 300,
   /** Commands, API docs. */
   static: 900,
+  /**
+   * Windows that cannot change: history below a `crawlSplit` anchor, and crawl
+   * pages pinned to a content version.
+   *
+   * Not `false`. These entries are only correct while the assumption that
+   * produced them holds — that rows below the anchor are append-only, that the
+   * version digest sees every mutation — and an hour caps how long a wrong
+   * assumption can go unnoticed. It is a backstop, not the refresh mechanism:
+   * the URL changes when the data does, so the cache is normally busted by the
+   * key, not by the clock.
+   */
+  frozen: 3600,
 } as const;
 
 /** Upstream returned a non-2xx. Carries the machine-readable `error.code`. */
@@ -139,8 +151,34 @@ export async function apiGetSoft<T>(
   }
 }
 
+type CrawlOptions = GetOptions & {
+  maxPages?: number;
+  limit?: number;
+  /**
+   * Opaque token appended to every page URL as `&v=`.
+   *
+   * The upstream ignores unknown query parameters — verified against the live
+   * host — so this changes nothing about the response. What it changes is the
+   * *cache key*: Next's fetch cache is keyed by URL, so pinning the crawl to a
+   * digest of the data makes the cached pages content-addressed. While the
+   * digest holds, every page is a cache hit and the crawl costs one request
+   * (the probe that produced the digest) instead of a hundred; the moment the
+   * data moves, every URL changes and the crawl runs for real.
+   *
+   * The alternative — a shorter TTL — cannot tell "five minutes have passed"
+   * apart from "something happened", and the measured book routinely sits
+   * unchanged for hours.
+   */
+  version?: string;
+};
+
+/** Every crawl path already carries a query string, so `&` is always right. */
+const withVersion = (path: string, version?: string) =>
+  version ? `${path}&v=${version}` : path;
+
 /**
- * Walk a cursor-paginated endpoint to the end (or `maxPages`).
+ * Walk a cursor-paginated endpoint backwards (newest first) to the end, or to
+ * `maxPages`.
  *
  * Cursor pagination is inherently serial, so these run sequentially. Every
  * crawl is capped so a dataset that grows unexpectedly can't spiral into
@@ -148,11 +186,7 @@ export async function apiGetSoft<T>(
  */
 export async function crawl<T>(
   buildPath: (before: number | null) => string,
-  {
-    maxPages = 30,
-    limit = 200,
-    ...opts
-  }: GetOptions & { maxPages?: number; limit?: number } = {},
+  { maxPages = 30, limit = 200, version, ...opts }: CrawlOptions = {},
 ): Promise<{ rows: T[]; complete: boolean; pages: number }> {
   const rows: T[] = [];
   let before: number | null = null;
@@ -160,7 +194,7 @@ export async function crawl<T>(
 
   while (pages < maxPages) {
     const page: { data: T[]; meta?: Record<string, unknown> } = await apiGet<T[]>(
-      buildPath(before),
+      withVersion(buildPath(before), version),
       opts,
     );
     pages++;
@@ -176,6 +210,108 @@ export async function crawl<T>(
   }
 
   return { rows, complete: false, pages };
+}
+
+/**
+ * Walk a cursor-paginated endpoint forwards (oldest first) via `after`.
+ *
+ * `/transactions` is the only endpoint that implements it — `/orders` accepts
+ * `after` and silently ignores it, returning the same first page — so this is
+ * deliberately not general.
+ */
+async function crawlForward<T>(
+  buildPath: (after: number | null) => string,
+  { maxPages = 8, limit = 200, version, ...opts }: CrawlOptions = {},
+): Promise<{ rows: T[]; complete: boolean; pages: number }> {
+  const rows: T[] = [];
+  let after: number | null = null;
+  let pages = 0;
+
+  while (pages < maxPages) {
+    const page: { data: T[]; meta?: Record<string, unknown> } = await apiGet<T[]>(
+      withVersion(buildPath(after), version),
+      opts,
+    );
+    pages++;
+    const { data, meta } = page;
+    if (!data.length) return { rows, complete: true, pages };
+    rows.push(...data);
+
+    const next: unknown = meta?.nextAfter;
+    if (typeof next !== "number") return { rows, complete: true, pages };
+    after = next;
+    if (data.length < limit) return { rows, complete: true, pages };
+  }
+
+  return { rows, complete: false, pages };
+}
+
+/**
+ * Crawl an append-only endpoint as a frozen history plus a live head.
+ *
+ * The problem this solves: a `before` chain is deterministic, but every page's
+ * URL is derived from the previous page's cursor, so a *single* new row at the
+ * front shifts every cursor behind it and invalidates the whole chain. Under a
+ * URL-keyed cache that means the full history is re-fetched to discover a
+ * handful of new rows — 20 pages and 3.5 MB, every 90 seconds, to learn about
+ * two fills.
+ *
+ * Splitting at a quantized id fixes it. `anchor` moves only once every
+ * `ANCHOR_STEP` ids, so:
+ *
+ * - **History** (`before=anchor`, ids below it) is a fixed window of the past.
+ *   Its cursors are stable, so the pages stay cached until the anchor moves.
+ * - **Head** (`after=anchor - 1`, ids from the anchor up) is small and bounded
+ *   by the step. Its full pages are stable too — they hold the *oldest* rows
+ *   above the anchor, which are already written — so only the final partial
+ *   page actually churns.
+ *
+ * `before` is exclusive (`id < n`) and `after` is exclusive (`id > n`), both
+ * verified against the live host, hence the `anchor - 1`: without it the row
+ * sitting exactly on the anchor falls between the two halves and is lost.
+ *
+ * The assumption is that rows below the anchor never change. Transactions are
+ * append-only, and the one mutation that exists — a `pending` row reaching
+ * `success`, which makes it appear under the default `status=success` filter —
+ * was measured settling in ~50 ms, while the anchor trails the head by up to a
+ * thousand ids (days, at observed rates). A row that stayed pending that long
+ * would be missed until the anchor next moves; `TTL.frozen` bounds it further.
+ *
+ * Returns newest-first, matching `crawl`.
+ */
+export async function crawlSplit<T>(
+  buildPath: (cursor: string) => string,
+  anchor: number,
+  {
+    maxPages = 40,
+    /**
+     * The head can hold at most one anchor step of ids, so at 200 rows a page
+     * six would do. Ten, because running out here silently drops the *newest*
+     * rows — a forward crawl fills from the anchor upward — and that is a much
+     * worse failure than the backward crawl's, which drops the oldest.
+     */
+    headPages = 10,
+    ...opts
+  }: CrawlOptions & { headPages?: number } = {},
+): Promise<{ rows: T[]; complete: boolean; pages: number }> {
+  const history = await crawl<T>(
+    (before) => buildPath(`&before=${before ?? anchor}`),
+    { ...opts, maxPages, revalidate: TTL.frozen },
+  );
+
+  const head = await crawlForward<T>(
+    (after) => buildPath(`&after=${after ?? anchor - 1}`),
+    { ...opts, maxPages: headPages },
+  );
+
+  return {
+    // `head` arrives oldest-first and sits entirely above the anchor; `history`
+    // is already newest-first and entirely below it. The two are disjoint by
+    // construction, so this is a concatenation, not a merge.
+    rows: [...head.rows.reverse(), ...history.rows],
+    complete: history.complete && head.complete,
+    pages: history.pages + head.pages,
+  };
 }
 
 /**

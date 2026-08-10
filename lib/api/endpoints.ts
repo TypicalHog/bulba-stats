@@ -1,6 +1,15 @@
 import "server-only";
+import { createHash } from "node:crypto";
 import { cache } from "react";
-import { apiGet, apiGetOrNull, apiGetSoft, crawl, mapLimit, TTL } from "./client";
+import {
+  apiGet,
+  apiGetOrNull,
+  apiGetSoft,
+  crawl,
+  crawlSplit,
+  mapLimit,
+  TTL,
+} from "./client";
 import {
   BANK_TYPES,
   TRADE_TYPES,
@@ -12,6 +21,7 @@ import {
   type LimitOrder,
   type Listing,
   type OrderStatus,
+  type OrderSummaryGroup,
   type OrderbookDetail,
   type OrderbookSummary,
   type OrderbookView,
@@ -29,7 +39,80 @@ import {
  * Each is wrapped in `React.cache` so a page that needs the listing catalog in
  * four places fetches it once per request, on top of the cross-request
  * `revalidate` cache.
+ *
+ * Two patterns keep the expensive reads from re-running when nothing has
+ * changed; both are documented at their definitions in `client.ts`:
+ *
+ * - **Transaction history is split at an anchor** (`crawlSplit`), so the fixed
+ *   past stays cached and only the head is re-read.
+ * - **Order crawls are content-addressed** — a one-request digest from
+ *   `/orders/summary` pins the crawl's cache key, so an unchanged book costs
+ *   one request rather than a hundred and eleven.
  */
+
+/**
+ * Ids per anchor step for `crawlSplit`.
+ *
+ * The whole cost of the split is the head, which is bounded by this; the whole
+ * benefit is the history staying cached, which ends every time it moves. At the
+ * observed ~340 transaction ids a day, a thousand is roughly a three-day
+ * history rebuild against a head of at most two pages.
+ */
+const ANCHOR_STEP = 1000;
+
+const ALL_TRANSACTION_TYPES = [...TRADE_TYPES, ...BANK_TYPES].join(",");
+
+/**
+ * Where to split transaction history, quantized so it rarely moves.
+ *
+ * Costs one request, shared by all three transaction crawls: the anchor only
+ * has to be a stable id below the newest one, so the same value serves every
+ * `type` filter. It is deliberately read at the same tier as the crawls it
+ * gates — a fresher anchor would just rebuild history more often.
+ */
+const getTransactionAnchor = cache(async (): Promise<number | null> => {
+  // Soft: this one request gates all three transaction crawls, so a failure
+  // here must degrade to crawling them the old way rather than take down every
+  // page that reads history.
+  const data = await apiGetSoft<Fill[]>(
+    `/transactions?view=fills&type=${ALL_TRANSACTION_TYPES}&limit=1`,
+    { revalidate: TTL.aggregate, tags: ["transactions"] },
+  );
+  const newest = data?.[0]?.id;
+  if (typeof newest !== "number") return null;
+  const anchor = Math.floor(newest / ANCHOR_STEP) * ANCHOR_STEP;
+  // A market younger than one step has no history worth freezing.
+  return anchor > 0 ? anchor : null;
+});
+
+/** Short digest of whatever the caller decides identifies a dataset's state. */
+const digest = (parts: readonly string[]): string =>
+  createHash("sha1").update(parts.join("|")).digest("hex").slice(0, 16);
+
+/**
+ * A token that changes exactly when the resting-order set does.
+ *
+ * Every mutation an order can undergo shows up in this fold. A fill or a
+ * partial changes `remainingAmount`; a cancel or an expiry sweep changes
+ * `count`; a new order raises `latestId`. Price cannot be amended in place —
+ * there is no such endpoint — so a requote is a cancel plus an insert and moves
+ * two of the three. Returns null if the summary is unavailable, which makes the
+ * caller fall back to an unpinned crawl rather than pin to a stale key.
+ */
+async function orderBookVersion(status: string): Promise<string | null> {
+  const groups = await getOrderSummary(status);
+  if (!groups) return null;
+  return digest(
+    groups
+      .map(
+        (g) =>
+          `${g.listing?.id ?? 0}:${g.side}:${g.bankAccount?.id ?? 0}:${g.count}:${g.remainingAmount}:${g.latestId}`,
+      )
+      // The upstream's group order is not guaranteed, and a reordering that
+      // changed the digest would trigger a pointless hundred-page crawl.
+      .sort(),
+  );
+}
 
 export const getListings = cache(async (): Promise<Listing[]> => {
   const { data } = await apiGet<Listing[]>("/listings", {
@@ -39,10 +122,22 @@ export const getListings = cache(async (): Promise<Listing[]> => {
   return data;
 });
 
-export const getListing = cache(
-  async (id: number): Promise<Listing | null> =>
-    apiGetOrNull<Listing>(`/listings/${id}`, { revalidate: TTL.near }),
-);
+/**
+ * One listing, usually without asking for it.
+ *
+ * The root layout fetches the whole catalog on every route to build the command
+ * palette, and a catalog row is byte-identical to what `/listings/:id` returns
+ * — verified against the live host, including the three inactive listings the
+ * catalog turns out to carry. So the common case is a lookup in something
+ * already cached, and the request only happens for an id the catalog does not
+ * have, which is the one case only that endpoint can answer.
+ */
+export const getListing = cache(async (id: number): Promise<Listing | null> => {
+  const catalog = await getListings().catch(() => [] as Listing[]);
+  const found = catalog.find((listing) => listing.id === id);
+  if (found) return found;
+  return apiGetOrNull<Listing>(`/listings/${id}`, { revalidate: TTL.near });
+});
 
 /** Best bid/ask/mid/spread for every active listing — one request. */
 export const getOrderbookSummary = cache(
@@ -111,26 +206,43 @@ export const getPriceQuote = cache(
     ),
 );
 
+/**
+ * A player profile.
+ *
+ * Deliberately on the aggregate tier rather than a fresher one. A profile is
+ * never read on its own: every page that shows one also shows figures derived
+ * from the trade crawls, so a 20-second profile against a 90-second page bought
+ * no visible freshness — it just meant the 22-account directory sweep re-ran
+ * four and a half times as often.
+ */
 export const getPlayer = cache(
   async (username: string): Promise<Player | null> =>
     apiGetOrNull<Player>(`/players/${encodeURIComponent(username)}`, {
-      revalidate: TTL.near,
+      revalidate: TTL.aggregate,
     }),
 );
 
 /**
  * Every taker action in market history, newest first.
  *
- * ~200 rows / 2 pages today (the market opened 2026-07-12), so this is the
+ * ~225 rows / 2 pages today (the market opened 2026-07-12), so this is the
  * complete record rather than a sample. `makers[]` on each row is what makes
  * maker-side attribution possible.
+ *
+ * Split at the anchor even though it is only two pages: this is the one crawl
+ * the root layout runs, so it is on the critical path of every route, and
+ * `makers[]` makes it 2.5 KB a row — the heaviest payload per row on the site.
+ * Freezing the history stops half a megabyte moving on every revalidation.
  */
 export const getAllTrades = cache(async (): Promise<Trade[]> => {
-  const { rows } = await crawl<Trade>(
-    (before) =>
-      `/transactions?view=trades&limit=200${before ? `&before=${before}` : ""}`,
-    { maxPages: 25, revalidate: TTL.aggregate, tags: ["trades"] },
-  );
+  const anchor = await getTransactionAnchor();
+  const path = (cursor: string) =>
+    `/transactions?view=trades&limit=200${cursor}`;
+  const opts = { maxPages: 25, revalidate: TTL.aggregate, tags: ["trades"] };
+
+  const { rows } = anchor
+    ? await crawlSplit<Trade>(path, anchor, opts)
+    : await crawl<Trade>((before) => path(before ? `&before=${before}` : ""), opts);
   return rows;
 });
 
@@ -146,27 +258,31 @@ export const getRecentTrades = cache(
   },
 );
 
-/** Every trade-type transaction row (~3,900), including maker fills. */
-export const getAllFills = cache(async (): Promise<Fill[]> => {
-  const types = TRADE_TYPES.join(",");
-  const { rows } = await crawl<Fill>(
-    (before) =>
-      `/transactions?view=fills&type=${types}&limit=200${before ? `&before=${before}` : ""}`,
-    { maxPages: 40, revalidate: TTL.aggregate, tags: ["fills"] },
-  );
-  return rows;
-});
+/** Every transaction row of the given types, newest first, split at the anchor. */
+async function allTransactions(
+  types: readonly string[],
+  tag: string,
+): Promise<Fill[]> {
+  const anchor = await getTransactionAnchor();
+  const path = (cursor: string) =>
+    `/transactions?view=fills&type=${types.join(",")}&limit=200${cursor}`;
+  const opts = { maxPages: 40, revalidate: TTL.aggregate, tags: [tag] };
 
-/** Every internal bank movement (~3,400): deposit, withdraw, transfer, pay. */
-export const getAllBankOps = cache(async (): Promise<Fill[]> => {
-  const types = BANK_TYPES.join(",");
-  const { rows } = await crawl<Fill>(
-    (before) =>
-      `/transactions?view=fills&type=${types}&limit=200${before ? `&before=${before}` : ""}`,
-    { maxPages: 40, revalidate: TTL.aggregate, tags: ["bankops"] },
-  );
+  const { rows } = anchor
+    ? await crawlSplit<Fill>(path, anchor, opts)
+    : await crawl<Fill>((before) => path(before ? `&before=${before}` : ""), opts);
   return rows;
-});
+}
+
+/** Every trade-type transaction row (~3,965), including maker fills. */
+export const getAllFills = cache(
+  async (): Promise<Fill[]> => allTransactions(TRADE_TYPES, "fills"),
+);
+
+/** Every internal bank movement (~3,550): deposit, withdraw, transfer, pay. */
+export const getAllBankOps = cache(
+  async (): Promise<Fill[]> => allTransactions(BANK_TYPES, "bankops"),
+);
 
 /**
  * Every account the public data mentions, with its banks.
@@ -282,32 +398,78 @@ export const getOrders = cache(
   },
 );
 
+const OPEN_STATUS = "pending,partially_filled";
+const CLOSED_STATUS = "filled,cancelled,expired";
+
 /**
- * The full resting-order book across every listing (~20,700 rows, ~20 s).
+ * Resting orders folded to one row per (side, listing, bank account) — the
+ * whole open book in a single request.
  *
- * The heaviest read on the site by an order of magnitude, so it gets the
- * longest cache window and only the pages that need order-level ownership
- * call it. `complete: false` means the page cap was hit — surface that rather
- * than presenting a truncated crawl as the whole book.
+ * Undocumented upstream; see the note on `OrderSummaryGroup` for what it can
+ * and cannot answer. Soft, because everything that depends on it degrades to
+ * running the crawl unpinned.
+ */
+export const getOrderSummary = cache(
+  async (status: string = OPEN_STATUS): Promise<OrderSummaryGroup[] | null> =>
+    apiGetSoft<OrderSummaryGroup[]>(`/orders/summary?status=${status}`, {
+      revalidate: TTL.aggregate,
+      tags: ["order-summary"],
+    }),
+);
+
+/**
+ * The full resting-order book across every listing (~22,100 rows, 111 pages,
+ * ~21 s).
+ *
+ * The heaviest read on the site by an order of magnitude. Only the pages that
+ * need order-level detail call it, and it is pinned to a digest of
+ * `/orders/summary` so an unchanged book is served from cache for the price of
+ * that one request — which matters because the book measurably sits still for
+ * hours at a time, while the tier alone would re-crawl it twelve times an hour.
+ *
+ * `complete: false` means the page cap was hit — surface that rather than
+ * presenting a truncated crawl as the whole book.
  */
 export const getAllOpenOrders = cache(
   async (): Promise<{ rows: LimitOrder[]; complete: boolean }> => {
+    const version = await orderBookVersion(OPEN_STATUS);
     const { rows, complete } = await crawl<LimitOrder>(
       (before) =>
-        `/orders?status=pending,partially_filled&limit=200${before ? `&before=${before}` : ""}`,
-      { maxPages: 130, revalidate: TTL.heavy, tags: ["open-orders"] },
+        `/orders?status=${OPEN_STATUS}&limit=200${before ? `&before=${before}` : ""}`,
+      {
+        maxPages: 130,
+        // Pinned: the key changes when the book does, so the clock is only a
+        // backstop. Unpinned, the old tier is still what bounds staleness.
+        revalidate: version ? TTL.frozen : TTL.heavy,
+        tags: ["open-orders"],
+        version: version ?? undefined,
+      },
     );
     return { rows, complete };
   },
 );
 
-/** Closed orders — the input to fill-rate and time-to-fill statistics. */
+/**
+ * Closed orders — the input to fill-rate and time-to-fill statistics.
+ *
+ * Pinned the same way as the open book. Note what `complete: false` means
+ * here: ids run to ~269,600 against ~22,100 still open, so roughly 247,000
+ * orders have closed — some 1,236 pages, growing by thousands a day. This crawl
+ * reads the newest `maxPages` of that and nothing reaches the end, which is why
+ * callers surface the truncation rather than implying whole-history coverage.
+ */
 export const getClosedOrders = cache(
   async (maxPages = 25): Promise<{ rows: LimitOrder[]; complete: boolean }> => {
+    const version = await orderBookVersion(CLOSED_STATUS);
     const { rows, complete } = await crawl<LimitOrder>(
       (before) =>
-        `/orders?status=filled,cancelled,expired&limit=200${before ? `&before=${before}` : ""}`,
-      { maxPages, revalidate: TTL.heavy, tags: ["closed-orders"] },
+        `/orders?status=${CLOSED_STATUS}&limit=200${before ? `&before=${before}` : ""}`,
+      {
+        maxPages,
+        revalidate: version ? TTL.frozen : TTL.heavy,
+        tags: ["closed-orders"],
+        version: version ?? undefined,
+      },
     );
     return { rows, complete };
   },
