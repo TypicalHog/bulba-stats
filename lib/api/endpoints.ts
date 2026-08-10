@@ -21,6 +21,7 @@ import {
   type LimitOrder,
   type Listing,
   type OrderStatus,
+  type OrderLevel,
   type OrderSummaryGroup,
   type OrderbookDetail,
   type OrderbookSummary,
@@ -47,7 +48,7 @@ import {
  *   past stays cached and only the head is re-read.
  * - **Order crawls are content-addressed** — a one-request digest from
  *   `/orders/summary` pins the crawl's cache key, so an unchanged book costs
- *   one request rather than a hundred and eleven.
+ *   one request rather than forty-seven.
  */
 
 /**
@@ -415,6 +416,31 @@ export const getOrderSummary = cache(
       revalidate: TTL.aggregate,
       tags: ["order-summary"],
     }),
+);
+
+/**
+ * The whole open book as price levels, attributed per player — one request.
+ *
+ * This is what `getAllOpenOrders` exists to reconstruct, computed upstream
+ * instead. ~9,300 rows in ~600 ms against 47 requests and ~10 s, and verified
+ * to reproduce the official best bid and ask on 118 of 118 listings exactly,
+ * identically to the crawl.
+ *
+ * Prefer it for anything that needs *books*. It carries no timestamps, so order
+ * ages, fill rates and time-to-fill still need the crawl.
+ *
+ * Not soft: everything downstream of it is the page's actual content, so a
+ * failure should surface rather than render an empty market as though it were
+ * a real one.
+ */
+export const getOpenBookLevels = cache(
+  async (): Promise<OrderLevel[]> => {
+    const { data } = await apiGet<OrderLevel[]>(
+      `/orders/summary?groupBy=listing,side,player,price&status=${OPEN_STATUS}`,
+      { revalidate: TTL.aggregate, tags: ["open-orders"] },
+    );
+    return data;
+  },
 );
 
 /**

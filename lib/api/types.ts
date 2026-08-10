@@ -54,8 +54,18 @@ export type BookOrder = {
   username: string;
   uuid: string;
   amount: number;
-  createdAt: string;
-  expiresAt: string | null;
+  /**
+   * Optional because a level can be built from two sources. `includePlayers=true`
+   * and the order-level crawl both carry timestamps; the grouped
+   * `/orders/summary?groupBy=…,player,price` rows do not — they are already
+   * folded, so there is no single order to date.
+   *
+   * Nothing reads these off a book order today: order ages and time-to-fill run
+   * on `LimitOrder[]` straight from the crawl, and `participants` needs only
+   * owner and amount.
+   */
+  createdAt?: string;
+  expiresAt?: string | null;
 };
 
 export type BookLevel = {
@@ -268,6 +278,31 @@ export type OrderSummaryGroup = {
   maxPrice: number;
   statuses: OrderStatus[];
   /** Highest order id in the group. */
+  latestId: number;
+};
+
+/**
+ * A row of `GET /orders/summary?groupBy=listing,side,player,price` — resting
+ * orders folded to one row per price level per player.
+ *
+ * The whole open book in one request. Unlike the ungrouped summary, `price` is
+ * a real level rather than a collapsed min/max, and the grouping key is the
+ * player rather than the bank account — which is what makes it a book that can
+ * be rebuilt and attributed. It carries no timestamps: these rows are folds,
+ * not orders.
+ */
+export type OrderLevel = {
+  side: "buy" | "sell";
+  listing: ListingRef | null;
+  player: PlayerRef | null;
+  price: number;
+  /** Orders folded into this row. */
+  count: number;
+  totalAmount: number;
+  filledAmount: number;
+  remainingAmount: number;
+  remainingValue: number;
+  statuses: OrderStatus[];
   latestId: number;
 };
 

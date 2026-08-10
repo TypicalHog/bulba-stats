@@ -94,7 +94,7 @@ sits still for hours. Instead:
   about three days at current rates.
 - **The order crawls are content-addressed.** One request to `/orders/summary`
   digests the whole resting book; that digest keys the crawl's cache. An
-  unchanged book costs one request instead of 111.
+  unchanged book costs one request instead of 47.
 
 Prerendering every route with all caches expired: **424 upstream requests and
 34.4 MB before this, 80 requests and 1.74 MB after** — 81% fewer requests and
@@ -123,12 +123,12 @@ Deploys to Vercel as a standard Next.js app — no environment variables, no
 database. Two settings are non-default and worth understanding:
 
 - **`vercel.json` pins the region to `lhr1` (London).** Every page proxies to
-  `webstore.bulbastore.uk`, and a cold order crawl is ~111 *sequential*
+  `webstore.bulbastore.uk`, and a cold order crawl is ~47 *sequential*
   requests, so round-trip time dominates rather than compute. The region is
   inferred from the upstream's `.uk` domain — if it is actually hosted
   elsewhere, change this to the nearest region and the cold-cache pages get
   proportionally faster.
-- **`maxDuration = 60` on `/market`, `/orders`, `/players` and `/recipes`.** All depend on that crawl,
+- **`maxDuration = 60` on `/market`, `/orders` and `/players`.** All depend on that crawl,
   which takes ~10 s and would be killed by the default serverless
   timeout on a cold cache. 60 s is the Hobby-tier ceiling, so it is safe on any
   plan. Warm requests return from cache immediately — and stay warm across a

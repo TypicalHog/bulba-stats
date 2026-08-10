@@ -3,6 +3,7 @@ import type {
   BookOrder,
   LimitOrder,
   OrderBook,
+  OrderLevel,
   OrderbookSummary,
 } from "../api/types";
 import { isHouseOrder } from "./house";
@@ -115,6 +116,99 @@ export function reconstructBooks(
   }
 
   return books;
+}
+
+/**
+ * The same books, built from `/orders/summary?groupBy=listing,side,player,price`
+ * instead of the crawl.
+ *
+ * The rows arrive already folded to one per (listing, side, player, price), so
+ * this is the same aggregation as `reconstructBooks` with the inner loop
+ * already done upstream — one request rather than forty-seven. Checked against
+ * `GET /orderbook`: both agree with the official best bid and ask on 118 of 118
+ * listings.
+ *
+ * Two differences from the crawl, both deliberate:
+ *
+ * - **`orderCount` counts orders, not rows.** Each row carries the `count` it
+ *   folded, so the total still matches the crawl's.
+ * - **No expiry filter.** The crawl drops rows whose `expiresAt` has passed but
+ *   which upstream still reports as pending; grouped rows carry no timestamps,
+ *   so that sweep cannot be reproduced here. It is upstream's own filter that
+ *   decides what is in the fold — the same filter behind `GET /orderbook`,
+ *   which these books are checked against.
+ */
+export function booksFromLevels(
+  levels: readonly OrderLevel[],
+): Map<number, ReconstructedBook> {
+  const acc = new Map<
+    number,
+    { bids: Map<number, LevelAcc>; asks: Map<number, LevelAcc>; count: number }
+  >();
+
+  for (const row of levels) {
+    const listingId = row.listing?.id;
+    if (!listingId || row.remainingAmount <= 0) continue;
+
+    let book = acc.get(listingId);
+    if (!book) {
+      book = { bids: new Map(), asks: new Map(), count: 0 };
+      acc.set(listingId, book);
+    }
+    book.count += row.count;
+
+    const side = row.side === "buy" ? book.bids : book.asks;
+    let level = side.get(row.price);
+    if (!level) {
+      level = { price: row.price, quantity: 0, orders: [] };
+      side.set(row.price, level);
+    }
+    level.quantity += row.remainingAmount;
+    if (row.player) {
+      level.orders.push({
+        username: row.player.username,
+        uuid: row.player.uuid,
+        amount: row.remainingAmount,
+      });
+    }
+  }
+
+  const books = new Map<number, ReconstructedBook>();
+  for (const [listingId, book] of acc) {
+    const bids = toLevels(book.bids, "bid");
+    const asks = toLevels(book.asks, "ask");
+    const bestBid = bids[0]?.price ?? null;
+    const bestAsk = asks[0]?.price ?? null;
+    books.set(listingId, {
+      listingId,
+      bids,
+      asks,
+      mid: bestBid != null && bestAsk != null ? (bestBid + bestAsk) / 2 : null,
+      spread: bestBid != null && bestAsk != null ? bestAsk - bestBid : null,
+      orderCount: book.count,
+    });
+  }
+
+  return books;
+}
+
+/**
+ * The grouped books with house-posted liquidity removed.
+ *
+ * Attribution is by player, because grouped rows carry no bank relation —
+ * `isHouseOrder` prefers the bank and only falls back to the operating account.
+ * Checked against the crawl over all 9,384 resting orders: the two agree on
+ * every row, because every trader posts from their own bank and only
+ * `BulbaStore` posts from `market_maker`. It would diverge if a human ever
+ * quoted from a house bank, which `crossCheck` would not catch — it guards the
+ * book, not the split.
+ */
+export function organicBooksFromLevels(
+  levels: readonly OrderLevel[],
+): Map<number, ReconstructedBook> {
+  return booksFromLevels(
+    levels.filter((row) => !isHouseOrder({ player: row.player })),
+  );
 }
 
 /**

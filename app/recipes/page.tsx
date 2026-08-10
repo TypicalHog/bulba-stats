@@ -1,6 +1,6 @@
 import { Suspense } from "react";
-import { getAllOpenOrders, getListings } from "@/lib/api/endpoints";
-import { reconstructBooks } from "@/lib/analytics/reconstruct";
+import { getListings, getOpenBookLevels } from "@/lib/api/endpoints";
+import { booksFromLevels } from "@/lib/analytics/reconstruct";
 import { priceRecipes } from "@/lib/analytics/recipes";
 import {
   assemblyPremiums,
@@ -20,8 +20,10 @@ export const metadata = {
     "Buy it or build it — the cost of crafting, smelting and enchanting every item on BulbaStore, priced against the real order book.",
 };
 
-/** Prices come from the reconstructed books, which need the full order crawl. */
-export const maxDuration = 60;
+/*
+ * Prices come from the whole open book, which is now one request rather than a
+ * forty-seven-page crawl, so this route no longer needs a raised ceiling.
+ */
 
 export default function RecipesPage() {
   return (
@@ -44,12 +46,12 @@ export default function RecipesPage() {
 }
 
 async function RecipesBody() {
-  const [listings, { rows: orders }] = await Promise.all([
+  const [listings, levels] = await Promise.all([
     getListings(),
-    getAllOpenOrders(),
+    getOpenBookLevels(),
   ]);
 
-  const books = reconstructBooks(orders);
+  const books = booksFromLevels(levels);
   const priced = priceRecipes(listings, books);
 
   const rows: RecipeRow[] = priced.map((r) => ({

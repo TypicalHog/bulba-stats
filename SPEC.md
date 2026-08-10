@@ -139,6 +139,18 @@ all. Both were verified to reproduce the official best bid and ask on **118 of
 for order ages and lifecycle statistics, because grouped rows carry no
 timestamps.
 
+`booksFromLevels` builds the books from those rows and `organicBooksFromLevels`
+strips the house from them, both interchangeable with the crawl-based pair.
+Equivalence was checked at full depth, not just at the touch: across all 9,219
+price levels the two agree on every quantity **and** on every per-player amount
+behind each level.
+
+`/recipes` reads the grouped rows and no longer crawls at all — it prices every
+recipe by sweeping books it gets for one request, and its `maxDuration = 60` is
+gone with the crawl that needed it. The remaining crawl callers are `/orders`,
+`/market`, `/players` and `/house`, which each still want something order-level
+alongside their books.
+
 The closed-order set is genuinely out of reach. Order ids run to ~274,700
 against ~9,400 still open, so roughly **265,000 orders have closed** — some
 1,327 pages. It has, however, stopped growing: the ~8,500 ids a day it used to

@@ -187,7 +187,7 @@ type CrawlOptions = GetOptions & {
    * *cache key*: Next's fetch cache is keyed by URL, so pinning the crawl to a
    * digest of the data makes the cached pages content-addressed. While the
    * digest holds, every page is a cache hit and the crawl costs one request
-   * (the probe that produced the digest) instead of a hundred; the moment the
+   * (the probe that produced the digest) instead of forty-seven; the moment the
    * data moves, every URL changes and the crawl runs for real.
    *
    * The alternative — a shorter TTL — cannot tell "five minutes have passed"
