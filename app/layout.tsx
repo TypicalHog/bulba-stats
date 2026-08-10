@@ -23,6 +23,12 @@ const firaSans = Fira_Sans({
   display: "swap",
 });
 
+/*
+ * Both faces stay preloaded. Dropping the preload buys about 0.2 s of FCP by
+ * freeing 108 KB of pipe ahead of the markup — and costs 0.24 CLS, because the
+ * swap then lands after first paint and reflows the page. Measured both ways;
+ * the trade is not worth it.
+ */
 const firaCode = Fira_Code({
   variable: "--font-fira-code",
   weight: ["400", "500", "600"],
