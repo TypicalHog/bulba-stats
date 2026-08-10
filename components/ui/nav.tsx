@@ -30,13 +30,22 @@ export function SiteNav({ search }: { search?: ReactNode }) {
     <header className="sticky top-0 z-30 border-b border-line bg-bg/90 backdrop-blur-sm">
       <div className="mx-auto flex w-full max-w-[1600px] items-center gap-3 px-3 py-2.5 sm:px-5">
         <Link href="/" className="flex shrink-0 items-center gap-2">
+          {/*
+            The size is pinned in CSS, not just in the attributes. Tailwind's
+            preflight sets `img { height: auto }`, which drops the intrinsic
+            height the browser would otherwise reserve — and this icon is
+            cross-origin, so it lands late and grew the sticky header after
+            first paint, shifting the whole page down (CLS 0.24 on mobile).
+            `ItemIcon` and `Avatar` pin their size the same way.
+          */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={`${SITE_ORIGIN}/img/mc-icons/bulba_icon.webp`}
             alt=""
             width={20}
             height={20}
-            className="pixel"
+            className="pixel shrink-0"
+            style={{ width: 20, height: 20 }}
           />
           <span className="text-[13px] font-semibold tracking-tight">
             Bulba<span className="text-accent">Stats</span>

@@ -63,27 +63,38 @@ export default function OverviewPage() {
         <MarketHeader />
       </Suspense>
 
+      {/*
+        Every height below is the panel's measured rendered height, so streamed
+        content swaps in without moving the page. They were guesses before, all
+        of them 150-250px short, which is what the page's layout shift was.
+        Re-measure when a panel's row count or chart height changes.
+      */}
       <div className="grid gap-4 xl:grid-cols-[1fr_340px]">
         <div className="flex min-w-0 flex-col gap-4">
-          <Suspense fallback={<PanelSkeleton height={260} />}>
+          <Suspense fallback={<PanelSkeleton height={444} />}>
             <VolumeHistory />
           </Suspense>
-          <Suspense fallback={<PanelSkeleton height={320} />}>
+          <Suspense fallback={<PanelSkeleton height={492} />}>
             <TopItems />
           </Suspense>
         </div>
 
         <div className="flex min-w-0 flex-col gap-4">
-          <Suspense fallback={<PanelSkeleton height={280} />}>
+          <Suspense fallback={<PanelSkeleton height={417} />}>
             <LiveTradesPanel />
           </Suspense>
-          <Suspense fallback={<PanelSkeleton height={260} />}>
+          <Suspense fallback={<PanelSkeleton height={419} />}>
             <TopTraders />
           </Suspense>
         </div>
       </div>
 
-      <Suspense fallback={<PanelSkeleton height={220} />}>
+      {/* Three panels: stacked on a phone, one row from `lg` up. */}
+      <Suspense
+        fallback={
+          <PanelSkeleton className="h-[1016px] sm:h-[981px] lg:h-[364px]" />
+        }
+      >
         <MarketStructure />
       </Suspense>
     </div>
@@ -516,6 +527,17 @@ async function TopTraders() {
 
 /* ----------------------------------------------------------- structure */
 
+/** How many books each spread panel shows. Both panels scroll past ~8 rows. */
+const SPREAD_ROWS = 25;
+
+function AllBooksLink() {
+  return (
+    <Link href="/market" className="text-[11px] text-ink-3 hover:text-accent">
+      All books →
+    </Link>
+  );
+}
+
 async function MarketStructure() {
   const [trades, summary] = await Promise.all([
     getAllTrades(),
@@ -533,13 +555,23 @@ async function MarketStructure() {
   const totalVolume = shares.reduce((a, b) => a + b, 0);
 
   const withMid = summary.filter((s) => s.mid != null);
-  /* Every quoted book, in both directions — the panels scroll. */
+  /*
+   * The extremes of the book in both directions, not the whole book.
+   *
+   * These two panels used to render every quoted listing. At ~130 rows each
+   * that was over a thousand table cells on the homepage — around two thirds
+   * of its DOM and the largest single contributor to layout time on a phone,
+   * for rows nobody scrolls a 300px box to reach. The head of each ranking is
+   * the part that answers the question; /market ranks and filters the rest.
+   */
   const widest = [...summary]
     .filter((s) => s.spread != null && s.mid)
-    .sort((a, b) => b.spread! / b.mid! - a.spread! / a.mid!);
+    .sort((a, b) => b.spread! / b.mid! - a.spread! / a.mid!)
+    .slice(0, SPREAD_ROWS);
   const tightest = [...summary]
     .filter((s) => s.spread != null && s.mid && s.spread! > 0)
-    .sort((a, b) => a.spread! / a.mid! - b.spread! / b.mid!);
+    .sort((a, b) => a.spread! / a.mid! - b.spread! / b.mid!)
+    .slice(0, SPREAD_ROWS);
 
   return (
     <div className="grid gap-4 lg:grid-cols-3">
@@ -581,7 +613,8 @@ async function MarketStructure() {
 
       <Panel
         title="Tightest spreads"
-        subtitle={`${num(withMid.length)} listings currently quoted`}
+        subtitle={`Top ${SPREAD_ROWS} of ${num(withMid.length)} quoted listings`}
+        action={<AllBooksLink />}
         bodyClassName="p-0"
       >
         <SpreadList rows={tightest} />
@@ -590,6 +623,7 @@ async function MarketStructure() {
       <Panel
         title="Widest spreads"
         subtitle="Where a market order costs the most"
+        action={<AllBooksLink />}
         bodyClassName="p-0"
       >
         <SpreadList rows={widest} />
@@ -666,8 +700,10 @@ function SpreadList({
 function HeaderSkeleton() {
   return (
     <div className="flex flex-col gap-4">
-      <div className="panel h-[132px] animate-pulse" />
-      <TileRowSkeleton count={6} />
+      {/* The hero stacks its figure over the four mini-facts until `lg`. */}
+      <div className="panel h-[278px] animate-pulse sm:h-[221px] lg:h-[145px]" />
+      {/* Seven tiles, not six — the count has to match `MarketHeader`. */}
+      <TileRowSkeleton count={7} />
     </div>
   );
 }

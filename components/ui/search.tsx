@@ -98,11 +98,16 @@ export function CommandPalette({ entries }: { entries: SearchEntry[] }) {
   };
 
   if (!open) {
+    /*
+     * No `aria-label`: it read "Search" while the button shows "Search ⌘K",
+     * and an accessible name that omits part of the visible label breaks
+     * WCAG 2.5.3 (speech users cannot say what they see). The content itself
+     * names the button, and the shortcut hint is a <kbd> inside it.
+     */
     return (
       <button
         type="button"
         onClick={openPalette}
-        aria-label="Search"
         className="hidden shrink-0 items-center gap-1.5 rounded border border-line px-2 py-1.5 text-[11px] text-ink-3 transition-colors hover:border-accent/40 hover:text-accent sm:flex"
       >
         Search

@@ -7,16 +7,24 @@
  */
 
 export function PanelSkeleton({
-  height = 200,
+  height,
+  className = "",
   label,
 }: {
   height?: number;
+  /**
+   * Responsive height, for the boundaries whose content reflows across
+   * breakpoints — a single number cannot reserve a three-panel grid that
+   * stacks on a phone and sits in one row on a desktop.
+   */
+  className?: string;
   label?: string;
 }) {
   return (
     <div
-      className="panel flex animate-pulse items-center justify-center"
-      style={{ height }}
+      className={`panel flex animate-pulse items-center justify-center ${className}`}
+      /* Omitted when `className` carries the height, or it would win over it. */
+      style={height != null ? { height } : undefined}
       aria-busy="true"
       aria-live="polite"
     >
@@ -25,11 +33,18 @@ export function PanelSkeleton({
   );
 }
 
+/**
+ * Stands in for a row of `Stat` tiles.
+ *
+ * The grid classes and tile height mirror the real thing exactly, so the
+ * reserved height follows the same column count at every breakpoint instead of
+ * being guessed per width. `count` must match the number of tiles rendered.
+ */
 export function TileRowSkeleton({ count = 4 }: { count?: number }) {
   return (
     <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
       {Array.from({ length: count }, (_, i) => (
-        <div key={i} className="panel h-[78px] animate-pulse" />
+        <div key={i} className="panel h-[87px] animate-pulse" />
       ))}
     </div>
   );

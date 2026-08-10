@@ -7,11 +7,17 @@ export function SiteFooter() {
       <div className="mx-auto flex w-full max-w-[1600px] flex-wrap items-center gap-x-5 gap-y-2 px-3 py-4 text-[11px] text-ink-3 sm:px-5">
         <span>
           BulbaStats — an independent, read-only analytics view of{" "}
+          {/*
+            Underlined because this link sits inside a sentence. Against the
+            surrounding muted text it clears only 1.46:1 — well under the 3:1
+            that would let colour alone mark it — so the underline is what
+            makes it findable, not decoration.
+          */}
           <a
             href={SITE_ORIGIN}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-ink-2 hover:text-accent"
+            className="text-ink-2 underline hover:text-accent"
           >
             BulbaStore
           </a>

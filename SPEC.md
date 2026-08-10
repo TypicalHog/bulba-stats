@@ -856,6 +856,19 @@ Two boundary rules fall out of that split:
 - **Panels set `min-width: 0`.** They are always grid or flex children, and the
   `min-width: auto` default made any panel wrapping a wide table push its track
   past the viewport and scroll the whole page sideways.
+- **Anything arriving after first paint reserves its space.** Two ways to get
+  this wrong, both of which cost real layout shift:
+  - *Suspense fallbacks.* A `PanelSkeleton` height is the panel's **measured**
+    rendered height, not an estimate — the overview's were 150–250px short and
+    were the whole of its 0.24 CLS on mobile. Where content reflows across
+    breakpoints the fallback takes responsive classes instead of a fixed number,
+    and `TileRowSkeleton` mirrors the real grid so its height follows the same
+    column count. Re-measure when a panel's row count or chart height changes.
+  - *Images.* Width and height **attributes** are not enough: Tailwind's
+    preflight sets `img { height: auto }`, which drops the reservation. Every
+    `<img>` also pins its size in CSS, as `ItemIcon` and `Avatar` do. The nav
+    logo is cross-origin, so it landed late and grew the sticky header after
+    paint, shifting every page down.
 
 ---
 
