@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="BulbaStats">
+  <!--
+    A brilliant-cut diamond: ◇ is the unit every figure on this site is
+    denominated in, so the mark is the currency rather than a chart glyph.
+    Deliberately not BulbaStore's own icon — BulbaStats is an independent view
+    of their exchange and should not wear their logo in the browser tab.
+
+    Drawn on a 32px grid with the crown, girdle and pavilion as separate solid
+    shapes rather than strokes: hairlines disappear at 16px, filled facets do
+    not. Colours are the design tokens from globals.css.
+  -->
+  <rect width="32" height="32" rx="7" fill="#131A22" />
+
+  <!-- Pavilion: the deep lower point. -->
+  <path d="M5.5 13.5h21L16 27.5z" fill="#2FBF74" />
+  <!-- Crown: the table and its bevel, lighter so the cut reads at small sizes. -->
+  <path d="M11 5.5h10l5.5 8h-21z" fill="#4ADE80" />
+  <!-- Table facet, the flat top — the one highlight that survives 16px. -->
+  <path d="M11 5.5h10l2.6 3.8H8.4z" fill="#8BF0B4" />
+</svg>

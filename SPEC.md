@@ -837,6 +837,19 @@ rendered `image-rendering: pixelated`, with the Bulba icon as fallback. Player
 avatars: `https://mc-heads.net/avatar/<uuid>/<size>`. Both are plain `<img>` —
 `next/image` optimization is pointless for 32px pixel art.
 
+**The site mark is a brilliant-cut diamond**, drawn in `app/icon.svg` from the
+palette tokens. ◇ is the unit every figure here is denominated in, so the mark
+is the currency rather than a chart glyph — and deliberately *not* BulbaStore's
+own icon, which this site has no business wearing in a browser tab while calling
+itself independent. Crown, girdle and pavilion are filled shapes rather than
+strokes, because hairlines vanish at 16px and filled facets do not.
+
+Three files, generated from that one SVG: `favicon.ico` (PNG-embedded 16/32/48/
+256) for legacy consumers, `icon.svg` for everything modern, and a 180px
+`apple-icon.png` drawn full-bleed with no rounded corners, since iOS masks its
+own. It replaced the stock Next.js mark, which had shipped since the first
+commit.
+
 ---
 
 ## 6. Architecture
