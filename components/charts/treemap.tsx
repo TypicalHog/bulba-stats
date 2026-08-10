@@ -145,7 +145,7 @@ export function Treemap({
               type="button"
               onClick={() => setMetric(m.key)}
               aria-pressed={metric === m.key}
-              className={`rounded-[3px] px-2.5 py-1 text-[11px] transition-colors ${
+              className={`rounded-[3px] px-2.5 py-1 text-[12px] transition-colors ${
                 metric === m.key
                   ? "bg-panel-2 text-ink"
                   : "text-ink-3 hover:text-ink-2"
@@ -155,7 +155,7 @@ export function Treemap({
             </button>
           ))}
         </div>
-        <p className="text-[11px] text-ink-3">{active?.hint}</p>
+        <p className="text-[12px] text-ink-3">{active?.hint}</p>
       </div>
 
       <div className="scroll-x">

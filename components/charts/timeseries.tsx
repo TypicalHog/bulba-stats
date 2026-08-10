@@ -105,7 +105,7 @@ export function StackedBars({
       >
         {/* A legend is always present for two or more series. */}
         {!single && (
-          <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px]">
+          <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px]">
             {series.map((s, i) => (
               <span
                 key={s.key}

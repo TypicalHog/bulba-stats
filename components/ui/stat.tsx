@@ -54,7 +54,7 @@ export function Stat({
   return (
     <div className="panel px-3.5 py-3">
       <div className="flex items-start justify-between gap-2">
-        <p className="text-[11px] leading-tight text-ink-3">{label}</p>
+        <p className="text-[12px] leading-tight text-ink-3">{label}</p>
         {spark && spark.length > 1 && (
           <Sparkline values={spark} width={56} height={16} />
         )}
@@ -72,7 +72,7 @@ export function Stat({
       </p>
 
       {(delta != null || hint) && (
-        <p className="mt-1.5 flex items-center gap-1.5 text-[11px] leading-tight">
+        <p className="mt-1.5 flex items-center gap-1.5 text-[12px] leading-tight">
           {delta != null && (
             <span className={`font-mono ${deltaTone}`}>
               <span aria-hidden>{arrow(delta)}</span>{" "}
@@ -106,7 +106,7 @@ export function HeroStat({
 }) {
   return (
     <div>
-      <p className="text-[11px] uppercase tracking-[0.14em] text-ink-3">
+      <p className="text-[12px] uppercase tracking-[0.14em] text-ink-3">
         {label}
       </p>
       <p

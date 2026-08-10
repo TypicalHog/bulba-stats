@@ -764,6 +764,15 @@ Fira Sans for UI, Fira Code for all numerics and identifiers — a trading reado
 wants monospace digits. Tabular figures in table columns and axis ticks;
 proportional figures for hero numbers and stat-tile values.
 
+**12px is the floor for anything you read.** The dense dial originally put
+secondary text at 11px, which is below the threshold browsers and auditors
+treat as legible on a phone — it was a third of all text on the page. Body
+copy, table cells, labels, hints and captions are 12px or larger. Below that
+sits only non-prose chrome that is never read as a sentence: 10px for
+uppercase micro-labels and badges, 9px for the ⌘K hint, 8px for axis
+annotations. Density comes from spacing and line height, not from shrinking
+text people have to read.
+
 ### 5.5 Chart rules
 
 Hand-rolled SVG, no charting dependency — full control over the dense trading
@@ -856,6 +865,13 @@ Two boundary rules fall out of that split:
 - **Panels set `min-width: 0`.** They are always grid or flex children, and the
   `min-width: auto` default made any panel wrapping a wide table push its track
   past the viewport and scroll the whole page sideways.
+- **The live feed is imported at use, not at module scope.** `socket.io-client`
+  is ~44 KB, and `WatchAlerts` sits in the shell — a static import put it in the
+  entry bundle of every route, parsed and evaluated during hydration even for
+  visitors watching nothing. Both it and `LiveTicker` already open their socket
+  inside an effect, so the runtime `io` is an `await import()` there and only
+  the types are imported at the top. It lands in its own chunk, off the
+  critical path.
 - **Anything arriving after first paint reserves its space.** Two ways to get
   this wrong, both of which cost real layout shift:
   - *Suspense fallbacks.* A `PanelSkeleton` height is the panel's **measured**

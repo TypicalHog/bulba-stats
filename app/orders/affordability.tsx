@@ -137,7 +137,7 @@ export function Affordability({ rows }: { rows: AffordRow[] }) {
     <div>
       <div className="mb-3 flex flex-wrap items-end gap-3">
         <label className="flex flex-col gap-1">
-          <span className="text-[11px] text-ink-3">Budget (diamonds)</span>
+          <span className="text-[12px] text-ink-3">Budget (diamonds)</span>
           <input
             type="number"
             min={0}
@@ -148,7 +148,7 @@ export function Affordability({ rows }: { rows: AffordRow[] }) {
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-[11px] text-ink-3">Max above mid (%)</span>
+          <span className="text-[12px] text-ink-3">Max above mid (%)</span>
           <input
             type="number"
             min={0}
@@ -166,7 +166,7 @@ export function Affordability({ rows }: { rows: AffordRow[] }) {
           aria-checked={withFee}
           onClick={() => setWithFee((v) => !v)}
           title="Whether the budget has to cover the 4% taker fee as well"
-          className={`cursor-pointer rounded border px-2.5 py-1.5 text-[11px] transition-colors ${
+          className={`cursor-pointer rounded border px-2.5 py-1.5 text-[12px] transition-colors ${
             withFee
               ? "border-accent/50 bg-accent/10 text-accent"
               : "border-line text-ink-3 hover:border-ink-3 hover:text-ink-2"
@@ -174,7 +174,7 @@ export function Affordability({ rows }: { rows: AffordRow[] }) {
         >
           {withFee ? "Budget includes fee" : "Fee excluded"}
         </button>
-        <span className="ml-auto font-mono text-[11px] text-ink-3">
+        <span className="ml-auto font-mono text-[12px] text-ink-3">
           {num(results.length)} buyable
         </span>
       </div>

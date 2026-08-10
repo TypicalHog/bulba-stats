@@ -226,12 +226,12 @@ export default function AboutPage() {
               title="Documented but not deployed"
               subtitle="Verified 404 against the live host — no feature depends on them"
             >
-              <ul className="flex flex-col gap-1.5 font-mono text-[11px] text-ink-3">
+              <ul className="flex flex-col gap-1.5 font-mono text-[12px] text-ink-3">
                 <li>GET /health</li>
                 <li>GET /ledger, /ledger/balance/…, /ledger/audit/…</li>
                 <li>GET /banks/:id</li>
               </ul>
-              <p className="mt-3 text-[11px] leading-relaxed text-ink-2">
+              <p className="mt-3 text-[12px] leading-relaxed text-ink-2">
                 The client treats these as optional: a missing endpoint removes
                 a section rather than failing a page.
               </p>
@@ -241,13 +241,13 @@ export default function AboutPage() {
               title="Live but undocumented"
               subtitle="Found in the official web client, verified unauthenticated"
             >
-              <ul className="flex flex-col gap-1.5 font-mono text-[11px] text-ink-3">
+              <ul className="flex flex-col gap-1.5 font-mono text-[12px] text-ink-3">
                 <li>GET /treasury</li>
                 <li>GET /treasury/revenue</li>
                 <li>GET /treasury/distributions</li>
                 <li>GET /lending/orders, /lending/loans</li>
               </ul>
-              <p className="mt-3 text-[11px] leading-relaxed text-ink-2">
+              <p className="mt-3 text-[12px] leading-relaxed text-ink-2">
                 These power the Treasury section. Being undocumented, they may
                 change or disappear without notice — that section degrades to a
                 notice if they do.
@@ -368,7 +368,7 @@ async function UpstreamDocs() {
               href={DOCS_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-3 inline-block rounded border border-line px-3 py-1.5 text-[11px] text-ink-2 transition-colors duration-150 hover:border-accent/40 hover:text-accent"
+              className="mt-3 inline-block rounded border border-line px-3 py-1.5 text-[12px] text-ink-2 transition-colors duration-150 hover:border-accent/40 hover:text-accent"
             >
               Read the full reference ↗
             </a>

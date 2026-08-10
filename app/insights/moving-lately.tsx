@@ -93,7 +93,7 @@ export function MovingLately({ legs }: { legs: MovingLeg[] }) {
                   ? "Every trade on record"
                   : `The ${w} days ending at the market's last trade`
               }
-              className={`cursor-pointer rounded px-2 py-1 font-mono text-[11px] transition-colors duration-150 ${
+              className={`cursor-pointer rounded px-2 py-1 font-mono text-[12px] transition-colors duration-150 ${
                 window === w
                   ? "bg-accent/15 text-accent"
                   : "text-ink-3 hover:bg-panel-2 hover:text-ink-2"
@@ -103,7 +103,7 @@ export function MovingLately({ legs }: { legs: MovingLeg[] }) {
             </button>
           ))}
         </div>
-        <span className="ml-auto font-mono text-[11px] text-ink-3">
+        <span className="ml-auto font-mono text-[12px] text-ink-3">
           {diamondsCompact(total)} across {num(rising.length)} items
         </span>
       </div>

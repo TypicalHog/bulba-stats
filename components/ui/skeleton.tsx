@@ -28,7 +28,7 @@ export function PanelSkeleton({
       aria-busy="true"
       aria-live="polite"
     >
-      <span className="text-[11px] text-ink-3">{label ?? "Loading…"}</span>
+      <span className="text-[12px] text-ink-3">{label ?? "Loading…"}</span>
     </div>
   );
 }
@@ -44,7 +44,8 @@ export function TileRowSkeleton({ count = 4 }: { count?: number }) {
   return (
     <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
       {Array.from({ length: count }, (_, i) => (
-        <div key={i} className="panel h-[87px] animate-pulse" />
+        /* Taller on the narrowest column count, where tile hints wrap. */
+        <div key={i} className="panel h-[91px] animate-pulse sm:h-[88px]" />
       ))}
     </div>
   );

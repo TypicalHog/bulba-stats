@@ -172,7 +172,7 @@ export function DepthChart({
         className="relative"
         style={{ minWidth: CHART_MIN_WIDTH }}
       >
-        <div className="mb-2 flex items-center gap-4 text-[11px]">
+        <div className="mb-2 flex items-center gap-4 text-[12px]">
           <LegendKey color={DIRECTION.up} label="Bids (cumulative)" />
           <LegendKey color={DIRECTION.down} label="Asks (cumulative)" />
           <span className="ml-auto font-mono text-ink-3">

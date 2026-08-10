@@ -178,7 +178,7 @@ export function NetworkGraph({
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-center gap-1.5">
-        <span className="mr-1 text-[11px] text-ink-3">Hide</span>
+        <span className="mr-1 text-[12px] text-ink-3">Hide</span>
         {nodes.map((n) => {
           const off = hidden.includes(n.username);
           return (
@@ -459,7 +459,7 @@ export function NetworkGraph({
         heatmap already established that the browser's own tooltip, with its
         one-second delay, is unusable for scanning a dense chart.
       */}
-      <p className="mt-1 h-4 text-[11px] text-ink-3">
+      <p className="mt-1 h-4 text-[12px] text-ink-3">
         {aimedEdge ? (
           <>
             <span className="font-mono text-ink">{aimedEdge.a}</span>
@@ -498,7 +498,7 @@ export function NetworkGraph({
             </button>
           </div>
 
-          <div className="mt-2 grid grid-cols-2 gap-3 text-[11px] sm:grid-cols-3">
+          <div className="mt-2 grid grid-cols-2 gap-3 text-[12px] sm:grid-cols-3">
             <div>
               <p className="text-ink-3">Traded between them</p>
               <p className="font-mono text-[15px] text-ink">
@@ -524,7 +524,7 @@ export function NetworkGraph({
           {pair.items && pair.items.length > 0 && (
             <div className="mt-2 border-t border-line pt-2">
               <p className="mb-1 text-[10px] text-ink-3">What they traded</p>
-              <ul className="flex flex-wrap gap-x-4 gap-y-1 text-[11px]">
+              <ul className="flex flex-wrap gap-x-4 gap-y-1 text-[12px]">
                 {pair.items.slice(0, 6).map((item) => (
                   <li
                     key={`${item.itemName}-${item.variantName}`}

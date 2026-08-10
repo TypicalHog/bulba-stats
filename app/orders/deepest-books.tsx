@@ -139,7 +139,7 @@ export function DeepestBooks({ rows }: { rows: BookRow[] }) {
   return (
     <div>
       <div className="flex flex-wrap items-center gap-2 border-b border-line px-3 py-2.5">
-        <span className="text-[11px] text-ink-3">Distance from mid</span>
+        <span className="text-[12px] text-ink-3">Distance from mid</span>
         <div
           className="flex items-center gap-0.5 rounded border border-line p-0.5"
           role="group"
@@ -156,7 +156,7 @@ export function DeepestBooks({ rows }: { rows: BookRow[] }) {
                   ? "Every resting order, however far from mid"
                   : `Only orders priced within ${b}% of mid`
               }
-              className={`cursor-pointer rounded px-2 py-1 font-mono text-[11px] transition-colors duration-150 ${
+              className={`cursor-pointer rounded px-2 py-1 font-mono text-[12px] transition-colors duration-150 ${
                 band === b
                   ? "bg-accent/15 text-accent"
                   : "text-ink-3 hover:bg-panel-2 hover:text-ink-2"
@@ -167,7 +167,7 @@ export function DeepestBooks({ rows }: { rows: BookRow[] }) {
           ))}
         </div>
 
-        <span className="ml-auto font-mono text-[11px] text-ink-3">
+        <span className="ml-auto font-mono text-[12px] text-ink-3">
           {diamonds(totalShown)}
           {band != null && totalAll > 0 && (
             <span className="text-ink-3">

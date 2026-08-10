@@ -4,7 +4,7 @@ import { DOCS_URL, REPO_URL, SITE_ORIGIN } from "@/lib/api/constants";
 export function SiteFooter() {
   return (
     <footer className="mt-8 border-t border-line">
-      <div className="mx-auto flex w-full max-w-[1600px] flex-wrap items-center gap-x-5 gap-y-2 px-3 py-4 text-[11px] text-ink-3 sm:px-5">
+      <div className="mx-auto flex w-full max-w-[1600px] flex-wrap items-center gap-x-5 gap-y-2 px-3 py-4 text-[12px] text-ink-3 sm:px-5">
         <span>
           BulbaStats — an independent, read-only analytics view of{" "}
           {/*

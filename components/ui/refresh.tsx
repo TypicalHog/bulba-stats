@@ -38,7 +38,7 @@ export function RefreshButton() {
         })
       }
       title="Discard the cached data and refetch this page from BulbaStore"
-      className="flex shrink-0 items-center gap-1.5 rounded border border-accent/50 bg-accent/10 px-2.5 py-1.5 text-[11px] text-accent transition-colors duration-150 hover:bg-accent/20 disabled:cursor-progress disabled:opacity-70"
+      className="flex shrink-0 items-center gap-1.5 rounded border border-accent/50 bg-accent/10 px-2.5 py-1.5 text-[12px] text-accent transition-colors duration-150 hover:bg-accent/20 disabled:cursor-progress disabled:opacity-70"
     >
       <span
         aria-hidden="true"

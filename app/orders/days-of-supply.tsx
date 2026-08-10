@@ -114,7 +114,7 @@ export function DaysOfSupply({ rows }: { rows: SupplyRow[] }) {
               onClick={() => setWindow(w.key)}
               aria-pressed={window === w.key}
               title={w.hint}
-              className={`rounded-[3px] px-2.5 py-1 text-[11px] transition-colors ${
+              className={`rounded-[3px] px-2.5 py-1 text-[12px] transition-colors ${
                 window === w.key
                   ? "bg-panel-2 text-ink"
                   : "text-ink-3 hover:text-ink-2"
@@ -124,7 +124,7 @@ export function DaysOfSupply({ rows }: { rows: SupplyRow[] }) {
             </button>
           ))}
         </div>
-        <p className="text-[11px] text-ink-3">
+        <p className="text-[12px] text-ink-3">
           {WINDOWS.find((w) => w.key === window)?.hint}
         </p>
       </div>

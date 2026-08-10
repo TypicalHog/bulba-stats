@@ -30,7 +30,7 @@ export function Panel({
               </h2>
             )}
             {subtitle && (
-              <p className="mt-0.5 text-[11px] leading-snug text-ink-3">
+              <p className="mt-0.5 text-[12px] leading-snug text-ink-3">
                 {subtitle}
               </p>
             )}
@@ -53,10 +53,10 @@ export function SectionTitle({
 }) {
   return (
     <div className="mb-3 flex items-baseline justify-between gap-3">
-      <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-3">
+      <h2 className="text-[12px] font-semibold uppercase tracking-[0.14em] text-ink-3">
         {children}
       </h2>
-      {hint && <span className="text-[11px] text-ink-3">{hint}</span>}
+      {hint && <span className="text-[12px] text-ink-3">{hint}</span>}
     </div>
   );
 }
@@ -68,7 +68,7 @@ export function SectionTitle({
  */
 export function Caveat({ children }: { children: ReactNode }) {
   return (
-    <p className="mt-2 flex gap-1.5 text-[11px] leading-relaxed text-ink-3">
+    <p className="mt-2 flex gap-1.5 text-[12px] leading-relaxed text-ink-3">
       <span aria-hidden className="text-warn">
         &#9432;
       </span>

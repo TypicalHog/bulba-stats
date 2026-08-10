@@ -113,7 +113,7 @@ export default async function ItemPage({
             {listing.lendingEnabled && <Badge tone="accent">lendable</Badge>}
             {!listing.isActive && <Badge tone="down">inactive</Badge>}
           </div>
-          <p className="mt-0.5 font-mono text-[11px] text-ink-3">
+          <p className="mt-0.5 font-mono text-[12px] text-ink-3">
             listing #{listing.id} · variant #{listing.variantId} ·{" "}
             {listing.stackAmount ?? 1} per stack
           </p>
@@ -123,7 +123,7 @@ export default async function ItemPage({
         </div>
         <Link
           href="/market"
-          className="text-[11px] text-ink-3 hover:text-accent"
+          className="text-[12px] text-ink-3 hover:text-accent"
         >
           ← All items
         </Link>
@@ -302,7 +302,7 @@ async function DepthPanel({ listingId }: { listingId: number }) {
     >
       <DepthChart book={view.orderBook} height={240} />
 
-      <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2 border-t border-line pt-3 text-[11px] sm:grid-cols-4">
+      <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2 border-t border-line pt-3 text-[12px] sm:grid-cols-4">
         <Fact
           label="Bid depth"
           value={`${num(book.bidUnits)} units`}
@@ -350,7 +350,7 @@ async function DepthPanel({ listingId }: { listingId: number }) {
       </div>
 
       <div className="mt-4 border-t border-line pt-3">
-        <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-ink-3">
+        <h3 className="mb-2 text-[12px] font-semibold uppercase tracking-wider text-ink-3">
           Cost to fill
         </h3>
         <DataTable>

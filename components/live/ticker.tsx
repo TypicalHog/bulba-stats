@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { io, type Socket } from "socket.io-client";
+/*
+ * Type-only, so the client never carries `socket.io-client` into hydration.
+ * The runtime `io` is imported inside the effect — see below.
+ */
+import type { Socket } from "socket.io-client";
 import { SITE_ORIGIN, WS_PATH } from "@/lib/api/constants";
 import { ItemLink, SideTag } from "@/components/ui/entity";
 import { diamonds, num, price } from "@/lib/format";
@@ -61,7 +65,19 @@ export function LiveTicker({ seed }: { seed: TickerRow[] }) {
      * tick lets the discarded mount finish before any connection is attempted,
      * so no socket is opened only to be abandoned.
      */
-    const timer = setTimeout(() => {
+    const timer = setTimeout(async () => {
+      if (cancelled) return;
+
+      /*
+       * Loaded here rather than at module scope. The client is ~44 KB and this
+       * panel is seeded server-side, so nothing on screen waits for it — but a
+       * static import puts it in the entry bundle, where it is parsed and
+       * evaluated during hydration on every route (`WatchAlerts` lives in the
+       * shell). Fetching it after mount takes that off the critical path; the
+       * tape simply goes live a moment later.
+       */
+      const { io } = await import("socket.io-client");
+      // The import is a await point — the effect may have torn down across it.
       if (cancelled) return;
 
       socket = io(SITE_ORIGIN, {
@@ -124,7 +140,7 @@ export function LiveTicker({ seed }: { seed: TickerRow[] }) {
 
   return (
     <div>
-      <div className="flex items-center gap-2 border-b border-line px-4 py-2 text-[11px]">
+      <div className="flex items-center gap-2 border-b border-line px-4 py-2 text-[12px]">
         <StatusDot status={status} />
         <span className="text-ink-3">
           {status === "live"
@@ -140,7 +156,7 @@ export function LiveTicker({ seed }: { seed: TickerRow[] }) {
         {rows.map((row) => (
           <li
             key={row.id}
-            className={`flex items-center gap-2 border-b border-line/60 px-3 py-1.5 text-[11px] transition-colors duration-500 ${
+            className={`flex items-center gap-2 border-b border-line/60 px-3 py-1.5 text-[12px] transition-colors duration-500 ${
               flash === row.id ? "bg-accent/10" : ""
             }`}
           >

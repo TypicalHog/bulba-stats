@@ -252,7 +252,7 @@ export function TradesExplorer({ rows }: { rows: TradeRow[] }) {
               title={f.hint}
               aria-pressed={facet === f.key}
               onClick={() => setFacet(f.key)}
-              className={`cursor-pointer rounded border px-2 py-1.5 text-[11px] transition-colors duration-150 ${
+              className={`cursor-pointer rounded border px-2 py-1.5 text-[12px] transition-colors duration-150 ${
                 facet === f.key
                   ? "border-accent/50 bg-accent/10 text-accent"
                   : "border-line text-ink-3 hover:border-ink-3 hover:text-ink-2"
@@ -263,7 +263,7 @@ export function TradesExplorer({ rows }: { rows: TradeRow[] }) {
           ))}
         </div>
 
-        <span className="ml-auto font-mono text-[11px] text-ink-3">
+        <span className="ml-auto font-mono text-[12px] text-ink-3">
           {num(filtered.length)} / {num(rows.length)}
         </span>
       </div>

@@ -83,7 +83,7 @@ function Side({
 }) {
   if (!levels.length) {
     return (
-      <p className="px-3 py-3 text-center text-[11px] text-ink-3">
+      <p className="px-3 py-3 text-center text-[12px] text-ink-3">
         No {side}s resting.
       </p>
     );
@@ -98,7 +98,7 @@ function Side({
         return (
           <li
             key={`${side}-${level.price}`}
-            className="relative grid grid-cols-[1fr_auto_auto] items-center gap-x-3 px-3 py-1 text-[11px]"
+            className="relative grid grid-cols-[1fr_auto_auto] items-center gap-x-3 px-3 py-1 text-[12px]"
             title={
               owners.length
                 ? owners

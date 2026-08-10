@@ -278,7 +278,7 @@ async function PlayersBody() {
               label: (
                 <span className="flex flex-wrap items-baseline gap-x-2">
                   <span className="text-ink">{step.label}</span>
-                  <span className="text-[11px] text-ink-3">{step.hint}</span>
+                  <span className="text-[12px] text-ink-3">{step.hint}</span>
                 </span>
               ),
             }))}
@@ -442,7 +442,7 @@ async function PlayersBody() {
                   >
                     {v.confidence}
                   </span>
-                  <span className="ml-auto font-mono text-[11px] text-ink-3">
+                  <span className="ml-auto font-mono text-[12px] text-ink-3">
                     {num(v.orders)} orders · median gap{" "}
                     {v.medianGapMs != null
                       ? `${(v.medianGapMs / 1000).toFixed(2)}s`
@@ -508,7 +508,7 @@ function RelationshipList({ edges }: { edges: CounterpartyEdge[] }) {
           <span className="ml-auto font-mono text-ink">
             {diamonds(e.volume)}
           </span>
-          <span className="w-16 text-right font-mono text-[11px] text-ink-3">
+          <span className="w-16 text-right font-mono text-[12px] text-ink-3">
             {num(e.trades)} fills
           </span>
           <span className="h-1 w-full rounded-full bg-panel-2">

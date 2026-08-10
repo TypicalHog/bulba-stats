@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { io, type Socket } from "socket.io-client";
+/* Type-only — the runtime `io` is imported inside the effect, as in the ticker. */
+import type { Socket } from "socket.io-client";
 import { SITE_ORIGIN, WS_PATH } from "@/lib/api/constants";
 import { useWatchlist } from "@/components/ui/watchlist";
 import { ItemIcon } from "@/components/ui/entity";
@@ -86,7 +87,14 @@ export function WatchAlerts() {
      * and remounts effects in development, and connecting synchronously means
      * the first throwaway socket is closed mid-handshake.
      */
-    const timer = setTimeout(() => {
+    const timer = setTimeout(async () => {
+      if (cancelled) return;
+      /*
+       * This component sits in the shell, so a static import would put the
+       * ~44 KB client in the entry bundle for every route — including the many
+       * visitors who watch nothing and never open a socket at all.
+       */
+      const { io } = await import("socket.io-client");
       if (cancelled) return;
       socket = io(SITE_ORIGIN, {
         path: WS_PATH,

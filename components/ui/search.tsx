@@ -108,7 +108,7 @@ export function CommandPalette({ entries }: { entries: SearchEntry[] }) {
       <button
         type="button"
         onClick={openPalette}
-        className="hidden shrink-0 items-center gap-1.5 rounded border border-line px-2 py-1.5 text-[11px] text-ink-3 transition-colors hover:border-accent/40 hover:text-accent sm:flex"
+        className="hidden shrink-0 items-center gap-1.5 rounded border border-line px-2 py-1.5 text-[12px] text-ink-3 transition-colors hover:border-accent/40 hover:text-accent sm:flex"
       >
         Search
         <kbd className="rounded border border-line px-1 font-mono text-[9px]">

@@ -195,7 +195,7 @@ export function RichList({
           role="switch"
           aria-checked={includeHouse}
           onClick={() => setIncludeHouse((v) => !v)}
-          className={`cursor-pointer rounded border px-2.5 py-1.5 text-[11px] transition-colors ${
+          className={`cursor-pointer rounded border px-2.5 py-1.5 text-[12px] transition-colors ${
             includeHouse
               ? "border-warn/50 bg-warn/10 text-warn"
               : "border-line text-ink-3 hover:border-ink-3 hover:text-ink-2"
@@ -203,7 +203,7 @@ export function RichList({
         >
           {includeHouse ? "House banks included" : "House banks excluded"}
         </button>
-        <span className="text-[11px] text-ink-3">
+        <span className="text-[12px] text-ink-3">
           {houseCount > 0 && `${num(houseCount)} house banks · `}
           Gini {giniHumans != null ? giniHumans.toFixed(2) : "—"} excluding the
           house, {giniAll != null ? giniAll.toFixed(2) : "—"} including it
@@ -220,7 +220,7 @@ export function RichList({
       />
 
       <div>
-        <p className="mb-2 text-[11px] text-ink-3">
+        <p className="mb-2 text-[12px] text-ink-3">
           Ownership per item — where one account holds nearly all of something,
           the quoted book is that account&apos;s to move.
         </p>

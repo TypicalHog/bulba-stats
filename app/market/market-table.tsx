@@ -376,7 +376,7 @@ export function MarketTable({
               title={hint}
               aria-pressed={unit === value}
               onClick={() => setUnit(value)}
-              className={`cursor-pointer rounded px-2 py-1 text-[11px] transition-colors duration-150 ${
+              className={`cursor-pointer rounded px-2 py-1 text-[12px] transition-colors duration-150 ${
                 unit === value
                   ? "bg-accent/15 text-accent"
                   : "text-ink-3 hover:bg-panel-2 hover:text-ink-2"
@@ -387,7 +387,7 @@ export function MarketTable({
           ))}
         </div>
 
-        <span className="ml-auto font-mono text-[11px] text-ink-3">
+        <span className="ml-auto font-mono text-[12px] text-ink-3">
           {num(filtered.length)} / {num(rows.length)}
         </span>
       </div>
@@ -429,7 +429,7 @@ function Toggle({
       aria-checked={checked}
       title={hint}
       onClick={() => onChange(!checked)}
-      className={`cursor-pointer rounded border px-2.5 py-1.5 text-[11px] transition-colors duration-150 ${
+      className={`cursor-pointer rounded border px-2.5 py-1.5 text-[12px] transition-colors duration-150 ${
         checked
           ? "border-accent/50 bg-accent/10 text-accent"
           : "border-line text-ink-3 hover:border-ink-3 hover:text-ink-2"

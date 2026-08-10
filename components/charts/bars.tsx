@@ -45,7 +45,7 @@ export function RankedBars({
   return (
     <div>
       {legend && legend.length > 0 && (
-        <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px]">
+        <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px]">
           {legend.map((l) => (
             <span key={l.label} className="flex items-center gap-1.5 text-ink-3">
               <span
@@ -128,7 +128,7 @@ export function SplitBar({
 }) {
   const total = segments.reduce((a, s) => a + s.value, 0);
   if (total <= 0) {
-    return <div className="text-[11px] text-ink-3">No data.</div>;
+    return <div className="text-[12px] text-ink-3">No data.</div>;
   }
 
   return (
@@ -151,7 +151,7 @@ export function SplitBar({
           ))}
       </div>
       {showLegend && (
-        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px]">
+        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[12px]">
           {segments.map((s) => (
             <span key={s.key} className="flex items-center gap-1.5 text-ink-3">
               <span

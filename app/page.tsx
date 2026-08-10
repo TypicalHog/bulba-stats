@@ -71,19 +71,27 @@ export default function OverviewPage() {
       */}
       <div className="grid gap-4 xl:grid-cols-[1fr_340px]">
         <div className="flex min-w-0 flex-col gap-4">
-          <Suspense fallback={<PanelSkeleton height={444} />}>
+          {/* The chart is fixed-height; only its subtitle rewraps on a phone. */}
+          <Suspense
+            fallback={<PanelSkeleton className="h-[467px] sm:h-[450px]" />}
+          >
             <VolumeHistory />
           </Suspense>
-          <Suspense fallback={<PanelSkeleton height={492} />}>
+          <Suspense fallback={<PanelSkeleton height={493} />}>
             <TopItems />
           </Suspense>
         </div>
 
         <div className="flex min-w-0 flex-col gap-4">
-          <Suspense fallback={<PanelSkeleton height={417} />}>
+          <Suspense fallback={<PanelSkeleton height={420} />}>
             <LiveTradesPanel />
           </Suspense>
-          <Suspense fallback={<PanelSkeleton height={419} />}>
+          {/* The caveat under the bars wraps to a different line count twice. */}
+          <Suspense
+            fallback={
+              <PanelSkeleton className="h-[424px] md:h-[405px] xl:h-[444px]" />
+            }
+          >
             <TopTraders />
           </Suspense>
         </div>
@@ -92,7 +100,7 @@ export default function OverviewPage() {
       {/* Three panels: stacked on a phone, one row from `lg` up. */}
       <Suspense
         fallback={
-          <PanelSkeleton className="h-[1016px] sm:h-[981px] lg:h-[364px]" />
+          <PanelSkeleton className="h-[1029px] sm:h-[1009px] md:h-[990px] lg:h-[365px]" />
         }
       >
         <MarketStructure />
@@ -380,7 +388,7 @@ async function TopItems() {
       action={
         <Link
           href="/market"
-          className="text-[11px] text-ink-3 hover:text-accent"
+          className="text-[12px] text-ink-3 hover:text-accent"
         >
           All items →
         </Link>
@@ -470,7 +478,7 @@ async function LiveTradesPanel() {
       action={
         <Link
           href="/trades"
-          className="text-[11px] text-ink-3 hover:text-accent"
+          className="text-[12px] text-ink-3 hover:text-accent"
         >
           Explorer →
         </Link>
@@ -501,7 +509,7 @@ async function TopTraders() {
       action={
         <Link
           href="/players"
-          className="text-[11px] text-ink-3 hover:text-accent"
+          className="text-[12px] text-ink-3 hover:text-accent"
         >
           Leaderboards →
         </Link>
@@ -532,7 +540,7 @@ const SPREAD_ROWS = 25;
 
 function AllBooksLink() {
   return (
-    <Link href="/market" className="text-[11px] text-ink-3 hover:text-accent">
+    <Link href="/market" className="text-[12px] text-ink-3 hover:text-accent">
       All books →
     </Link>
   );
@@ -597,7 +605,7 @@ async function MarketStructure() {
             </p>
           </div>
         </div>
-        <p className="mt-3 text-[11px] leading-relaxed text-ink-2">
+        <p className="mt-3 text-[12px] leading-relaxed text-ink-2">
           The market maker accounts for{" "}
           <span className="font-mono text-ink">
             {percent(totalVolume > 0 ? (mmVolume / totalVolume) * 100 : 0)}
@@ -701,7 +709,7 @@ function HeaderSkeleton() {
   return (
     <div className="flex flex-col gap-4">
       {/* The hero stacks its figure over the four mini-facts until `lg`. */}
-      <div className="panel h-[278px] animate-pulse sm:h-[221px] lg:h-[145px]" />
+      <div className="panel h-[279px] animate-pulse sm:h-[223px] lg:h-[146px]" />
       {/* Seven tiles, not six — the count has to match `MarketHeader`. */}
       <TileRowSkeleton count={7} />
     </div>

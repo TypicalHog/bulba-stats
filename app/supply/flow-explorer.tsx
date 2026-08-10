@@ -179,7 +179,7 @@ export function FlowExplorer({
               type="button"
               onClick={() => setMode(m.key)}
               aria-pressed={mode === m.key}
-              className={`rounded-[3px] px-2.5 py-1 text-[11px] transition-colors ${
+              className={`rounded-[3px] px-2.5 py-1 text-[12px] transition-colors ${
                 mode === m.key
                   ? "bg-panel-2 text-ink"
                   : "text-ink-3 hover:text-ink-2"
@@ -189,7 +189,7 @@ export function FlowExplorer({
             </button>
           ))}
         </div>
-        <p className="text-[11px] text-ink-3">
+        <p className="text-[12px] text-ink-3">
           {isValue
             ? "Valued at the current mid — items with no book are excluded, not counted as zero"
             : "Raw item counts, no valuation assumptions"}

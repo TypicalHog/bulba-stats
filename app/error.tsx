@@ -38,7 +38,7 @@ export default function Error({
         offline, restarting, or rate-limiting this address, pages stop resolving
         until it recovers.
       </p>
-      <p className="font-mono text-[11px] text-ink-3">
+      <p className="font-mono text-[12px] text-ink-3">
         {error.message}
         {error.digest && ` · ${error.digest}`}
       </p>

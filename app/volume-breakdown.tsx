@@ -81,7 +81,7 @@ export function VolumeBreakdown({ points }: { points: BreakdownPoint[] }) {
               title={m.hint}
               aria-pressed={mode === m.key}
               onClick={() => setMode(m.key)}
-              className={`cursor-pointer rounded px-2 py-1 text-[11px] transition-colors duration-150 ${
+              className={`cursor-pointer rounded px-2 py-1 text-[12px] transition-colors duration-150 ${
                 mode === m.key
                   ? "bg-accent/15 text-accent"
                   : "text-ink-3 hover:bg-panel-2 hover:text-ink-2"

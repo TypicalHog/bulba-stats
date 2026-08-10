@@ -249,7 +249,7 @@ export function EnchantMarket({
             <div className="flex flex-col gap-3 text-[12px]">
               {bookGaps.length > 0 && (
                 <div>
-                  <p className="mb-1 text-[11px] text-ink-3">
+                  <p className="mb-1 text-[12px] text-ink-3">
                     Sold as a book, but no listed tool carries it
                   </p>
                   <p className="text-ink-2">
@@ -261,7 +261,7 @@ export function EnchantMarket({
               )}
               {toolGaps.length > 0 && (
                 <div>
-                  <p className="mb-1 text-[11px] text-ink-3">
+                  <p className="mb-1 text-[12px] text-ink-3">
                     On a listed tool, but no book supplies it
                   </p>
                   <ul className="flex flex-col gap-1">
@@ -271,7 +271,7 @@ export function EnchantMarket({
                           {pretty(g.name)}
                           {g.level > 1 ? ` ${g.level}` : ""}
                         </span>
-                        <span className="font-mono text-[11px] text-ink-3">
+                        <span className="font-mono text-[12px] text-ink-3">
                           {g.tools.join(", ")}
                         </span>
                       </li>
@@ -303,7 +303,7 @@ export function EnchantMarket({
               aria-checked={showNiche}
               onClick={() => setShowNiche((v) => !v)}
               title="Low-demand variants with unusual enchantment combinations"
-              className={`cursor-pointer rounded border px-2 py-1 text-[11px] transition-colors ${
+              className={`cursor-pointer rounded border px-2 py-1 text-[12px] transition-colors ${
                 showNiche
                   ? "border-accent/50 bg-accent/10 text-accent"
                   : "border-line text-ink-3 hover:border-ink-3 hover:text-ink-2"

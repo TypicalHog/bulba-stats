@@ -592,7 +592,7 @@ function FlowBlock({
         <p className="mb-2 text-[10px] uppercase tracking-wider text-ink-3">
           {heading}
         </p>
-        <p className="text-[11px] text-ink-3">{emptyNote}</p>
+        <p className="text-[12px] text-ink-3">{emptyNote}</p>
       </div>
     );
   }
@@ -628,7 +628,7 @@ function FlowBlock({
         ]}
         height={10}
       />
-      <div className="mt-3 grid grid-cols-2 gap-3 text-[11px] sm:grid-cols-3">
+      <div className="mt-3 grid grid-cols-2 gap-3 text-[12px] sm:grid-cols-3">
         <div>
           <p className="text-ink-3">Fill rate</p>
           <p className="font-mono text-up">{percent(flow.fillRate * 100)}</p>
@@ -667,7 +667,7 @@ function DistanceBlock({
         <p className="mb-2 text-[10px] uppercase tracking-wider text-ink-3">
           {heading}
         </p>
-        <p className="text-[11px] text-ink-3">No orders in this group.</p>
+        <p className="text-[12px] text-ink-3">No orders in this group.</p>
       </div>
     );
   }
@@ -681,7 +681,7 @@ function DistanceBlock({
         </span>
       </p>
       <SplitBar segments={bands} height={10} />
-      <div className="mt-3 grid grid-cols-3 gap-3 text-[11px]">
+      <div className="mt-3 grid grid-cols-3 gap-3 text-[12px]">
         <div>
           <p className="text-ink-3">Median</p>
           <p className="font-mono text-ink">{percent(median(values))}</p>
@@ -788,7 +788,7 @@ async function Lifecycle() {
                       ? duration(b.medianLifetimeMs)
                       : "—"}
                   </span>
-                  <span className="w-20 text-right font-mono text-[11px] text-ink-3">
+                  <span className="w-20 text-right font-mono text-[12px] text-ink-3">
                     {num(b.orders)} quotes
                   </span>
                 </li>

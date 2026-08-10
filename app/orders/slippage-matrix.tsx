@@ -86,7 +86,7 @@ export function SlippageMatrix({
               type="button"
               onClick={() => setSide(s)}
               aria-pressed={side === s}
-              className={`rounded-[3px] px-2.5 py-1 text-[11px] capitalize transition-colors ${
+              className={`rounded-[3px] px-2.5 py-1 text-[12px] capitalize transition-colors ${
                 side === s
                   ? "bg-panel-2 text-ink"
                   : "text-ink-3 hover:text-ink-2"
@@ -96,7 +96,7 @@ export function SlippageMatrix({
             </button>
           ))}
         </div>
-        <p className="text-[11px] text-ink-3">
+        <p className="text-[12px] text-ink-3">
           {side === "buy"
             ? "Average fill price above mid when sweeping the ask side"
             : "Average fill price below mid when sweeping the bid side"}
@@ -104,7 +104,7 @@ export function SlippageMatrix({
       </div>
 
       <div className="scroll-x max-h-[520px] overflow-y-auto">
-        <table className="w-full min-w-[520px] border-separate border-spacing-0 text-[11px]">
+        <table className="w-full min-w-[520px] border-separate border-spacing-0 text-[12px]">
           <thead className="sticky top-0 z-10">
             <tr>
               <th className="sticky left-0 z-10 bg-panel-2 px-3 py-2 text-left font-medium text-ink-3">
@@ -169,7 +169,7 @@ export function SlippageMatrix({
       </div>
 
       {hovered && hoveredRow && (
-        <p className="mt-2 text-[11px] text-ink-2">
+        <p className="mt-2 text-[12px] text-ink-2">
           <span className="font-mono text-ink">
             {num(hovered.size)} units
           </span>{" "}

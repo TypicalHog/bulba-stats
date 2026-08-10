@@ -270,7 +270,7 @@ async function TreasuryBody() {
           </ul>
 
           {treasury.schedule && (
-            <div className="mt-4 border-t border-line pt-3 text-[11px]">
+            <div className="mt-4 border-t border-line pt-3 text-[12px]">
               <p className="text-ink-3">
                 Last run{" "}
                 <span className="font-mono text-ink-2">
@@ -312,7 +312,7 @@ async function TreasuryBody() {
                 ]}
                 height={10}
               />
-              <div className="mt-4 grid grid-cols-2 gap-3 border-t border-line pt-3 text-[11px]">
+              <div className="mt-4 grid grid-cols-2 gap-3 border-t border-line pt-3 text-[12px]">
                 <Fact
                   label="Outstanding"
                   value={num(stock.sharesOutstanding)}
@@ -406,7 +406,7 @@ async function TreasuryBody() {
                     : ""
                 }`}
               >
-                <div className="grid grid-cols-2 gap-4 text-[11px] sm:grid-cols-4">
+                <div className="grid grid-cols-2 gap-4 text-[12px] sm:grid-cols-4">
                   <div>
                     <p className="text-ink-3">Last paid to holders</p>
                     <p className="font-mono text-[18px] text-ink">
@@ -460,7 +460,7 @@ async function TreasuryBody() {
                   </div>
                 </div>
 
-                <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 border-t border-line pt-3 text-[11px]">
+                <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 border-t border-line pt-3 text-[12px]">
                   <span className="text-ink-3">
                     Yield at bid{" "}
                     <span className="font-mono text-ink-2">
@@ -543,7 +543,7 @@ async function TreasuryBody() {
             title="Where the diamonds are"
             subtitle="Currency crossing the boundary, and what the treasury holds"
           >
-            <div className="grid grid-cols-2 gap-4 text-[11px]">
+            <div className="grid grid-cols-2 gap-4 text-[12px]">
               <div>
                 <p className="text-ink-3">Deposited</p>
                 <p className="font-mono text-[18px] text-up">

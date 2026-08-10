@@ -339,7 +339,7 @@ async function Tape() {
                     {num(v.trades)} priced trades
                   </span>
                 </div>
-                <div className="mt-1 grid grid-cols-2 gap-2 text-[11px]">
+                <div className="mt-1 grid grid-cols-2 gap-2 text-[12px]">
                   <span className="text-ink-3">
                     Average against previous print{" "}
                     <span
@@ -377,7 +377,7 @@ async function Tape() {
           title="How long a trade takes"
           subtitle="An in-person trade needs two people to open a trade window; a bank transfer does not"
         >
-          <div className="grid grid-cols-2 gap-4 text-[11px]">
+          <div className="grid grid-cols-2 gap-4 text-[12px]">
             {venues.map((v) => (
               <div key={v.venue}>
                 <p className="text-ink-3">
@@ -431,7 +431,7 @@ async function Tape() {
                     size={16}
                   />
                   <span className="text-ink-3">{e.detail}</span>
-                  <span className="ml-auto font-mono text-[11px] text-ink-3">
+                  <span className="ml-auto font-mono text-[12px] text-ink-3">
                     {dateOnly(new Date(e.row.at).toISOString())}
                   </span>
                 </li>
@@ -626,7 +626,7 @@ async function Affiliations() {
                   className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px]"
                 >
                   <PlayerLink username={m.username} uuid={m.uuid} size={18} />
-                  <span className="font-mono text-[11px] text-ink-3">
+                  <span className="font-mono text-[12px] text-ink-3">
                     {m.banks.join(" · ")}
                   </span>
                 </li>
@@ -654,7 +654,7 @@ function BankList({ banks }: { banks: BankNode[] }) {
           <div className="flex items-center gap-2">
             <span className="font-mono text-[12px] text-ink">{bank.name}</span>
             {bank.isHouse && <Badge tone="warn">House</Badge>}
-            <span className="ml-auto text-[11px] text-ink-3">
+            <span className="ml-auto text-[12px] text-ink-3">
               {num(bank.members.length)}{" "}
               {bank.members.length === 1 ? "member" : "members"}
             </span>
@@ -714,7 +714,7 @@ async function Rhythm() {
         </Panel>
 
         <Panel title="Rhythm" subtitle="What the grid adds up to">
-          <div className="grid grid-cols-2 gap-4 text-[11px]">
+          <div className="grid grid-cols-2 gap-4 text-[12px]">
             <div>
               <p className="text-ink-3">Busiest hour</p>
               <p className="font-mono text-[15px] text-ink">
@@ -731,7 +731,7 @@ async function Rhythm() {
               <p className="text-ink-3">Days with trades</p>
               <p className="font-mono text-[15px] text-ink">
                 {num(activeDays)}
-                <span className="text-[11px] text-ink-3">
+                <span className="text-[12px] text-ink-3">
                   {" "}
                   / {num(days.length)}
                 </span>
@@ -855,7 +855,7 @@ async function Behaviour() {
             asserting "traders round" regardless of what the split shows would
             be the wrong claim.
           */}
-          <p className="mt-3 text-[11px] leading-relaxed text-ink-2">
+          <p className="mt-3 text-[12px] leading-relaxed text-ink-2">
             {clusterTotal > 0 ? (
               <>
                 <span className="font-mono text-ink">
@@ -876,7 +876,7 @@ async function Behaviour() {
           title="Trade sizes"
           subtitle="Minecraft stacks are 64, so stack-aligned sizes are deliberate"
         >
-          <div className="grid grid-cols-2 gap-4 text-[11px]">
+          <div className="grid grid-cols-2 gap-4 text-[12px]">
             <div>
               <p className="text-ink-3">Median size</p>
               <p className="font-mono text-[15px] text-ink">
@@ -967,7 +967,7 @@ async function Behaviour() {
             </tbody>
           </DataTable>
           <div className="px-3 pb-3 pt-2">
-            <p className="text-[11px] text-ink-3">
+            <p className="text-[12px] text-ink-3">
               {num(bankOps.length)} bank movements against {num(totals.trades)}{" "}
               trades — deposits and withdrawals are how items get in and out of
               the exchange.
@@ -1301,7 +1301,7 @@ async function Network() {
       </div>
       <div className="grid gap-4 lg:grid-cols-3">
         <Panel title="Shape of the network">
-          <div className="grid grid-cols-2 gap-4 text-[11px]">
+          <div className="grid grid-cols-2 gap-4 text-[12px]">
             <div>
               <p className="text-ink-3">Traders</p>
               <p className="font-mono text-[18px] text-ink">
@@ -1327,7 +1327,7 @@ async function Network() {
               </p>
             </div>
           </div>
-          <p className="mt-3 text-[11px] leading-relaxed text-ink-2">
+          <p className="mt-3 text-[12px] leading-relaxed text-ink-2">
             The market maker is a counterparty to{" "}
             <span className="font-mono text-ink">
               {percent(totalVolume > 0 ? (mmVolume / totalVolume) * 100 : 0)}

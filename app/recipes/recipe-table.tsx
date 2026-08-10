@@ -259,7 +259,7 @@ export function RecipeTable({ rows }: { rows: RecipeRow[] }) {
               type="button"
               onClick={() => setKind(k.key)}
               aria-pressed={kind === k.key}
-              className={`rounded-[3px] px-2.5 py-1 text-[11px] transition-colors ${
+              className={`rounded-[3px] px-2.5 py-1 text-[12px] transition-colors ${
                 kind === k.key
                   ? "bg-panel-2 text-ink"
                   : "text-ink-3 hover:text-ink-2"
@@ -321,7 +321,7 @@ export function RecipeTable({ rows }: { rows: RecipeRow[] }) {
                 key={input.listingName}
                 className="flex flex-wrap items-center gap-2 text-[12px]"
               >
-                <span className="font-mono text-[11px] text-ink-3">
+                <span className="font-mono text-[12px] text-ink-3">
                   ×{input.amount < 1 ? input.amount.toFixed(3) : num(input.amount)}
                 </span>
                 {input.listingId ? (
@@ -343,14 +343,14 @@ export function RecipeTable({ rows }: { rows: RecipeRow[] }) {
 
           {detail.row.anvilSteps.length > 0 && (
             <div className="mt-3 border-t border-line pt-3">
-              <p className="mb-1.5 text-[11px] text-ink-3">
+              <p className="mb-1.5 text-[12px] text-ink-3">
                 Cheapest combining order — {num(detail.row.anvilLevels ?? 0)}{" "}
                 levels total, dearest step {num(detail.row.anvilMaxStep ?? 0)}
                 {detail.row.xpBottles != null && (
                   <> · about {num(detail.row.xpBottles)} bottles of experience</>
                 )}
               </p>
-              <ol className="flex flex-col gap-1 text-[11px] text-ink-2">
+              <ol className="flex flex-col gap-1 text-[12px] text-ink-2">
                 {detail.row.anvilSteps.map((step, i) => (
                   <li key={i} className="flex gap-2">
                     <span className="font-mono text-ink-3">{i + 1}.</span>
@@ -400,7 +400,7 @@ function Switch({
       aria-checked={on}
       onClick={onClick}
       title={title}
-      className={`cursor-pointer rounded border px-2 py-1 text-[11px] transition-colors duration-150 ${
+      className={`cursor-pointer rounded border px-2 py-1 text-[12px] transition-colors duration-150 ${
         on
           ? "border-accent/50 bg-accent/10 text-accent"
           : "border-line text-ink-3 hover:border-ink-3 hover:text-ink-2"

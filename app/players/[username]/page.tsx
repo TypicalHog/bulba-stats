@@ -85,7 +85,7 @@ export default async function PlayerPage({
               </Badge>
             )}
           </div>
-          <p className="mt-0.5 font-mono text-[11px] text-ink-3">
+          <p className="mt-0.5 font-mono text-[12px] text-ink-3">
             {profile ? (
               <>
                 joined {dateOnly(profile.createdAt)} · last seen{" "}
@@ -100,7 +100,7 @@ export default async function PlayerPage({
         </div>
         <Link
           href="/players"
-          className="text-[11px] text-ink-3 hover:text-accent"
+          className="text-[12px] text-ink-3 hover:text-accent"
         >
           ← All players
         </Link>
@@ -554,7 +554,7 @@ async function OpenOrders({ username }: { username: string }) {
       }
       bodyClassName="p-0"
     >
-      <div className="grid grid-cols-2 gap-3 border-b border-line px-3 py-2.5 text-[11px]">
+      <div className="grid grid-cols-2 gap-3 border-b border-line px-3 py-2.5 text-[12px]">
         <div>
           <p className="text-ink-3">Bid capital</p>
           <p className="font-mono text-up">{diamondsCompact(bidCapital)}</p>

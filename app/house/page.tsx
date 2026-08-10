@@ -147,7 +147,7 @@ async function HouseBody() {
           title="Committed to the book"
           subtitle="Capital on the bid, inventory on the ask, right now"
         >
-          <div className="grid grid-cols-2 gap-4 text-[11px]">
+          <div className="grid grid-cols-2 gap-4 text-[12px]">
             <div>
               <p className="text-ink-3">Bid capital</p>
               <p className="font-mono text-[18px] text-up">
@@ -194,7 +194,7 @@ async function HouseBody() {
                   className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px]"
                 >
                   <PlayerLink username={m.username} uuid={m.uuid} size={18} />
-                  <span className="font-mono text-[11px] text-ink-3">
+                  <span className="font-mono text-[12px] text-ink-3">
                     {m.banks.join(" · ")}
                   </span>
                 </li>
@@ -236,7 +236,7 @@ async function HouseBody() {
                 <span className="ml-auto font-mono text-ink">
                   {diamonds(a.value)}
                 </span>
-                <span className="w-24 text-right font-mono text-[11px] text-ink-3">
+                <span className="w-24 text-right font-mono text-[12px] text-ink-3">
                   {num(a.units)} units
                 </span>
               </li>

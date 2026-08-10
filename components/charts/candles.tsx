@@ -90,7 +90,7 @@ export function CandleChart({
   return (
     <div className="scroll-x">
       <div className="relative" style={{ minWidth: CHART_MIN_WIDTH }}>
-        <div className="mb-2 flex flex-wrap items-baseline gap-x-4 gap-y-1 font-mono text-[11px]">
+        <div className="mb-2 flex flex-wrap items-baseline gap-x-4 gap-y-1 font-mono text-[12px]">
           <span className="text-ink-3">
             {active ? dateTime(active.time) : `${interval} · latest`}
           </span>

@@ -86,7 +86,7 @@ export function SiteNav({ search }: { search?: ReactNode }) {
           href={SITE_ORIGIN}
           target="_blank"
           rel="noopener noreferrer"
-          className="hidden shrink-0 rounded border border-line px-2.5 py-1.5 text-[11px] text-ink-3 transition-colors duration-150 hover:border-accent/40 hover:text-accent sm:block"
+          className="hidden shrink-0 rounded border border-line px-2.5 py-1.5 text-[12px] text-ink-3 transition-colors duration-150 hover:border-accent/40 hover:text-accent sm:block"
         >
           BulbaStore ↗
         </a>
