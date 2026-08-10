@@ -40,7 +40,7 @@ export const metadata = {
 
 /**
  * The funnel needs to know who has ever written an order, which means the
- * resting-order crawl — ~111 sequential requests, past the default serverless
+ * resting-order crawl — ~47 sequential requests, past the default serverless
  * timeout on a cold cache. Same ceiling as /market and /orders.
  *
  * `/orders/summary` cannot stand in for it here: it groups by bank account, so

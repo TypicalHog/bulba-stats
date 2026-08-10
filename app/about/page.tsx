@@ -276,10 +276,12 @@ export default function AboutPage() {
             Sparklines come from actual fill prices rather than per-listing
             candle requests, saving roughly 118 requests per market page view.
             Depth ownership uses one resting-order crawl instead of 118
-            individual book fetches. The read tier allows 120 requests a minute
-            per IP; crawls are capped, fan-out is bounded, and everything is
-            cached server-side, so a page view usually costs the upstream API
-            nothing at all.
+            individual book fetches. The read tier allows 300 requests a minute
+            per IP and cached reads don&apos;t count against it; crawls are
+            capped, fan-out is bounded, and everything is cached server-side, so
+            a page view usually costs the upstream API nothing at all. That
+            budget is shared with everything else using the proxy, which is why
+            the tiers stay conservative rather than spending the headroom.
           </p>
         </Panel>
       </div>

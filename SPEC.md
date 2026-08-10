@@ -34,7 +34,8 @@ auth. BulbaStats never writes.
 | `GET /transactions?view=trades` | One row per taker action, with a `makers[]` array and `fee` |
 | `GET /transactions?view=fills` | One row per transaction record, incl. bank operations |
 | `GET /orders` | Limit orders, all statuses, cursor-paginated |
-| `GET /orders/summary` | Resting orders folded per (side, listing, bank) — the whole book in one call |
+| `GET /orders/summary` | Resting orders folded per (side, listing, bank); `groupBy=listing,side[,player],price` returns the whole price-level book in one call |
+| `GET /orders?updatedAfter=` | Change polling — rows carry `updatedAt`; overlap 10–30 s and dedupe on `(id, updatedAt)` |
 | `GET /players/:username` | Profile, banks, per-variant balances |
 | `GET /treasury` | Pools, distribution schedule, stock (shares outstanding / holders) |
 | `GET /treasury/revenue?days=N` | Daily fee revenue split by `physical_fees` / `storage_fees` |
@@ -52,24 +53,54 @@ depends on them.
 unauthenticated): `/treasury`, `/treasury/revenue`, `/treasury/distributions`,
 `/lending/*`. These power the Treasury section.
 
-`/orders/summary` is undocumented too, found by probing the routes around the
-documented ones. It answers in one request what the `/orders` crawl answers in a
-hundred and eleven, and it accepts the same `listingId` / `status` / `username`
-filters. It is **not** a replacement for the crawl — price collapses to
-`minPrice`/`maxPrice`, so no book can be rebuilt from it, and rows group by bank
-account rather than by player, so an order written from a shared bank cannot be
-attributed to whoever actually wrote it. What it is good for is knowing whether
-anything changed, which is exactly how §1.3 uses it.
+`/orders/summary` was undocumented too, found by probing the routes around the
+documented ones. **It is documented upstream as of August 2026, and it gained a
+`groupBy` parameter that changes what it is for.**
+
+Ungrouped, it folds resting orders per (side, listing, bank account) and answers
+in one request what the `/orders` crawl answers in forty-seven. In that form the
+old caveat holds and is why §1.3 uses it only as a change probe: price collapses
+to `minPrice`/`maxPrice`, so no book can be rebuilt from it, and rows group by
+bank account rather than by player, so an order written from a shared bank
+cannot be attributed to whoever wrote it.
+
+`groupBy` removes both limits:
+
+| `groupBy` | Rows | Answers |
+|---|---|---|
+| `listing,side,price` | ~9,220 | the entire price-level book, one request |
+| `listing,side,player,price` | ~9,319 | the same, attributed per player |
+| `player` | 7 | resting capital per trader |
+
+Both book forms were checked against `GET /orderbook` and reproduce the official
+best bid and ask on **118 of 118** listings, identically to the crawl. The
+attributed form is house-vs-organic at level granularity in a single call — the
+thing `reconstructOrganicBooks` currently crawls for.
+
+What `groupBy` still cannot answer is anything about *when*: the rows carry no
+`createdAt`, `expiresAt` or `completedAt`, so order ages, fill rates and
+time-to-fill still need the order-level crawl.
 
 Two behaviours of the live API that the caching model depends on, both verified
 against the host rather than taken from the docs:
 
-- **Unknown query parameters are ignored, not rejected.** `?sort=`, `?fields=`
-  and `?updatedAfter=` all return the byte-identical response, same `ETag`.
+- **Unknown query parameters are ignored, not rejected.** `?sort=` and
+  `?fields=` return the byte-identical response, same `ETag`. This is what makes
+  the `&v=` content-addressing in §1.3 possible — it changes the cache key
+  without changing the request.
+
+  `?updatedAfter=` **used to be** such a parameter and no longer is: it became a
+  real change-polling filter in August 2026. Nothing here passed it, so nothing
+  broke, but it is a reminder that this trick rests on a parameter staying
+  unimplemented. `v` is not a plausible future parameter name; `updatedAfter`
+  always was.
 - **`before` and `after` are plain exclusive id bounds** (`id < n` and `id > n`),
   and accept any integer rather than only a cursor the API itself issued.
   `after` is implemented on `/transactions` only; `/orders` accepts it and
   silently ignores it.
+- **Only `/transactions` is append-only.** `/orders` cursor pages are *not*
+  immutable — rows mutate in place, so a page can change content without any row
+  being added. §1.3 says what that costs.
 
 ### 1.2 Observed data volumes
 
@@ -80,8 +111,9 @@ Measured against the live API. These drive the caching strategy.
 | Taker trades (`view=trades`) | ~225 | 2 | ~1.3 s |
 | Trade fills (`view=fills`) | ~3,965 | 20 | ~4.8 s |
 | Bank operations (deposit/withdraw/transfer/pay) | ~3,548 | 18 | ~4.9 s |
-| Open limit orders | ~22,144 | 111 | ~21.3 s |
-| Closed limit orders | ~247,000 | ~1,236 | not crawlable |
+| Open limit orders | ~9,384 | 47 | ~9.9 s |
+| Open book as price levels (`groupBy`) | ~9,319 | **1** | ~0.6 s |
+| Closed limit orders | ~265,000 | ~1,327 | not crawlable |
 | Listings / order books | 184 / 118 | 1 each | <1 s |
 
 The market opened 2026-07-12, so full history is small enough to aggregate
@@ -90,13 +122,28 @@ is computed over the complete dataset, not an estimate.
 
 Two datasets are exceptions, and they are different kinds of exception.
 
-The open-order crawl (~22,144 rows, 92% of them from the `BulbaStore`
-market-maker) is merely expensive: it is complete, it is just 111 sequential
+The open-order crawl (~9,384 rows, 83% of them from the `BulbaStore`
+market-maker) is merely expensive: it is complete, it is just 47 sequential
 requests, so only the pages that need order-level detail pull it.
 
-The closed-order set is genuinely out of reach. Order ids run to ~269,600
-against ~22,100 still open, so roughly **247,000 orders have closed** — some
-1,236 pages, growing by thousands a day and never shrinking. Nothing this site
+It halved in **August 2026**, when the house bot moved to aggregated levels —
+one row per price instead of one per item — taking the book from ~22,144 rows
+over 111 pages to ~9,384 over 47, and book payloads from ~78 KB to ~38 KB.
+
+The same release made the crawl largely unnecessary:
+`/orders/summary?groupBy=listing,side,price` returns the whole price-level book
+in **one** request, and `groupBy=listing,side,player,price` adds per-player
+attribution — which is house-vs-organic at level granularity without a crawl at
+all. Both were verified to reproduce the official best bid and ask on **118 of
+118** listings, identically to the crawl. The order-level crawl is still needed
+for order ages and lifecycle statistics, because grouped rows carry no
+timestamps.
+
+The closed-order set is genuinely out of reach. Order ids run to ~274,700
+against ~9,400 still open, so roughly **265,000 orders have closed** — some
+1,327 pages. It has, however, stopped growing: the ~8,500 ids a day it used to
+accrue were almost entirely the house bot replacing one order per item, and that
+churn went with the same release. Nothing this site
 does reads all of it. `getClosedOrders` takes the newest 45 pages, which is
 about five days, and the fill-rate and time-to-fill panels say so rather than
 implying whole-history coverage. That window narrows in calendar terms as the
@@ -126,7 +173,7 @@ No Cache Components (`cacheComponents` is off), so the previous model applies:
 A tier alone is a poor instrument: it cannot tell "five minutes have passed"
 apart from "something happened", and the measured book routinely sits unchanged
 for hours — during one observation the newest order was 2 h 45 m old. Under a
-tier alone the site re-read 22,144 rows twelve times an hour to rediscover it.
+tier alone the site re-read the whole book twelve times an hour to rediscover it.
 
 So the expensive reads are not paced by the clock. Two mechanisms replace it,
 both leaning on API behaviour verified in §1.1.
@@ -189,13 +236,19 @@ visit to a heavy page pays a cold crawl.
 
 ### 1.4 Etiquette
 
-Read tier is 120 req/min per IP. Crawls are sequential (cursor pagination is
-inherently serial), fan-outs are bounded to 6 concurrent requests, and every
-crawl has a hard page cap so a runaway dataset can't spiral. All fetching happens
-server-side, so a page view costs the upstream API nothing when cached.
+Read tier is **300 req/min** per IP, and cached reads do not count against it.
+(The documentation said 120 until August 2026; the tiers here were priced
+against that lower figure and have deliberately not been loosened since — the
+budget is shared across everything using the proxy, and none of the tiers exists
+because of the limit. They exist because the data does not change faster.)
+
+Crawls are sequential (cursor pagination is inherently serial), fan-outs are
+bounded to 6 concurrent requests, and every crawl has a hard page cap so a
+runaway dataset can't spiral. All fetching happens server-side, so a page view
+costs the upstream API nothing when cached.
 
 The hourly capture job (§1.5) is the one sustained load. It paces itself to
-60 req/min — half the allowance — and so spends ~160 s per run, a 4% duty cycle.
+60 req/min — a fifth of the allowance — and so spends ~160 s per run.
 
 ### 1.5 Captured history
 
@@ -334,7 +387,7 @@ meaning. Everything below is computed in `lib/analytics/`.
   crawl rather than from 118 per-listing requests. The crawl is already fetched
   for other panels and its rows carry everything a book is made of, so
   market-wide depth costs nothing extra. Verified exact — aggregating all
-  20,690 resting orders reproduces the official best bid and ask on 118 of 118
+  9,384 resting orders reproduces the official best bid and ask on 118 of 118
   listings — and re-checked at render against `GET /orderbook`, since a
   reconstruction is only as good as the crawl behind it. The result satisfies
   `OrderBook`, so depth curves, metrics, slippage and participants work on it

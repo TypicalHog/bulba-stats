@@ -129,7 +129,7 @@ database. Two settings are non-default and worth understanding:
   elsewhere, change this to the nearest region and the cold-cache pages get
   proportionally faster.
 - **`maxDuration = 60` on `/market`, `/orders`, `/players` and `/recipes`.** All depend on that crawl,
-  which takes ~21 s locally and would be killed by the default serverless
+  which takes ~10 s and would be killed by the default serverless
   timeout on a cold cache. 60 s is the Hobby-tier ceiling, so it is safe on any
   plan. Warm requests return from cache immediately — and stay warm across a
   revalidation now that the crawl is keyed by the book's content rather than by

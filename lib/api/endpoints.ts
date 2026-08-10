@@ -418,14 +418,22 @@ export const getOrderSummary = cache(
 );
 
 /**
- * The full resting-order book across every listing (~22,100 rows, 111 pages,
- * ~21 s).
+ * The full resting-order book across every listing (~9,400 rows, 47 pages,
+ * ~10 s).
  *
  * The heaviest read on the site by an order of magnitude. Only the pages that
  * need order-level detail call it, and it is pinned to a digest of
  * `/orders/summary` so an unchanged book is served from cache for the price of
  * that one request — which matters because the book measurably sits still for
  * hours at a time, while the tier alone would re-crawl it twelve times an hour.
+ *
+ * It halved in August 2026 when the house bot moved to aggregated levels
+ * (~22,100 rows over 111 pages before). It can go further: upstream now serves
+ * `/orders/summary?groupBy=listing,side,player,price`, which returns the whole
+ * price-level book with per-player attribution in **one** request — measured at
+ * 9,319 rows in ~600 ms against 47 requests and ~10 s here, and verified to
+ * reproduce the official best bid and ask on 118 of 118 listings. Everything
+ * that only needs books rather than individual orders should move to it.
  *
  * `complete: false` means the page cap was hit — surface that rather than
  * presenting a truncated crawl as the whole book.
@@ -453,10 +461,15 @@ export const getAllOpenOrders = cache(
  * Closed orders — the input to fill-rate and time-to-fill statistics.
  *
  * Pinned the same way as the open book. Note what `complete: false` means
- * here: ids run to ~269,600 against ~22,100 still open, so roughly 247,000
- * orders have closed — some 1,236 pages, growing by thousands a day. This crawl
- * reads the newest `maxPages` of that and nothing reaches the end, which is why
- * callers surface the truncation rather than implying whole-history coverage.
+ * here: ids run to ~274,700 against ~9,400 still open, so roughly 265,000
+ * orders have closed — some 1,327 pages. This crawl reads the newest
+ * `maxPages` of that and nothing reaches the end, which is why callers surface
+ * the truncation rather than implying whole-history coverage.
+ *
+ * The backlog stopped growing in August 2026. It used to accrue ~8,500 ids a
+ * day, almost all of it the house bot replacing one order per item; with the
+ * bot on aggregated levels that churn is essentially gone. The set is still far
+ * too large to crawl, but it is no longer a moving target.
  */
 export const getClosedOrders = cache(
   async (maxPages = 25): Promise<{ rows: LimitOrder[]; complete: boolean }> => {

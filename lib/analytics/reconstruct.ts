@@ -13,13 +13,21 @@ import { isHouseOrder } from "./house";
  * `GET /orderbook/:id` returns one book per request, so anything market-wide
  * that needs depth — a slippage matrix across the catalog, the book with the
  * house stripped out, "what could I buy for N diamonds" — would cost 118
- * requests against a 120/min budget. The open-order crawl already fetches every
- * resting order for other panels, and those rows carry everything a book is
- * made of, so the same data reconstructs all 118 books for no extra requests.
+ * requests against a shared per-minute budget. The open-order crawl already
+ * fetches every resting order for other panels, and those rows carry everything
+ * a book is made of, so the same data reconstructs all 118 books for no extra
+ * requests.
  *
- * Verified against the live API: aggregating all 20,690 resting orders
+ * Verified against the live API: aggregating all 9,384 resting orders
  * reproduces the official best bid and best ask on **118 of 118** listings
  * exactly. `crossCheck` keeps that honest at runtime rather than on trust.
+ *
+ * Upstream can now do this fold server-side —
+ * `/orders/summary?groupBy=listing,side,player,price` returns the same price
+ * levels with per-player attribution in one request, and was checked to land on
+ * the same 118 of 118. This function stays for as long as the order-level crawl
+ * is needed for order ages and lifecycle stats, which the grouped rows carry no
+ * timestamps for.
  *
  * The result satisfies `OrderBook`, so everything in `book.ts` — depth curves,
  * metrics, slippage, participants — works on a reconstructed book unchanged.

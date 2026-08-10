@@ -39,12 +39,15 @@ export const metadata = {
 };
 
 /**
- * The resting-order crawl is ~111 sequential upstream requests and takes about
- * 21 s locally, which is past the default serverless timeout — a cold cache
- * would be killed mid-crawl. 60 s is the ceiling on Vercel's Hobby tier, so it
- * is safe on any plan. Warm requests still return from cache immediately, and
- * the crawl is keyed to the book's contents, so a revalidation only pays that
- * cost again if the book has actually changed.
+ * The resting-order crawl is ~47 sequential upstream requests and takes about
+ * 10 s, which is past the default serverless timeout — a cold cache would be
+ * killed mid-crawl. 60 s is the ceiling on Vercel's Hobby tier, so it is safe
+ * on any plan. Warm requests still return from cache immediately, and the
+ * crawl is keyed to the book's contents, so a revalidation only pays that cost
+ * again if the book has actually changed.
+ *
+ * Halved in August 2026, when the house bot moved to aggregated levels: the
+ * book went from ~22,100 resting orders over 111 pages to ~9,400 over 47.
  */
 export const maxDuration = 60;
 
@@ -63,7 +66,7 @@ export default function OrdersPage() {
         fallback={
           <PanelSkeleton
             height={520}
-            label="Crawling ~20,000 resting orders…"
+            label="Crawling ~9,400 resting orders…"
           />
         }
       >

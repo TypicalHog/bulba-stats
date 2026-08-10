@@ -15,12 +15,21 @@ export const API_BASE =
  * Revalidation tiers, in seconds. Chosen against measured upstream cost —
  * see SPEC.md §1.2/§1.3.
  *
- * Sized against the 120 req/min read allowance, using the measured page counts:
- * a full aggregate refresh is 39 requests (2 trades + 20 fills + 17 bank ops)
- * and the heavy crawl is 104. Sustained worst case, with someone watching a
- * page in each tier continuously, is roughly 26 + 21 + 12 + 3 ≈ 62 req/min,
- * which leaves room for the hourly capture's 60 req/min burst to overlap
- * without either being throttled.
+ * Sized against the read allowance, using the measured page counts: a full
+ * aggregate refresh is 39 requests (2 trades + 20 fills + 17 bank ops) and the
+ * heavy crawl is 47. Sustained worst case, with someone watching a page in
+ * each tier continuously, is roughly 26 + 21 + 12 + 3 ≈ 62 req/min.
+ *
+ * The allowance is **300 req/min**, not the 120 these tiers were first priced
+ * against — the published figure was wrong and upstream corrected it in August
+ * 2026 — and cached reads do not count against it at all. So there is far more
+ * headroom here than the numbers below assume, and the hourly capture's burst
+ * can overlap without either being throttled.
+ *
+ * The tiers are deliberately *not* being loosened to spend that headroom. The
+ * budget is shared across every consumer of the proxy, so politeness here is
+ * not wasted, and none of these tiers exists because of the rate limit — they
+ * exist because the underlying data does not change faster than this.
  *
  * These are the floor for *passive* freshness. The Refresh control in the
  * header exists for the case a tier can never serve well — wanting to see a
@@ -33,7 +42,7 @@ export const TTL = {
   near: 20,
   /** Full trade/fill history crawls and the stats derived from them. ~39. */
   aggregate: 90,
-  /** The ~20k-row open-order crawl. 104 requests, ~20 s. */
+  /** The open-order crawl. ~9,400 rows, 47 requests, ~10 s. */
   heavy: 300,
   /** Commands, API docs. */
   static: 900,
@@ -47,6 +56,22 @@ export const TTL = {
    * assumption can go unnoticed. It is a backstop, not the refresh mechanism:
    * the URL changes when the data does, so the cache is normally busted by the
    * key, not by the clock.
+   *
+   * Upstream has since been explicit about which half of that is safe, and it
+   * is worth stating plainly because the two crawls rely on opposite things:
+   *
+   * - **`/transactions` is append-only.** `crawlSplit`'s anchor rests on this,
+   *   and it is now a documented guarantee rather than an inference.
+   * - **`/orders` pages are not immutable — rows mutate in place.** So a
+   *   cursor page can legitimately change content without any row being added,
+   *   and paging it is not a stable window. The open and closed order crawls
+   *   are therefore *only* as correct as their version digest: it is built
+   *   from each group's `count`, `remainingAmount` and `latestId`, so a
+   *   mutation that moves any of those is caught, and one that moves none of
+   *   them — a status change within the same filter, a bare `updatedAt` bump —
+   *   is not, and waits out this hour.
+   *
+   * That residual window is the reason this is an hour and not a day.
    */
   frozen: 3600,
 } as const;
@@ -316,7 +341,7 @@ export async function crawlSplit<T>(
 
 /**
  * Run `worker` over `items` with bounded concurrency, so a fan-out across 118
- * listings doesn't fire 118 simultaneous requests at a 120 req/min endpoint.
+ * listings doesn't fire 118 simultaneous requests at a rate-limited endpoint.
  */
 export async function mapLimit<T, R>(
   items: readonly T[],
