@@ -298,6 +298,7 @@ export function MarketTable({
     {
       key: "last",
       header: "Dormant for",
+      csvHeader: "Last trade (UTC)",
       title:
         "Time since this item last traded, measured from the market's most recent trade rather than the clock",
       align: "right",
@@ -318,6 +319,7 @@ export function MarketTable({
       },
       // Never-traded sorts last rather than first: "no data" is not "oldest".
       sort: (r) => (r.lastTradeAt ? anchor - r.lastTradeAt : null),
+      csv: (r) => (r.lastTradeAt ? new Date(r.lastTradeAt).toISOString() : null),
     },
   ];
 
