@@ -100,12 +100,14 @@ export const TTL = {
    *   cursor page can legitimately change content without any row being added,
    *   and paging it is not a stable window. The open and closed order crawls
    *   are therefore *only* as correct as their version digest: it is built
-   *   from each group's `count`, `remainingAmount` and `latestId`, so a
-   *   mutation that moves any of those is caught, and one that moves none of
-   *   them — a status change within the same filter, a bare `updatedAt` bump —
-   *   is not, and waits out this hour.
+   *   from each group's `count`, `remainingAmount`, `latestId` and
+   *   `latestUpdatedAt`, the last of which upstream describes as the one
+   *   digest that always moves when a group is touched. A mutation that moves
+   *   none of the counts — a status change within the same filter, a bare
+   *   `updatedAt` bump — moves that timestamp, so it is caught too.
    *
-   * That residual window is the reason this is an hour and not a day.
+   * That leaves the hour as a backstop against the digest itself being wrong,
+   * rather than against a mutation it was known not to see.
    */
   frozen: 3600,
 } as const;

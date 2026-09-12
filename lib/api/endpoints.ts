@@ -113,8 +113,16 @@ const digest = (parts: readonly string[]): string =>
  * partial changes `remainingAmount`; a cancel or an expiry sweep changes
  * `count`; a new order raises `latestId`. Price cannot be amended in place —
  * there is no such endpoint — so a requote is a cancel plus an insert and moves
- * two of the three. Returns null if the summary is unavailable, which makes the
- * caller fall back to an unpinned crawl rather than pin to a stale key.
+ * two of the three.
+ *
+ * `latestUpdatedAt` closes what those three leave open. A status change within
+ * the same filter, or a bare `updatedAt` bump, moves none of the counts, and
+ * the digest used to miss it and wait out `TTL.frozen`; upstream describes this
+ * field as the one digest that always moves when a group is touched, so folding
+ * it in costs nothing and makes the hour a pure backstop.
+ *
+ * Returns null if the summary is unavailable, which makes the caller fall back
+ * to an unpinned crawl rather than pin to a stale key.
  */
 async function orderBookVersion(status: string): Promise<string | null> {
   const groups = await getOrderSummary(status);
@@ -123,7 +131,7 @@ async function orderBookVersion(status: string): Promise<string | null> {
     groups
       .map(
         (g) =>
-          `${g.listing?.id ?? 0}:${g.side}:${g.bankAccount?.id ?? 0}:${g.count}:${g.remainingAmount}:${g.latestId}`,
+          `${g.listing?.id ?? 0}:${g.side}:${g.bankAccount?.id ?? 0}:${g.count}:${g.remainingAmount}:${g.latestId}:${g.latestUpdatedAt}`,
       )
       // The upstream's group order is not guaranteed, and a reordering that
       // changed the digest would trigger a pointless hundred-page crawl.
