@@ -306,6 +306,11 @@ that. Output lands on a dedicated **`data` branch** — never on `main`, and wit
 deployments disabled for it from both sides, since 24 pushes a day would
 otherwise be 24 rebuilds.
 
+The capture runner never runs `npm install`, so no dependency's install script
+executes there — including `unrs-resolver`'s `postinstall` (pulled in dev-only
+via `eslint-import-resolver-typescript`), which only runs on Vercel and local
+installs.
+
 | Path | Contents |
 |---|---|
 | `snapshots/<date>/<YYYY-MM-DDTHHMMSS>Z.json` | One immutable snapshot |
