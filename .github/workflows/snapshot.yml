@@ -156,8 +156,28 @@ jobs:
             exit 0
           fi
           git commit -q -m "snapshot: $(date -u +%Y-%m-%dT%H:%MZ)"
-          git push -q origin data
-          echo "Pushed $(git rev-parse --short HEAD)."
+          # Retried, because a rejected push loses the hour outright: the
+          # commit exists only on a runner about to be torn down, and the book
+          # it holds cannot be captured again. Rebase onto the refetched tip
+          # rather than the keep-alive job's reset — that one discards its
+          # commit because it carries no content, and doing the same here
+          # would throw away the very capture the retry exists to save.
+          for attempt in 1 2 3; do
+            if git push -q origin data; then
+              echo "Pushed $(git rev-parse --short HEAD)."
+              exit 0
+            fi
+            echo "Push rejected on attempt $attempt — refetching data and retrying."
+            git fetch -q origin data
+            if ! git rebase -q origin/data; then
+              git rebase --abort
+              echo "::error::This hour's snapshot conflicts with the data branch and could not be replayed onto it. Nothing else should write to that branch — check for a second capture run."
+              exit 1
+            fi
+          done
+
+          echo "::error::Snapshot push failed three times — this hour's capture is lost and cannot be retaken. Check DATA_PUSH_TOKEN has not expired and the data branch is not protected against it."
+          exit 1
 
       # Raised after the push, so the incomplete capture is preserved and the
       # run is still visibly red. Runs even if the push failed, so a degraded
