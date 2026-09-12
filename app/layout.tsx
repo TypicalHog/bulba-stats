@@ -125,9 +125,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </main>
         <SiteFooter />
         {/*
-          Both are inert outside Vercel: the scripts are only injected on a
-          Vercel deployment, so local development and self-hosting are
-          unaffected. Neither collects personal data or sets cookies.
+          Both components always inject a <script> tag client-side, on every
+          route. Off Vercel it only resolves into a working collector on the
+          platform itself: in dev it targets Vercel's public debug endpoint
+          (va.vercel-scripts.com), and in a self-hosted build it requests a
+          same-origin /_vercel/... path that 404s and is swallowed by
+          script.onerror. Neither collects personal data or sets cookies.
         */}
         <Analytics />
         <SpeedInsights />

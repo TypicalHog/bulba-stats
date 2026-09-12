@@ -183,8 +183,11 @@ database. Two settings are non-default and worth understanding:
 
 Vercel [Analytics](https://vercel.com/docs/analytics) and
 [Speed Insights](https://vercel.com/docs/speed-insights) are mounted in the root
-layout. Both are inert anywhere other than a Vercel deployment — the scripts are
-only injected there — so local development and self-hosting are unaffected.
+layout. Both packages always inject a `<script>` tag client-side, on every route.
+It only resolves into a working collector on Vercel's platform: in dev it
+requests Vercel's public debug endpoint (`va.vercel-scripts.com`), and in a
+self-hosted build it requests a same-origin `/_vercel/...` path that 404s
+harmlessly. Neither collects personal data or sets cookies.
 
 ## Documentation
 
