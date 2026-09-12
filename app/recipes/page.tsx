@@ -85,7 +85,13 @@ async function RecipesBody() {
     (r) => r.inputCost != null && r.buyCost != null,
   ).length;
   const enchanting = rows.filter((r) => r.kind === "enchant").length;
-  const blocked = rows.filter((r) => r.anvilTooExpensive).length;
+  // Every row is priced by its cheapest combining order, so the 40-level
+  // "Too Expensive" wall never actually appears on this catalog — the
+  // dearest step reached under optimal play is the honest number to show.
+  const dearestStep = rows.reduce(
+    (max, r) => (r.anvilMaxStep != null ? Math.max(max, r.anvilMaxStep) : max),
+    0,
+  );
 
   return (
     <div className="flex flex-col gap-5">
@@ -102,9 +108,9 @@ async function RecipesBody() {
           hint="derived from the catalog"
         />
         <Stat
-          label="Refused by the anvil"
-          value={num(blocked)}
-          hint="a step costs 40+ levels"
+          label="Dearest anvil step"
+          value={num(dearestStep)}
+          hint="cheapest order, in levels"
         />
       </div>
 
