@@ -77,11 +77,11 @@ async function CompareBody({
     getAllTrades(),
   ]);
 
-  if (!ids.length) {
+  if (ids.length < 2) {
     return (
       <Panel title="Nothing selected">
         <EmptyState>
-          Add listing ids to the URL, like{" "}
+          Add at least two listing ids to the URL, like{" "}
           <code className="font-mono text-ink-2">/compare?ids=2,6,101</code> —
           each item&apos;s id is shown under its name on its{" "}
           <Link href="/market" className="text-accent hover:underline">
