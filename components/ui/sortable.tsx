@@ -133,7 +133,7 @@ export function SortableTable<T>({
     const body = sorted.map((row) =>
       usable.map((c) => csvCell((c.csv ?? c.sort)!(row))).join(","),
     );
-    const blob = new Blob([[header.join(","), ...body].join("\r\n")], {
+    const blob = new Blob(["﻿", [header.join(","), ...body].join("\r\n")], {
       type: "text/csv;charset=utf-8",
     });
     const url = URL.createObjectURL(blob);
