@@ -38,7 +38,7 @@ import { getMarketHistory, hasTrend } from "@/lib/api/snapshots";
 import { PanelSkeleton, TileRowSkeleton } from "@/components/ui/skeleton";
 
 export const metadata = {
-  title: "Overview",
+  title: "Overview · BulbaStats",
   description:
     "Market-wide statistics for the BulbaStore exchange: volume, fees, liquidity breadth, top items and live trades.",
 };
