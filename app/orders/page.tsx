@@ -3,11 +3,13 @@ import {
   getAllOpenOrders,
   getAllTrades,
   getClosedOrders,
+  getOpenBookLevels,
   getOrderbookSummary,
 } from "@/lib/api/endpoints";
 import { groupBy, sum, toLegs } from "@/lib/analytics/legs";
 import { orderAges, orderFlow, slippageCurve } from "@/lib/analytics/book";
 import {
+  booksFromLevels,
   crossCheck,
   isRestingOrder,
   reconstructBooks,
@@ -209,19 +211,20 @@ const LADDER_MAX_SLIP_PCT = 50;
 /**
  * How much size each book can actually absorb.
  *
- * Every book is rebuilt from the crawl this page already ran, so a
- * catalog-wide matrix costs no upstream requests at all — the alternative,
- * `/orderbook/:id` per listing, would be 118 against a 300/min budget.
+ * Nothing here needs to know who wrote an order, so this panel reads the whole
+ * book as price levels in one upstream request rather than waiting on the crawl
+ * the panels around it need — the same source `/recipes` prices from. The
+ * other alternative, `/orderbook/:id` per listing, would be 118 requests
+ * against a 300/min budget.
  */
 async function Liquidity() {
-  const [{ rows: orders, complete }, summary, trades, now] = await Promise.all([
-    getAllOpenOrders(),
+  const [levels, summary, trades] = await Promise.all([
+    getOpenBookLevels(),
     getOrderbookSummary(),
     getAllTrades(),
-    requestTime(),
   ]);
 
-  const books = reconstructBooks(orders, { now });
+  const books = booksFromLevels(levels);
   const check = crossCheck(books, summary);
   const nameById = new Map(summary.map((s) => [s.listingId, s]));
 
@@ -340,20 +343,19 @@ async function Liquidity() {
       >
         <SlippageMatrix rows={rows} sizes={SWEEP_SIZES} />
         <Caveat>
-          Computed from the resting orders on this page rather than from{" "}
-          {num(check.checked)} separate book requests. The reconstruction
-          reproduces the official
-          best bid, ask and depth on {num(check.matched)} of {num(check.checked)}{" "}
-          listings
+          Computed from one grouped request for the whole price-level book
+          rather than from {num(check.checked)} separate ones. Those levels
+          reproduce the official best bid, ask and depth on{" "}
+          {num(check.matched)} of {num(check.checked)} listings
           {check.mismatches.length > 0 && (
             <>
               ; {num(check.mismatches.length)} disagree
               {check.mismatches.some((m) => m.depthOnly) && (
                 <>
                   {" "}
-                  — some only on depth, which means the crawl is missing
-                  levels the book actually has (likely the page cap) rather
-                  than the book having simply moved
+                  — some only on depth, which means the levels and the summary
+                  were read at different moments rather than the touch having
+                  moved
                 </>
               )}
               , so those rows may be understating size or slightly stale
@@ -361,8 +363,6 @@ async function Liquidity() {
           )}
           . Sweeping assumes the whole order goes through at once and that
           nothing is cancelled in front of it. Cost is before the 4% taker fee.
-          {!complete &&
-            " The crawl also hit its page cap, so the book behind this matrix covers the most recently placed orders rather than the entire book."}
         </Caveat>
       </Panel>
 

@@ -158,9 +158,12 @@ cache silently drops any entry over 2 MB, so the response itself has never been
 cacheable and the 90-second tier never applied to it. Packed down to the five
 fields a book is made of it is ~330 KB, which the cache does keep — see
 `getOpenBookLevels`. Its `maxDuration = 60` stays, because the request behind
-that cache still takes seconds every time the tier lapses. The remaining crawl
-callers are `/orders`, `/market`, `/players` and `/house`, which each still want
-something order-level alongside their books.
+that cache still takes seconds every time the tier lapses. `/orders` sweeps the
+same rows for the panels that only need books — slippage, affordability, days of
+supply — so its crawl is now what the organic book and the per-order statistics
+wait on, and nothing else. The remaining crawl callers are `/orders`,
+`/market`, `/players` and `/house`, which each still want something
+order-level alongside their books.
 
 The closed-order set is genuinely out of reach. Order ids run to ~274,700
 against ~9,400 still open, so roughly **265,000 orders have closed** — some
@@ -474,8 +477,8 @@ meaning. Everything below is computed in `lib/analytics/`.
 - **Liquidity score** per listing: depth within ±5% of mid
 - **Slippage matrix**: cost to sweep 1 / 10 / 64 / 256 / 1024 units on every
   two-sided book, buy side and sell side, as a single item × size grid. Answers
-  "where can size actually trade" in one glance, and costs no upstream requests
-  because it runs on the reconstructed books
+  "where can size actually trade" in one glance, and costs one grouped request
+  for the whole price-level book rather than 118 for the individual ones
 - **Spread distribution**: as % of mid; median, tightest, widest
 - **Break-even move**: how far mid must rise before buying an item and later
   selling it breaks even, after crossing the spread twice and paying the 4%
