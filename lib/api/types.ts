@@ -48,6 +48,13 @@ export type OrderbookSummary = VariantFields & {
   bestBid: number | null;
   bestAsk: number | null;
   spread: number | null;
+  tick: number;
+  bidUnits: number;
+  bidValue: number;
+  bidLevels: number;
+  askUnits: number | null;
+  askValue: number | null;
+  askLevels: number | null;
 };
 
 export type BookOrder = {
