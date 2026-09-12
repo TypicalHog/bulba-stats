@@ -84,7 +84,7 @@ export function population(
     ...legs.map((l) => l.at),
     ...bankOps.map((o) => new Date(o.createdAt).getTime()),
   );
-  const anchor = lastEvent || Date.now();
+  const anchor = lastEvent;
 
   const accounts: Account[] = players.map((player) => {
     const lastSeenAt = player.lastSeenAt
