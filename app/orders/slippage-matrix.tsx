@@ -220,7 +220,7 @@ function Cell({
       }
       className={`px-2 py-1 text-right font-mono tabular-nums transition-[outline-color] ${
         active ? "outline outline-1 -outline-offset-1 outline-accent" : ""
-      } ${unfillable ? "text-ink-3" : ""}`}
+      } ${unfillable ? "text-ink-3 border border-dashed border-line" : ""}`}
       style={{
         color: unfillable ? undefined : sequentialLabelInk(t),
         background: unfillable ? "transparent" : sequentialLabelledColor(t),
