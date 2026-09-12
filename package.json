@@ -1,8 +1,11 @@
 {
   "name": "bulba-stats",
-  "version": "0.1.238",
+  "version": "0.1.239",
   "private": true,
   "license": "MIT",
+  "engines": {
+    "node": ">=22.6.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
