@@ -299,6 +299,7 @@ export function TradesExplorer({ rows }: { rows: TradeRow[] }) {
         rowKey={(r) => r.id}
         emptyMessage="No trades match those filters."
         maxHeight={900}
+        exportName="bulbastats-trades"
       />
     </div>
   );

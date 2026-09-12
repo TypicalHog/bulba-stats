@@ -185,6 +185,7 @@ export function DeepestBooks({ rows }: { rows: BookRow[] }) {
           initialSort="value"
           rowKey={(r) => r.listingId}
           emptyMessage="No orders rest that close to mid."
+          exportName="bulbastats-deepest-books"
         />
       </div>
     </div>

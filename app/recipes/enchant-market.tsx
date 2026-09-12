@@ -238,6 +238,7 @@ export function EnchantMarket({
             rowKey={(r) => r.key}
             maxHeight={360}
             emptyMessage="No enchantment books listed."
+            exportName="bulbastats-enchant-prices"
           />
         </Panel>
 
@@ -321,6 +322,7 @@ export function EnchantMarket({
           rowKey={(r) => r.listingId}
           maxHeight={420}
           emptyMessage="No enchanted tools listed."
+          exportName="bulbastats-enchant-premiums"
         />
       </Panel>
 

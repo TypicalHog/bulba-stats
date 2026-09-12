@@ -186,6 +186,7 @@ export function Affordability({ rows }: { rows: AffordRow[] }) {
         rowKey={({ row }) => row.listingId}
         maxHeight={360}
         emptyMessage="Nothing is buyable within that budget and slippage ceiling."
+        exportName="bulbastats-affordability"
       />
     </div>
   );

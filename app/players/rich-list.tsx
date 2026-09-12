@@ -217,6 +217,7 @@ export function RichList({
         rowKey={(r) => r.key}
         maxHeight={420}
         emptyMessage="No holdings found."
+        exportName="bulbastats-holders"
       />
 
       <div>
@@ -231,6 +232,7 @@ export function RichList({
           rowKey={(r) => r.variantId}
           maxHeight={360}
           emptyMessage="No holdings found."
+          exportName="bulbastats-item-concentration"
         />
       </div>
     </div>
