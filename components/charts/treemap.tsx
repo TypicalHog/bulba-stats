@@ -183,7 +183,7 @@ export function Treemap({
                 href={rect.node.href}
                 title={name}
                 aria-label={name}
-                className="absolute overflow-hidden rounded-[2px] transition-opacity hover:opacity-80"
+                className="absolute overflow-hidden rounded-[2px] transition-opacity hover:opacity-80 focus-visible:outline-offset-[-2px]"
                 style={{
                   left: `${(rect.x / WIDTH) * 100}%`,
                   top: `${(rect.y / height) * 100}%`,
