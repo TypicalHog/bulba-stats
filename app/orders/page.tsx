@@ -142,11 +142,11 @@ async function Organic() {
             fullBook?.bids[0]?.price ?? null,
             fullBook?.asks[0]?.price ?? null,
           ),
-          2,
+          4,
         ),
         organicBid: r(organicBid, 6),
         organicAsk: r(organicAsk, 6),
-        organicSpreadPct: r(spread(organicBid, organicAsk), 2),
+        organicSpreadPct: r(spread(organicBid, organicAsk), 4),
         quoters: owners.size,
         organicOrders: book.orderCount,
       };
@@ -233,9 +233,9 @@ async function Liquidity() {
       legs.filter((l) => anchor - l.at <= ms).reduce((a, l) => a + l.amount, 0);
     const lifeDays = Math.max(1, (anchor - legs[0].at) / DAY_MS);
     return {
-      lifetime: r(legs.reduce((a, l) => a + l.amount, 0) / lifeDays, 3) ?? 0,
-      d30: r(since(30 * DAY_MS) / 30, 3) ?? 0,
-      d7: r(since(7 * DAY_MS) / 7, 3) ?? 0,
+      lifetime: r(legs.reduce((a, l) => a + l.amount, 0) / lifeDays, 6) ?? 0,
+      d30: r(since(30 * DAY_MS) / 30, 6) ?? 0,
+      d7: r(since(7 * DAY_MS) / 7, 6) ?? 0,
     };
   };
 
@@ -289,12 +289,12 @@ async function Liquidity() {
         mid: r(book.mid, 6),
         buy: curve.map((p) => ({
           size: p.size,
-          pct: r(p.buySlipPct, 2),
+          pct: r(p.buySlipPct, 4),
           cost: p.buyAvg != null ? r(p.buyAvg * p.size) : null,
         })),
         sell: curve.map((p) => ({
           size: p.size,
-          pct: r(p.sellSlipPct, 2),
+          pct: r(p.sellSlipPct, 4),
           cost: p.sellAvg != null ? r(p.sellAvg * p.size) : null,
         })),
       };

@@ -136,7 +136,7 @@ async function MarketBody() {
         bestAsk: r(book?.bestAsk, 6),
         spreadPct:
           book?.spread != null && book.mid
-            ? r((book.spread / book.mid) * 100, 2)
+            ? r((book.spread / book.mid) * 100, 4)
             : null,
         volume: r(vol?.volume, 3) ?? 0,
         units: vol?.units ?? 0,
@@ -145,7 +145,7 @@ async function MarketBody() {
         vwap: r(vwap, 6),
         vsVwapPct:
           mid != null && vwap != null && vwap > 0
-            ? r(((mid - vwap) / vwap) * 100, 2)
+            ? r(((mid - vwap) / vwap) * 100, 4)
             : null,
         lastTradeAt: itemLegs.length ? itemLegs[itemLegs.length - 1].at : null,
         spark: itemLegs.map((l) => r(l.price, 6) ?? 0),
