@@ -566,8 +566,7 @@ export const getOpenBookLevels = cache(
 );
 
 /**
- * The full resting-order book across every listing (~9,400 rows, 47 pages,
- * ~10 s).
+ * The full resting-order book across every listing (~20,850 rows, 105 pages).
  *
  * The heaviest read on the site by an order of magnitude. Only the pages that
  * need order-level detail call it, and it is pinned to a digest of
@@ -576,17 +575,20 @@ export const getOpenBookLevels = cache(
  * hours at a time, while the tier alone would re-crawl it twelve times an hour.
  *
  * It halved in August 2026 when the house bot moved to aggregated levels
- * (~22,100 rows over 111 pages before). It can go further: upstream now serves
+ * (~22,100 rows over 111 pages before), then grew back to roughly that count.
+ * It can go further: upstream now serves
  * `/orders/summary?groupBy=listing,side[,player],price`, which returns the whole
  * price-level book — optionally attributed per player — in **one** request:
- * ~13,500 rows and ~5.7 MB in ~3.3 s against 47 requests and ~10 s here,
+ * ~13,500 rows and ~5.7 MB in ~3.3 s against 105 requests here,
  * verified to reproduce the official best bid and ask on 118 of 118 listings.
  * Everything that only needs books rather than individual orders should move to
  * it, and read `getOpenBookLevels` first for what a body that size costs to
  * cache.
  *
  * `complete: false` means the page cap was hit — surface that rather than
- * presenting a truncated crawl as the whole book.
+ * presenting a truncated crawl as the whole book. At ~105 pages today, having
+ * already round-tripped once from 111 to 47 and back, the cap carries real
+ * headroom rather than the one-more-growth-step margin `maxPages: 130` left.
  */
 export const getAllOpenOrders = cache(
   async (): Promise<{ rows: LimitOrder[]; complete: boolean }> => {
@@ -595,7 +597,7 @@ export const getAllOpenOrders = cache(
       (before) =>
         `/orders?status=${OPEN_STATUS}&limit=200${before ? `&before=${before}` : ""}`,
       {
-        maxPages: 130,
+        maxPages: 200,
         // Pinned: the key changes when the book does, so the clock is only a
         // backstop. Unpinned, the old tier is still what bounds staleness.
         revalidate: version ? TTL.frozen : TTL.heavy,
