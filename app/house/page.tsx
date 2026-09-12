@@ -16,7 +16,15 @@ import { Panel, Caveat, SectionTitle } from "@/components/ui/panel";
 import { Stat } from "@/components/ui/stat";
 import { PanelSkeleton } from "@/components/ui/skeleton";
 import { ItemLink, PlayerLink } from "@/components/ui/entity";
-import { MARKET_MAKER, diamonds, diamondsCompact, duration, num, percent } from "@/lib/format";
+import {
+  MARKET_MAKER,
+  dateOnly,
+  diamonds,
+  diamondsCompact,
+  duration,
+  num,
+  percent,
+} from "@/lib/format";
 
 export const metadata = {
   title: "The house",
@@ -48,15 +56,21 @@ export default function HousePage() {
 }
 
 async function HouseBody() {
-  const [trades, directory, listings, summary, { rows: openOrders }, closed] =
-    await Promise.all([
-      getAllTrades(),
-      getPlayerDirectory(),
-      getListings(),
-      getOrderbookSummary(),
-      getAllOpenOrders(),
-      getClosedOrders(45).then((r) => r.rows),
-    ]);
+  const [
+    trades,
+    directory,
+    listings,
+    summary,
+    { rows: openOrders, complete: openComplete },
+    { rows: closed, complete: closedComplete },
+  ] = await Promise.all([
+    getAllTrades(),
+    getPlayerDirectory(),
+    getListings(),
+    getOrderbookSummary(),
+    getAllOpenOrders(),
+    getClosedOrders(45),
+  ]);
 
   const legs = toLegs(trades);
   const allStats = playerStats(legs);
@@ -180,6 +194,19 @@ async function HouseBody() {
             Ask inventory is valued at the house&apos;s own asking price, which
             is what it hopes to get rather than what the market has paid. Bid
             capital is real diamonds committed at the order&apos;s limit price.
+            {!openComplete &&
+              " The order crawl hit its page cap, so these figures cover the most recent orders rather than the entire book."}{" "}
+            {cadence.windowFrom != null && cadence.windowTo != null && (
+              <>
+                Median quote life covers {num(cadence.sampled)} house quotes
+                between{" "}
+                {dateOnly(new Date(cadence.windowFrom).toISOString())} and{" "}
+                {dateOnly(new Date(cadence.windowTo).toISOString())}
+                {!closedComplete &&
+                  "; the crawl is capped, so this is a window rather than all history"}
+                .
+              </>
+            )}
           </Caveat>
         </Panel>
 

@@ -116,7 +116,7 @@ async function PlayersBody() {
     { rows: openOrders },
     listings,
     summary,
-    closedOrders,
+    { rows: closedOrders, complete: closedOrdersComplete },
   ] =
     await Promise.all([
       getAllTrades(),
@@ -126,7 +126,7 @@ async function PlayersBody() {
       getAllOpenOrders(),
       getListings(),
       getOrderbookSummary(),
-      getClosedOrders(45).then((r) => r.rows),
+      getClosedOrders(45),
     ]);
   const legs = toLegs(trades);
   const stats = playerStats(legs);
@@ -511,6 +511,8 @@ async function PlayersBody() {
             claim can be checked rather than taken on trust. Regularity, not
             speed, is what separates the two — a fast burst by hand is common,
             a low-variance clock is not. This measures behaviour, not identity.
+            {!closedOrdersComplete &&
+              " Closed-order evidence is drawn from the most recent slice of the archive — the crawl is capped, so an account whose bursts happened earlier may be misclassified from too few observations."}
           </Caveat>
         </Panel>
       </div>
