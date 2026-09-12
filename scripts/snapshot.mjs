@@ -53,7 +53,7 @@ const API_BASE = resolveBase(
 /**
  * Requests per minute. The upstream read tier allows 300/min per IP; this job
  * runs unattended once an hour, so it takes a fifth of that budget and
- * spends ~90s rather than racing.
+ * spends ~160s rather than racing.
  */
 const RATE_PER_MIN = 60;
 
@@ -594,7 +594,7 @@ async function main() {
    * UTC minute wrote the same "immutable" filename — the second silently
    * replacing the first — while still appending two distinct series rows,
    * because the dedupe key there is the full millisecond timestamp. The
-   * concurrency group and a ~3-minute runtime make that unreachable in the
+   * concurrency group and a ~160s runtime make that unreachable in the
    * scheduled job, but `workflow_dispatch` has neither, and an immutability
    * guarantee that holds only by scheduling accident is not one.
    */
