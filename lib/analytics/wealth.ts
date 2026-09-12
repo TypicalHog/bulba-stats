@@ -162,13 +162,17 @@ export function itemConcentration(
       holders: Map<string, number>;
     }
   >();
+  const ownerNames = new Map<string, string>();
   const seenBanks = new Set<number>();
 
   for (const player of players) {
     for (const bank of player.bankAccounts ?? []) {
       if (seenBanks.has(bank.id)) continue;
       seenBanks.add(bank.id);
-      const owner = bank.isPersonal ? player.username : bank.name;
+      const owner = bank.isPersonal
+        ? `player:${player.username}`
+        : `bank:${bank.id}`;
+      ownerNames.set(owner, bank.isPersonal ? player.username : bank.name);
 
       for (const balance of bank.balances ?? []) {
         if (balance.total <= 0 || balance.variantId == null) continue;
@@ -201,7 +205,7 @@ export function itemConcentration(
         units,
         holders: ranked.length,
         topShare: units > 0 ? ranked[0][1] / units : 0,
-        topHolder: ranked[0][0],
+        topHolder: ownerNames.get(ranked[0][0]) ?? ranked[0][0],
       };
     })
     .sort((a, b) => b.units - a.units);
