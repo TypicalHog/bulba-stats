@@ -13,7 +13,9 @@
  * variable amount and there is no single correct ratio to quote. Recipes whose
  * intermediate items the exchange doesn't list (planks, ingots, nuggets, plain
  * books) are either expressed in terms of the compressed form that *is* listed,
- * or left out.
+ * or left out. The enchanted golden apple is left out too: its eight-gold-block
+ * recipe was removed from Java Edition in 1.9, so the item is chest loot rather
+ * than a conversion, and there is nothing to price against buying it.
  *
  * Enchanted tools are **not** here. They are derived from the catalog itself —
  * every listing carrying `nbt` becomes a recipe of its plain base item plus one
@@ -200,15 +202,6 @@ export const RECIPES: Recipe[] = [
     ],
     output: { listing: "ender_chest", amount: 1 },
     note: "One eye of ender is a pearl plus blaze powder; a rod makes two powder.",
-  },
-  {
-    id: "enchanted_golden_apple",
-    method: "craft",
-    inputs: [
-      { listing: "gold_block", amount: 8 },
-      { listing: "apple", amount: 1 },
-    ],
-    output: { listing: "enchanted_golden_apple", amount: 1 },
   },
   {
     id: "hopper",

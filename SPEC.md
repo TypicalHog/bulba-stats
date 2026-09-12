@@ -537,7 +537,7 @@ round trip rather than two unrelated numbers.
 
 Two recipe families:
 
-- **Crafting and smelting** — 24 hand-written recipes, because nothing upstream
+- **Crafting and smelting** — 23 hand-written recipes, because nothing upstream
   knows that nine ice make a packed ice. This is the one place on the site
   where a wrong number is confidently wrong rather than missing, so only
   deterministic conversions are included: ore is *smelted* rather than mined,
@@ -561,7 +561,7 @@ answers depending on what you already hold: fee on buying, fee on selling, XP
 priced as bottles, and whether the base item is bought at all (off by default —
 most players already own the tool).
 
-Measured live: 47 recipes, 20 with both sides priceable, **building is cheaper
+Measured live: 46 recipes, 20 with both sides priceable, **building is cheaper
 on 15 of those 20**, the widest being `elytra:max` at 7.05 to build against
 60.00 to buy.
 
