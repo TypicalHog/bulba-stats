@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { DIRECTION } from "@/lib/design";
 
 /**
@@ -7,7 +8,7 @@ import { DIRECTION } from "@/lib/design";
  * Color follows first-to-last direction and is always paired with the value it
  * annotates, so it never carries meaning alone.
  */
-export function Sparkline({
+function SparklineImpl({
   values,
   width = 80,
   height = 20,
@@ -64,3 +65,5 @@ export function Sparkline({
     </svg>
   );
 }
+
+export const Sparkline = memo(SparklineImpl);
