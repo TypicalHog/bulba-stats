@@ -149,7 +149,8 @@ async function BookHistory() {
             No captured history yet. The order book is only ever exposed as it
             stands right now, so spread and depth over time cannot be
             reconstructed after the fact — they appear here once the hourly
-            snapshot workflow has been running for a few hours.
+            snapshot workflow has accrued enough captures, which can take a
+            day or so.
           </EmptyState>
         </Panel>
       </div>
