@@ -22,7 +22,9 @@ const PAGES = [
  *
  * Built from the same two cheap cached reads as the search palette — the
  * catalog and the trade record — rather than the player directory, which costs
- * a request per account. Everyone worth listing has traded.
+ * a request per account. Traders are the ones worth the extra freshness and
+ * discoverability here; non-trading accounts still have a valid page, just
+ * reachable via /players instead of a sitemap entry.
  *
  * `/compare` is absent by design; `robots.ts` disallows it.
  */
