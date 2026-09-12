@@ -189,7 +189,7 @@ export function EnchantMarket({
       key: "premium",
       header: "Over books",
       title:
-        "Finished tool price less the books it carries — negative means the whole is quoted below its parts",
+        "Finished tool price less the books it carries — a negative premium (shown in green) flags a mispricing, not a discount",
       align: "right",
       mono: true,
       cell: (r) => {
