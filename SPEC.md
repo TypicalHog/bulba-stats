@@ -217,8 +217,12 @@ against an anchor that trails by days.
 resting book folded to 326 rows in one request. Digesting its `count`,
 `remainingAmount` and `latestId` per group gives a token that changes exactly
 when the book does — a fill moves `remainingAmount`, a cancel moves `count`, a
-new order raises `latestId`, and price cannot be amended in place, so a requote
-moves two of the three. That token rides along on every crawl page URL as `&v=`,
+new order raises `latestId`, and price cannot be amended in place, so a
+requote is a cancel plus an insert — at a new price that touches two
+groups and moves every field between them, but at the same price and size
+it nets `count` and `remainingAmount` back to where they started, moving
+only `latestId`. Still enough: a group's `latestId` only ever rises. That
+token rides along on every crawl page URL as `&v=`,
 which the API ignores and the fetch cache does not. While the book holds still
 the crawl is served from cache for the price of that one request; the moment it
 moves, every URL changes and the crawl runs for real. `TTL.frozen` caps how long
