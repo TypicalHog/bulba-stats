@@ -199,6 +199,7 @@ export function NetworkGraph({
               }`}
             >
               {n.username}
+              {n.isMarketMaker ? " · MM" : ""}
             </button>
           );
         })}
@@ -314,7 +315,7 @@ export function NetworkGraph({
                   role="button"
                   tabIndex={0}
                   aria-pressed={selected === node.username}
-                  aria-label={`${node.username}, ${diamondsCompact(node.volume)} traded`}
+                  aria-label={`${node.username}${node.isMarketMaker ? ", market maker" : ""}, ${diamondsCompact(node.volume)} traded`}
                   onMouseEnter={() => setHover(node.username)}
                   onFocus={() => setHover(node.username)}
                   onBlur={() => setHover(null)}
@@ -364,6 +365,7 @@ export function NetworkGraph({
                           ? 2
                           : 1
                     }
+                    strokeDasharray={node.isMarketMaker ? "3 2" : undefined}
                   />
                   <image
                     href={avatarUrl(node.uuid, Math.ceil(r * 2))}
@@ -384,6 +386,7 @@ export function NetworkGraph({
                     fontFamily="var(--font-fira-code), monospace"
                   >
                     {node.username}
+                    {node.isMarketMaker ? " · MM" : ""}
                   </text>
                 </g>
               );
@@ -556,9 +559,9 @@ export function NetworkGraph({
         <span className="flex items-center gap-1.5">
           <span
             aria-hidden
-            className="inline-block h-2.5 w-2.5 rounded-full border border-warn"
+            className="inline-block h-2.5 w-2.5 rounded-full border border-dashed border-warn"
           />
-          Market maker
+          Market maker (dashed ring, “MM” label)
         </span>
         <span>Circle area = volume traded · line width = value between the pair</span>
         <span className="ml-auto">
