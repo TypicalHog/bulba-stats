@@ -80,7 +80,11 @@ export function DaysOfSupply({ rows }: { rows: SupplyRow[] }) {
       mono: true,
       cell: ({ rate }) => (
         <span className="text-ink-2">
-          {rate > 0 ? (rate < 1 ? rate.toFixed(2) : num(Math.round(rate))) : "—"}
+          {rate > 0
+            ? rate < 1
+              ? rate.toFixed(rate < 0.01 ? 4 : 2)
+              : num(Math.round(rate))
+            : "—"}
         </span>
       ),
       sort: ({ rate }) => rate,
