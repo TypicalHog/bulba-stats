@@ -349,6 +349,9 @@ export type Holding = {
   value: number | null;
 };
 
+/** Diamonds are the exchange's currency, not an unpriceable good (see wealth.ts). */
+const CURRENCY = "diamond";
+
 export function valueHoldings(
   balances: {
     variantId: number | null;
@@ -359,19 +362,32 @@ export function valueHoldings(
     reserved: number;
   }[],
   midByVariant: Map<number, number>,
-): { holdings: Holding[]; totalValue: number; unpricedCount: number } {
-  const holdings: Holding[] = balances.map((b) => {
-    const mid = b.variantId != null ? (midByVariant.get(b.variantId) ?? null) : null;
-    return {
-      ...b,
-      mid,
-      value: mid != null ? mid * b.total : null,
-    };
-  });
+): {
+  holdings: Holding[];
+  totalValue: number;
+  currency: number;
+  unpricedCount: number;
+} {
+  let currency = 0;
+  const holdings: Holding[] = balances
+    .filter((b) => {
+      if (b.itemName !== CURRENCY) return true;
+      currency += b.total;
+      return false;
+    })
+    .map((b) => {
+      const mid = b.variantId != null ? (midByVariant.get(b.variantId) ?? null) : null;
+      return {
+        ...b,
+        mid,
+        value: mid != null ? mid * b.total : null,
+      };
+    });
 
   return {
     holdings: holdings.sort((a, b) => (b.value ?? -1) - (a.value ?? -1)),
-    totalValue: sum(holdings, (h) => h.value ?? 0),
+    totalValue: currency + sum(holdings, (h) => h.value ?? 0),
+    currency,
     unpricedCount: holdings.filter((h) => h.value == null && h.total > 0).length,
   };
 }

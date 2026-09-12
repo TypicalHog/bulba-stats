@@ -551,7 +551,7 @@ async function Holdings({ username }: { username: string }) {
     .sort((a, b) => b.value - a.value);
 
   const balances = personal.flatMap((b) => b.balances);
-  const { holdings, totalValue, unpricedCount } = valueHoldings(
+  const { holdings, totalValue, currency, unpricedCount } = valueHoldings(
     balances,
     midByVariant,
   );
@@ -568,6 +568,13 @@ async function Holdings({ username }: { username: string }) {
         </span>
       }
     >
+      {currency > 0 && (
+        <div className="flex items-baseline justify-between gap-3 border-b border-line px-3 py-2 text-[12px]">
+          <span className="text-ink-3">Diamonds held</span>
+          <span className="font-mono text-ink">{diamonds(currency)}</span>
+        </div>
+      )}
+
       {shown.length ? (
         <DataTable>
           <thead>
