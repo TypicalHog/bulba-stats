@@ -44,14 +44,19 @@ export function Affordability({ rows }: { rows: AffordRow[] }) {
         let units = 0;
         let cost = 0;
         for (const [price, quantity] of row.asks) {
-          if (price > ceiling) break;
-          const affordable = Math.min(quantity, (spend - cost) / price);
-          if (affordable <= 0) break;
-          units += affordable;
-          cost += affordable * price;
+          let take = Math.min(quantity, (spend - cost) / price);
           // The slippage ceiling applies to the average paid, not to the last
-          // level touched, so a deep sweep can still qualify.
-          if (row.mid != null && cost / units > ceiling) break;
+          // level touched, so a deep sweep can still qualify: take only as much
+          // of a level above the ceiling as keeps the average at or below it.
+          if (price > ceiling) {
+            take = Math.min(
+              take,
+              Math.max(0, (ceiling * units - cost) / (price - ceiling)),
+            );
+          }
+          if (take <= 1e-9) break;
+          units += take;
+          cost += take * price;
         }
 
         const whole = Math.floor(units + 1e-9);
