@@ -64,18 +64,25 @@ export default async function PlayerPage({
   const { username: raw } = await params;
   const username = decodeURIComponent(raw);
 
-  const trades = await getAllTrades();
-  const stats = playerStats(toLegs(trades)).get(username);
   const profile = await getPlayer(username);
 
-  // A player may exist on the exchange without ever having traded, and a
-  // traded name may no longer resolve to a profile. Only both missing is a 404.
-  if (!stats && !profile) notFound();
+  /*
+   * A player may exist on the exchange without ever having traded, and a
+   * traded name may no longer resolve to a profile. Only both missing is a
+   * 404 — so the trade crawl only has to settle the question when there is no
+   * profile, which is the rare path. With a profile in hand the header paints
+   * without waiting for market history at all, and the 404 is still decided
+   * before anything streams: a name with a profile can never become one.
+   */
+  const traded = profile
+    ? null
+    : playerStats(toLegs(await getAllTrades())).get(username);
+  if (!profile && !traded) notFound();
 
   return (
     <div className="flex flex-col gap-4">
       <header className="flex flex-wrap items-start gap-3">
-        <Avatar uuid={profile?.uuid ?? stats?.uuid} size={40} />
+        <Avatar uuid={profile?.uuid ?? traded?.uuid} size={40} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-[17px] font-semibold">{username}</h1>
@@ -106,47 +113,89 @@ export default async function PlayerPage({
         </Link>
       </header>
 
-      {stats ? (
-        <>
-          <Suspense fallback={<PanelSkeleton height={90} />}>
-            <PlayerTiles username={username} />
-          </Suspense>
-
-          <div className="grid gap-4 xl:grid-cols-[1fr_380px]">
-            <div className="flex min-w-0 flex-col gap-4">
-              <Suspense fallback={<PanelSkeleton height={260} />}>
-                <ActivityChart username={username} />
-              </Suspense>
-              <Suspense fallback={<PanelSkeleton height={320} />}>
-                <Positions username={username} />
-              </Suspense>
-              <Suspense fallback={<PanelSkeleton height={300} />}>
-                <RecentActivity username={username} />
-              </Suspense>
-            </div>
-
-            <div className="flex min-w-0 flex-col gap-4">
-              <Suspense fallback={<PanelSkeleton height={300} />}>
-                <Holdings username={username} />
-              </Suspense>
-              <Suspense fallback={<PanelSkeleton height={260} />}>
-                <OpenOrders username={username} />
-              </Suspense>
-              <Suspense fallback={<PanelSkeleton height={220} />}>
-                <Counterparties username={username} />
-              </Suspense>
-            </div>
-          </div>
-        </>
-      ) : (
-        <Panel title="No trading history">
-          <p className="text-[12px] text-ink-2">
-            {username} has a BulbaStore account but has not appeared in any
-            market trade yet.
-          </p>
-        </Panel>
-      )}
+      <Suspense fallback={<PlayerBodySkeleton />}>
+        <PlayerBody username={username} />
+      </Suspense>
     </div>
+  );
+}
+
+/**
+ * Everything that depends on trade history, including the choice between a
+ * trader's panels and an account that has never traded.
+ *
+ * Behind its own boundary so the header above it paints before the full
+ * history crawl resolves (§3, progressive disclosure). The fallback mirrors
+ * the frame this renders, so the swap costs no layout shift.
+ */
+async function PlayerBody({ username }: { username: string }) {
+  const stats = playerStats(toLegs(await getAllTrades())).get(username);
+
+  if (!stats) {
+    return (
+      <Panel title="No trading history">
+        <p className="text-[12px] text-ink-2">
+          {username} has a BulbaStore account but has not appeared in any
+          market trade yet.
+        </p>
+      </Panel>
+    );
+  }
+
+  return (
+    <>
+      <Suspense fallback={<PanelSkeleton height={90} />}>
+        <PlayerTiles username={username} />
+      </Suspense>
+
+      <div className="grid gap-4 xl:grid-cols-[1fr_380px]">
+        <div className="flex min-w-0 flex-col gap-4">
+          <Suspense fallback={<PanelSkeleton height={260} />}>
+            <ActivityChart username={username} />
+          </Suspense>
+          <Suspense fallback={<PanelSkeleton height={320} />}>
+            <Positions username={username} />
+          </Suspense>
+          <Suspense fallback={<PanelSkeleton height={300} />}>
+            <RecentActivity username={username} />
+          </Suspense>
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-4">
+          <Suspense fallback={<PanelSkeleton height={300} />}>
+            <Holdings username={username} />
+          </Suspense>
+          <Suspense fallback={<PanelSkeleton height={260} />}>
+            <OpenOrders username={username} />
+          </Suspense>
+          <Suspense fallback={<PanelSkeleton height={220} />}>
+            <Counterparties username={username} />
+          </Suspense>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function PlayerBodySkeleton() {
+  return (
+    <>
+      <PanelSkeleton height={90} />
+
+      <div className="grid gap-4 xl:grid-cols-[1fr_380px]">
+        <div className="flex min-w-0 flex-col gap-4">
+          <PanelSkeleton height={260} />
+          <PanelSkeleton height={320} />
+          <PanelSkeleton height={300} />
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-4">
+          <PanelSkeleton height={300} />
+          <PanelSkeleton height={260} />
+          <PanelSkeleton height={220} />
+        </div>
+      </div>
+    </>
   );
 }
 
