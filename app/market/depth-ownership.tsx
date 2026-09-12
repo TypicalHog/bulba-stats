@@ -26,6 +26,13 @@ export type DepthBook = {
   participants: number;
 };
 
+/*
+ * Both rankings run to hundreds of rows, so each scrolls inside a box of this
+ * height rather than being cut off — and the two panels stay the same height
+ * side by side.
+ */
+const MAX_HEIGHT = 520;
+
 /**
  * Two views over the same resting-order crawl. Rendered server-side — these are
  * static rankings, so there's nothing to hydrate.
@@ -45,7 +52,7 @@ function PlayerDepth({ players }: { players: DepthPlayer[] }) {
   const max = Math.max(...players.map((p) => p.bidValue + p.askValue), 1);
 
   return (
-    <DataTable>
+    <DataTable maxHeight={MAX_HEIGHT}>
       <thead>
         <tr>
           <Th>#</Th>
@@ -102,7 +109,7 @@ function PlayerDepth({ players }: { players: DepthPlayer[] }) {
 
 function BookDepth({ books }: { books: DepthBook[] }) {
   return (
-    <DataTable>
+    <DataTable maxHeight={MAX_HEIGHT}>
       <thead>
         <tr>
           <Th>#</Th>

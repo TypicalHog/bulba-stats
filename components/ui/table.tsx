@@ -4,11 +4,22 @@ import type { ReactNode } from "react";
  * Dense data table.
  *
  * Wrapped in a horizontal scroll container: wide tables scroll inside their own
- * box so the page body never scrolls sideways on a phone.
+ * box so the page body never scrolls sideways on a phone. Pass `maxHeight` to
+ * cap a long ranking at a fixed height and scroll it vertically instead of
+ * truncating the rows — the header cells are already sticky.
  */
-export function DataTable({ children }: { children: ReactNode }) {
+export function DataTable({
+  children,
+  maxHeight,
+}: {
+  children: ReactNode;
+  maxHeight?: number;
+}) {
   return (
-    <div className="scroll-x">
+    <div
+      className={maxHeight ? "scroll-x scroll-y" : "scroll-x"}
+      style={maxHeight ? { maxHeight } : undefined}
+    >
       <table className="w-full min-w-max border-collapse text-[12px]">
         {children}
       </table>

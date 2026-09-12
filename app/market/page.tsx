@@ -274,7 +274,7 @@ async function DepthPanel() {
           subtitle="Listings with the most capital resting on them"
           bodyClassName="p-0"
         >
-          <DepthOwnership players={[]} books={books.slice(0, 25)} />
+          <DepthOwnership players={[]} books={books} />
         </Panel>
       </div>
 
