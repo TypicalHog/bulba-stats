@@ -24,7 +24,6 @@ export function CommandPalette({ entries }: { entries: SearchEntry[] }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
-  const inputRef = useRef<HTMLInputElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const router = useRouter();
@@ -167,7 +166,6 @@ export function CommandPalette({ entries }: { entries: SearchEntry[] }) {
         }}
       >
         <input
-          ref={inputRef}
           autoFocus
           value={query}
           onChange={(e) => {
