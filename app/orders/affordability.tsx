@@ -16,6 +16,9 @@ export type AffordRow = {
 
 const FEE = 0.04;
 
+/** Matches LADDER_MAX_SLIP_PCT in page.tsx — the ceiling the shipped ask ladder is cut at. */
+const MAX_SLIP_PCT = 50;
+
 /**
  * What a given budget could actually buy right now.
  *
@@ -157,10 +160,13 @@ export function Affordability({ rows }: { rows: AffordRow[] }) {
           <input
             type="number"
             min={0}
+            max={MAX_SLIP_PCT}
             step="any"
             value={maxSlip}
             onChange={(e) =>
-              setMaxSlip(Math.max(0, Number(e.target.value) || 0))
+              setMaxSlip(
+                Math.min(MAX_SLIP_PCT, Math.max(0, Number(e.target.value) || 0)),
+              )
             }
             className="w-32 rounded border border-line bg-panel-2 px-2.5 py-1.5 font-mono text-[12px] text-ink focus:border-accent/50 focus:outline-none"
           />

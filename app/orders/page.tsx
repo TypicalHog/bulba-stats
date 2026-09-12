@@ -190,6 +190,13 @@ async function Organic() {
 const SWEEP_SIZES = [1, 10, 64, 256, 1024];
 
 /**
+ * Furthest above mid the affordability scanner's "Max above mid" input can be
+ * set. The ask ladder shipped to the browser is cut at this same ceiling, so
+ * the two stay in lockstep — see the ladder comment below.
+ */
+const LADDER_MAX_SLIP_PCT = 50;
+
+/**
  * How much size each book can actually absorb.
  *
  * Every book is rebuilt from the crawl this page already ran, so a
@@ -233,27 +240,33 @@ async function Liquidity() {
   };
 
   /*
-   * Ask ladders for the budget scanner, truncated at 40 levels. Both inputs
-   * recompute in the browser, so the ladder has to travel with the page — but
-   * nothing beyond the fortieth level is reachable by a realistic budget, and
-   * the market maker parks orders very far out.
+   * Ask ladders for the budget scanner. Both inputs recompute in the browser,
+   * so the ladder has to travel with the page — but nothing above the input's
+   * own slippage ceiling is reachable, so levels are cut at LADDER_MAX_SLIP_PCT
+   * above mid rather than at a fixed count, which would under-report units for
+   * cheap, deep books. Bidless books (no mid) ship uncapped.
    */
   const affordRows: AffordRow[] = [...books.entries()]
     .filter(([, book]) => book.asks.length > 0)
-    .map(([listingId, book]) => ({
-      listingId,
-      itemName: nameById.get(listingId)?.itemName ?? null,
-      variantName: nameById.get(listingId)?.variantName ?? null,
-      mid: r(book.mid, 6),
-      asks: book.asks
-        .slice(0, 25)
-        .map(
+    .map(([listingId, book]) => {
+      const ceiling =
+        book.mid != null ? book.mid * (1 + LADDER_MAX_SLIP_PCT / 100) : null;
+      return {
+        listingId,
+        itemName: nameById.get(listingId)?.itemName ?? null,
+        variantName: nameById.get(listingId)?.variantName ?? null,
+        mid: r(book.mid, 6),
+        asks: (ceiling != null
+          ? book.asks.filter((level) => level.price <= ceiling)
+          : book.asks
+        ).map(
           (level) =>
             // Rounded because upstream prices carry float noise like
             // 0.08499999999999999, and every extra digit ships to the browser.
             [r(level.price, 6) ?? 0, level.quantity] as [number, number],
         ),
-    }));
+      };
+    });
 
   const supplyRows: SupplyRow[] = [...books.entries()]
     .map(([listingId, book]) => ({
