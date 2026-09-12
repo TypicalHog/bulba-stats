@@ -12,6 +12,14 @@ export const API_BASE =
   process.env.BULBA_API_BASE ?? `${SITE_ORIGIN}/upstream/api/v1`;
 
 /**
+ * Ceiling on a single upstream request, so a stalled connection throws
+ * instead of hanging the render until the platform kills it. Sized above the
+ * largest known single-request body — the ~5.7 MB open-book sweep behind
+ * /recipes — and under the 60 s `maxDuration` those heavy routes set.
+ */
+const UPSTREAM_TIMEOUT_MS = 45_000;
+
+/**
  * Revalidation tiers, in seconds. Chosen against measured upstream cost —
  * see SPEC.md §1.2/§1.3.
  *
@@ -115,6 +123,8 @@ export async function apiGet<T>(
   const url = `${API_BASE}${path}`;
   const res = await fetch(url, {
     headers: { accept: "application/json" },
+    // Never wait past UPSTREAM_TIMEOUT_MS for a single response.
+    signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
     // Every read carries UPSTREAM_TAG so one action can expire the lot — see
     // the note on the constant.
     next: { revalidate, tags: [UPSTREAM_TAG, ...(tags ?? [])] },

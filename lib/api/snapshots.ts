@@ -48,6 +48,8 @@ function dayKey(ms: number): string {
 async function fetchDay(day: string): Promise<MarketSample[]> {
   try {
     const res = await fetch(`${DATA_BASE}/series/${day}.json`, {
+      // Never wait past 10s for a single file — these are small JSON series.
+      signal: AbortSignal.timeout(10_000),
       // Today's file is still being appended to; older ones never change.
       next: { revalidate: TTL.aggregate, tags: [UPSTREAM_TAG, "snapshots"] },
     });
