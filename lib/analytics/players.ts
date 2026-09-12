@@ -80,7 +80,10 @@ export function playerStats(legs: TradeLeg[]): Map<string, PlayerStats> {
     let netFlow = 0;
 
     for (const leg of rows) {
-      if (leg.counterparty) counterparties.add(leg.counterparty);
+      // A self-cross names the player on both sides; they are not their own
+      // partner, so it contributes no counterparty (its value still counts).
+      if (leg.counterparty && leg.counterparty !== leg.username)
+        counterparties.add(leg.counterparty);
 
       let pos = positions.get(leg.listingId);
       if (!pos) {
@@ -319,11 +322,10 @@ export function counterpartiesFor(
    */
   for (const leg of legs) {
     if (!leg.isMaker) continue;
-    if (leg.username === username) {
-      if (leg.counterparty) add(leg.counterparty, leg.value);
-    } else if (leg.counterparty === username) {
-      add(leg.username, leg.value);
-    }
+    const other = leg.counterparty;
+    if (!other || other === leg.username) continue; // self-cross: no partner
+    if (leg.username === username) add(other, leg.value);
+    else if (other === username) add(leg.username, leg.value);
   }
 
   return [...out.values()].sort((a, b) => b.volume - a.volume);

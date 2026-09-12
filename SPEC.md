@@ -462,7 +462,9 @@ leg names a counterparty only when the sweep matched exactly one maker, since
 there is no single name to give otherwise — reading a player's own legs would
 therefore drop every multi-maker fill and understate the pairing. A maker leg
 has no such ambiguity: it names its taker and carries its own fill value, so a
-sweep across three makers contributes three exact rows.
+sweep across three makers contributes three exact rows. A self-cross names
+nobody: an account is not its own counterparty, so it raises neither the
+partner count nor the ranking, though its value stays in every total (§4).
 
 **Holdings** are public on every player profile but visible one player at a
 time, so nothing upstream answers "who owns most of this market". Net worth is
