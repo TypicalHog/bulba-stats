@@ -460,7 +460,9 @@ meaning. Everything below is computed in `lib/analytics/`.
   because most of this catalog trades a handful of times in total, so a short
   window divides by zero on nearly every row; each item's lifetime runs from
   its *own* first trade, so a recently listed item isn't penalised for the
-  months before it existed
+  months before it existed. A second toggle switches the ask side between
+  every resting unit and only those within ±25% of mid, since the house's far
+  ladder is parked at prices that will never trade
 - **Dormancy**: time since each listing last traded, measured from the market's
   most recent trade rather than the clock, so a cached table reports the same
   age however old the cache is. Never-traded listings sort last rather than

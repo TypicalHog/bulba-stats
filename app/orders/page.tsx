@@ -274,12 +274,27 @@ async function Liquidity() {
       };
     });
 
+  // Second band for "days of supply": the far ladder the house parks well
+  // above mid will never trade, so a near-mid ask count answers the panel's
+  // question better than the full book does. Reuses the same ±% predicate as
+  // the deepest-books band filter above (BANDS[1] is 25).
+  const nearMidBand = BANDS[1];
   const supplyRows: SupplyRow[] = [...books.entries()]
     .map(([listingId, book]) => ({
       listingId,
       itemName: nameById.get(listingId)?.itemName ?? null,
       variantName: nameById.get(listingId)?.variantName ?? null,
       askUnits: book.asks.reduce((a, level) => a + level.quantity, 0),
+      askUnitsNearMid:
+        book.mid != null && book.mid > 0
+          ? book.asks
+              .filter(
+                (level) =>
+                  Math.abs(level.price - book.mid!) / book.mid! <=
+                  nearMidBand / 100,
+              )
+              .reduce((a, level) => a + level.quantity, 0)
+          : null,
       perDay: ratesFor(listingId),
     }))
     .filter((r) => r.askUnits > 0);
