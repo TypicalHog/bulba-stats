@@ -59,7 +59,7 @@ export function SiteNav({ search }: { search?: ReactNode }) {
         */}
         <nav
           aria-label="Primary"
-          className="scroll-x -mx-1 flex min-w-0 flex-1 items-center gap-0.5 px-1"
+          className="scroll-x nav-fade -mx-1 flex min-w-0 flex-1 items-center gap-0.5 px-1"
         >
           {LINKS.map((link) => (
             <Link

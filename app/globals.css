@@ -141,6 +141,15 @@
   .scroll-y {
     overflow-y: auto;
   }
+
+  /*
+   * Signals that the nav strip has links off-screen: fades the right edge
+   * instead of letting links simply run off the visible width.
+   */
+  .nav-fade {
+    mask-image: linear-gradient(to right, black 90%, transparent);
+    -webkit-mask-image: linear-gradient(to right, black 90%, transparent);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
