@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import {
   getAllTrades,
   getBankOps,
-  getOrderbookSummary,
+  getOrderbookSummaryStale,
   getTreasury,
   getTreasuryDistributions,
   getTreasuryRevenue,
@@ -69,7 +69,7 @@ async function TreasuryBody() {
     getTreasury(),
     getTreasuryRevenue(60),
     getTreasuryDistributions(500),
-    getOrderbookSummary(),
+    getOrderbookSummaryStale(),
     getAllTrades(),
     getBankOps(),
   ]);

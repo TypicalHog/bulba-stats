@@ -4,7 +4,7 @@ import {
   getAllTrades,
   getClosedOrders,
   getListings,
-  getOrderbookSummary,
+  getOrderbookSummaryStale,
   getPlayerDirectory,
 } from "@/lib/api/endpoints";
 import { toLegs, sum } from "@/lib/analytics/legs";
@@ -67,7 +67,7 @@ async function HouseBody() {
     getAllTrades(),
     getPlayerDirectory(),
     getListings(),
-    getOrderbookSummary(),
+    getOrderbookSummaryStale(),
     getAllOpenOrders(),
     getClosedOrders(45),
   ]);

@@ -5,7 +5,7 @@ import {
   getBankOps,
   getClosedOrders,
   getListings,
-  getOrderbookSummary,
+  getOrderbookSummaryStale,
   getPlayerDirectory,
   getPlayerIndex,
 } from "@/lib/api/endpoints";
@@ -125,7 +125,7 @@ async function PlayersBody() {
       getBankOps(),
       getAllOpenOrders(),
       getListings(),
-      getOrderbookSummary(),
+      getOrderbookSummaryStale(),
       getClosedOrders(45),
     ]);
   const legs = toLegs(trades);

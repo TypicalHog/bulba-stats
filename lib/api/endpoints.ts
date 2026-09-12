@@ -159,6 +159,25 @@ export const getOrderbookSummary = cache(
   },
 );
 
+/**
+ * Same summary, for pages that only use it to value other numbers rather
+ * than show the quote itself. `revalidate` is per-URL, so a `TTL.live` fetch
+ * anywhere in a route drags the *whole* route down to a 5-second ISR floor
+ * (Next.js: the lowest fetch revalidate on a route wins). The distinct query
+ * string — ignored upstream, same trick as elsewhere — buys a separate cache
+ * entry on the 90-second aggregate tier instead, matching the rest of the
+ * page's freshness with no visible change.
+ */
+export const getOrderbookSummaryStale = cache(
+  async (): Promise<OrderbookSummary[]> => {
+    const { data } = await apiGet<OrderbookSummary[]>("/orderbook?tier=aggregate", {
+      revalidate: TTL.aggregate,
+      tags: ["orderbook"],
+    });
+    return data;
+  },
+);
+
 export const getOrderbook = cache(
   async (
     listingId: number,

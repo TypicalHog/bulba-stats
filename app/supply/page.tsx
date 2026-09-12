@@ -3,7 +3,7 @@ import {
   getAllTrades,
   getBankOps,
   getListings,
-  getOrderbookSummary,
+  getOrderbookSummaryStale,
 } from "@/lib/api/endpoints";
 import {
   dailyFlow,
@@ -54,7 +54,7 @@ async function FlowBody() {
   ] = await Promise.all([
     getBankOps(),
     getListings(),
-    getOrderbookSummary(),
+    getOrderbookSummaryStale(),
     getAllTrades(),
   ]);
 

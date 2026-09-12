@@ -188,7 +188,7 @@ No Cache Components (`cacheComponents` is off), so the previous model applies:
 |---|---|---|
 | Live | 5 s | Order book summary, recent trades, per-listing book |
 | Near-live | 20 s | Candles, listings |
-| Aggregate | 90 s | History crawls, player profiles, the two change probes |
+| Aggregate | 90 s | History crawls, player profiles, the two change probes, the order book summary where a page only uses it to value other figures |
 | Heavy | 300 s | Order crawls, when they cannot be pinned |
 | Frozen | 3600 s | Anchored history, pinned crawl pages — a backstop, not the mechanism |
 | Static | 900 s | Commands, API docs |

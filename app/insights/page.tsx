@@ -3,7 +3,7 @@ import {
   getAllBankOps,
   getAllTrades,
   getListings,
-  getOrderbookSummary,
+  getOrderbookSummaryStale,
   getPlayerDirectory,
 } from "@/lib/api/endpoints";
 import { affiliations, type BankNode } from "@/lib/analytics/house";
@@ -482,7 +482,7 @@ async function Tape() {
  * shown beside mid and never used as a quote.
  */
 async function ReferencePrice() {
-  const summary = await getOrderbookSummary();
+  const summary = await getOrderbookSummaryStale();
 
   const rows = summary
     .filter((s) => s.makerMid != null && s.mid != null)
@@ -990,7 +990,7 @@ async function Behaviour() {
 async function Liquidity() {
   const [trades, summary, listings] = await Promise.all([
     getAllTrades(),
-    getOrderbookSummary(),
+    getOrderbookSummaryStale(),
     getListings(),
   ]);
 
