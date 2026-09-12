@@ -28,8 +28,9 @@ import { isHouseOrder } from "./house";
  * `/orders/summary?groupBy=listing,side,player,price` returns the same price
  * levels with per-player attribution in one request, and was checked to land on
  * the same 118 of 118. This function stays for as long as the order-level crawl
- * is needed for order ages and lifecycle stats, which the grouped rows carry no
- * timestamps for.
+ * is needed for per-order ages and lifecycle stats — the grouped rows carry a
+ * fold-level `oldestCreatedAt`/`newestCreatedAt` range but no per-order
+ * timestamps and no `expiresAt`/`completedAt`.
  *
  * The result satisfies `OrderBook`, so everything in `book.ts` — depth curves,
  * metrics, slippage, participants — works on a reconstructed book unchanged.
@@ -134,7 +135,7 @@ export function reconstructBooks(
  * - **`orderCount` counts orders, not rows.** Each row carries the `count` it
  *   folded, so the total still matches the crawl's.
  * - **No expiry filter.** The crawl drops rows whose `expiresAt` has passed but
- *   which upstream still reports as pending; grouped rows carry no timestamps,
+ *   which upstream still reports as pending; grouped rows carry no `expiresAt`,
  *   so that sweep cannot be reproduced here. It is upstream's own filter that
  *   decides what is in the fold — the same filter behind `GET /orderbook`,
  *   which these books are checked against.

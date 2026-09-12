@@ -279,6 +279,10 @@ export type OrderSummaryGroup = {
   statuses: OrderStatus[];
   /** Highest order id in the group. */
   latestId: number;
+  /** Oldest/newest `createdAt` and latest `updatedAt` folded into this row. */
+  oldestCreatedAt: string;
+  newestCreatedAt: string;
+  latestUpdatedAt: string;
 };
 
 /**
@@ -288,8 +292,10 @@ export type OrderSummaryGroup = {
  * The whole open book in one request. Unlike the ungrouped summary, `price` is
  * a real level rather than a collapsed min/max, and the grouping key is the
  * player rather than the bank account — which is what makes it a book that can
- * be rebuilt and attributed. It carries no timestamps: these rows are folds,
- * not orders.
+ * be rebuilt and attributed. It carries a fold-level age range, not per-order
+ * timestamps: `oldestCreatedAt`/`newestCreatedAt` can span days within one row,
+ * and there is no `expiresAt` or `completedAt`, so individual order ages and
+ * fill/time-to-fill statistics still need the order-level crawl.
  */
 export type OrderLevel = {
   side: "buy" | "sell";
@@ -304,6 +310,10 @@ export type OrderLevel = {
   remainingValue: number;
   statuses: OrderStatus[];
   latestId: number;
+  /** Oldest/newest `createdAt` and latest `updatedAt` folded into this row. */
+  oldestCreatedAt: string;
+  newestCreatedAt: string;
+  latestUpdatedAt: string;
 };
 
 /**

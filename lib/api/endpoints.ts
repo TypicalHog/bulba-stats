@@ -498,10 +498,11 @@ const readPackedLevels = unstable_cache(
  * instead: one request against 47, and verified to reproduce the official best
  * bid and ask on 118 of 118 listings exactly, identically to the crawl.
  *
- * Prefer it for anything that needs *books*. It carries no timestamps, so order
- * ages, fill rates and time-to-fill still need the crawl, and it is not
- * attributed — `organicBooksFromLevels` needs the `player` column added back to
- * the request and to the packing above.
+ * Prefer it for anything that needs *books*. It carries only a fold-level age
+ * range (`oldestCreatedAt`/`newestCreatedAt`), so per-order ages, fill rates
+ * and time-to-fill still need the crawl, and it is not attributed —
+ * `organicBooksFromLevels` needs the `player` column added back to the request
+ * and to the packing above.
  *
  * Not soft: everything downstream of it is the page's actual content, so a
  * failure should surface rather than render an empty market as though it were

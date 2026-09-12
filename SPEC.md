@@ -76,9 +76,10 @@ best bid and ask on **118 of 118** listings, identically to the crawl. The
 attributed form is house-vs-organic at level granularity in a single call — the
 thing `reconstructOrganicBooks` currently crawls for.
 
-What `groupBy` still cannot answer is anything about *when*: the rows carry no
-`createdAt`, `expiresAt` or `completedAt`, so order ages, fill rates and
-time-to-fill still need the order-level crawl.
+What `groupBy` still cannot answer is anything about *when* at per-order
+granularity: rows carry `oldestCreatedAt`/`newestCreatedAt`/`latestUpdatedAt`
+as a fold-level range, but no `expiresAt` or `completedAt`, so per-order ages,
+fill rates and time-to-fill still need the order-level crawl.
 
 Two behaviours of the live API that the caching model depends on, both verified
 against the host rather than taken from the docs:
@@ -135,8 +136,9 @@ in **one** request, and `groupBy=listing,side,player,price` adds per-player
 attribution — which is house-vs-organic at level granularity without a crawl at
 all. Both were verified to reproduce the official best bid and ask on **118 of
 118** listings, identically to the crawl. The order-level crawl is still needed
-for order ages and lifecycle statistics, because grouped rows carry no
-timestamps.
+for per-order ages and lifecycle statistics, because grouped rows carry only a
+fold-level `oldestCreatedAt`/`newestCreatedAt` range, not per-order timestamps
+or `expiresAt`/`completedAt`.
 
 `booksFromLevels` builds the books from those rows and `organicBooksFromLevels`
 strips the house from them, both interchangeable with the crawl-based pair.
