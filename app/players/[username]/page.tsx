@@ -16,7 +16,7 @@ import {
 import { dayKey } from "@/lib/analytics/market";
 import { Panel, Caveat } from "@/components/ui/panel";
 import { Stat } from "@/components/ui/stat";
-import { PanelSkeleton } from "@/components/ui/skeleton";
+import { PanelSkeleton, TileRowSkeleton } from "@/components/ui/skeleton";
 import { DataTable, Rank, Td, Th, Tr } from "@/components/ui/table";
 import {
   Avatar,
@@ -159,7 +159,13 @@ async function PlayerBody({ username }: { username: string }) {
 
   return (
     <>
-      <Suspense fallback={<PanelSkeleton height={90} />}>
+      {/* Seven tiles, so two rows from `md` and four on a phone — the flat
+          90px box this replaced only ever fitted the `xl` single row. */}
+      <Suspense
+        fallback={
+          <TileRowSkeleton count={7} cols="md:grid-cols-4 xl:grid-cols-7" />
+        }
+      >
         <PlayerTiles username={username} />
       </Suspense>
 
@@ -195,7 +201,7 @@ async function PlayerBody({ username }: { username: string }) {
 function PlayerBodySkeleton() {
   return (
     <>
-      <PanelSkeleton height={90} />
+      <TileRowSkeleton count={7} cols="md:grid-cols-4 xl:grid-cols-7" />
 
       <div className="grid gap-4 xl:grid-cols-[1fr_380px]">
         <div className="flex min-w-0 flex-col gap-4">

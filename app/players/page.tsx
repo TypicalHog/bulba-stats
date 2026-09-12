@@ -24,7 +24,7 @@ import {
 } from "@/lib/analytics/players";
 import { Panel, Caveat, SectionTitle } from "@/components/ui/panel";
 import { Stat } from "@/components/ui/stat";
-import { PanelSkeleton } from "@/components/ui/skeleton";
+import { PanelSkeleton, TileRowSkeleton } from "@/components/ui/skeleton";
 import { RankedBars } from "@/components/charts/bars";
 import { PagedBars } from "@/components/charts/paged-bars";
 import { PlayerLink } from "@/components/ui/entity";
@@ -61,11 +61,47 @@ export default function PlayersPage() {
         </p>
       </div>
 
-      <Suspense
-        fallback={<PanelSkeleton height={520} label="Aggregating traders…" />}
-      >
+      <Suspense fallback={<PlayersBodySkeleton />}>
         <PlayersBody />
       </Suspense>
+    </div>
+  );
+}
+
+/**
+ * Mirrors the frame `PlayersBody` renders: the four-tile row, then seven
+ * titled sections.
+ *
+ * One flat 520px box stood in for all nine panels, against a body that runs
+ * past 5,000px — so the footer and everything with it jumped by the whole
+ * difference the moment the crawl resolved. Each height below is derived from
+ * that panel's own content rather than guessed at: the funnel's five fixed
+ * steps, a leaderboard page's eight bars, the fifteen relationship rows, and
+ * the tables' own `maxHeight` caps, with a taller variant below `lg` where the
+ * leaderboards unstack and the caveats rewrap. The cohort and automation lists
+ * grow with the dataset, so those two are typical rather than exact.
+ */
+function PlayersBodySkeleton() {
+  return (
+    <div className="flex flex-col gap-5">
+      <TileRowSkeleton count={4} cols="md:grid-cols-4" />
+      <SectionSkeleton className="h-[600px] lg:h-[380px]" />
+      <SectionSkeleton className="h-[1310px] lg:h-[520px]" />
+      <SectionSkeleton className="h-[1380px] lg:h-[1160px]" />
+      <SectionSkeleton className="h-[940px] lg:h-[610px]" />
+      <SectionSkeleton className="h-[1560px] lg:h-[690px]" />
+      <SectionSkeleton className="h-[1060px] lg:h-[985px]" />
+      <SectionSkeleton className="h-[975px] lg:h-[680px]" />
+    </div>
+  );
+}
+
+/** A `SectionTitle` and the panel under it, the shape every section here has. */
+function SectionSkeleton({ className }: { className: string }) {
+  return (
+    <div>
+      <div className="mb-3 h-[18px] w-40 animate-pulse rounded bg-panel-2" />
+      <PanelSkeleton className={className} />
     </div>
   );
 }

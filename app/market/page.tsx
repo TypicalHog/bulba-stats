@@ -11,7 +11,7 @@ import { isHouseOrder } from "@/lib/analytics/house";
 import { median, volumeByItem } from "@/lib/analytics/market";
 import { Panel, Caveat } from "@/components/ui/panel";
 import { Stat } from "@/components/ui/stat";
-import { PanelSkeleton } from "@/components/ui/skeleton";
+import { PanelSkeleton, TileRowSkeleton } from "@/components/ui/skeleton";
 import { MarketTable, type MarketRow } from "./market-table";
 import { Treemap } from "@/components/charts/treemap";
 import { DepthOwnership } from "./depth-ownership";
@@ -43,9 +43,7 @@ export default function MarketPage() {
         </p>
       </div>
 
-      <Suspense
-        fallback={<PanelSkeleton height={600} label="Loading market…" />}
-      >
+      <Suspense fallback={<MarketBodySkeleton />}>
         <MarketBody />
       </Suspense>
 
@@ -69,6 +67,28 @@ export default function MarketPage() {
       >
         <DepthPanel />
       </Suspense>
+    </div>
+  );
+}
+
+/**
+ * Mirrors the frame `MarketBody` renders: the four-tile row, then the panel
+ * holding the quote table.
+ *
+ * The flat 600px this replaced was shorter than the table's own scroll cap
+ * (`maxHeight={900}`, market-table.tsx), which the ~180-listing catalog always
+ * fills — so the panel below jumped the better part of 500px on every visit.
+ * The panel height is that cap plus the CSV export row and the filter bar,
+ * which wraps to more rows the narrower the viewport gets.
+ */
+function MarketBodySkeleton() {
+  return (
+    <div className="flex flex-col gap-4">
+      <TileRowSkeleton count={4} cols="md:grid-cols-4" />
+      <PanelSkeleton
+        className="h-[1130px] md:h-[985px]"
+        label="Loading market…"
+      />
     </div>
   );
 }

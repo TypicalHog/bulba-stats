@@ -25,7 +25,7 @@ import {
 } from "@/lib/analytics/book";
 import { Panel, Caveat } from "@/components/ui/panel";
 import { Stat } from "@/components/ui/stat";
-import { PanelSkeleton } from "@/components/ui/skeleton";
+import { PanelSkeleton, TileRowSkeleton } from "@/components/ui/skeleton";
 import { DataTable, Rank, Td, Th, Tr } from "@/components/ui/table";
 import { Badge, ItemIcon, PlayerLink, SideTag } from "@/components/ui/entity";
 import { CandleChart } from "@/components/charts/candles";
@@ -129,7 +129,14 @@ export default async function ItemPage({
         </Link>
       </header>
 
-      <Suspense fallback={<PanelSkeleton height={90} />}>
+      {/* Seven tiles: four rows on a phone, two from `md`, one from `xl` — a
+          flat 90px box reserved the widest case and shoved everything below it
+          down by three tile rows on the narrowest. */}
+      <Suspense
+        fallback={
+          <TileRowSkeleton count={7} cols="md:grid-cols-4 xl:grid-cols-7" />
+        }
+      >
         <QuoteTiles listingId={listingId} interval={interval} />
       </Suspense>
 

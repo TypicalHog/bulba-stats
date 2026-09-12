@@ -3,7 +3,7 @@ import { getAllTrades } from "@/lib/api/endpoints";
 import { marketTotals } from "@/lib/analytics/market";
 import { Panel } from "@/components/ui/panel";
 import { Stat } from "@/components/ui/stat";
-import { PanelSkeleton } from "@/components/ui/skeleton";
+import { PanelSkeleton, TileRowSkeleton } from "@/components/ui/skeleton";
 import { TradesExplorer, type TradeRow } from "./trades-explorer";
 import { diamonds, diamondsCompact, num, percent } from "@/lib/format";
 
@@ -25,11 +25,30 @@ export default function TradesPage() {
         </p>
       </div>
 
-      <Suspense
-        fallback={<PanelSkeleton height={640} label="Loading trade history…" />}
-      >
+      <Suspense fallback={<TradesBodySkeleton />}>
         <TradesBody />
       </Suspense>
+    </div>
+  );
+}
+
+/**
+ * Mirrors the frame `TradesBody` renders: the six-tile row, then the panel
+ * holding the explorer.
+ *
+ * The flat 640px this replaced did not even cover the explorer's own scroll
+ * cap (`maxHeight={900}`, trades-explorer.tsx), let alone the filter bar, the
+ * totals strip and the export row above it — the whole page dropped by roughly
+ * its own height when the crawl resolved.
+ */
+function TradesBodySkeleton() {
+  return (
+    <div className="flex flex-col gap-4">
+      <TileRowSkeleton count={6} />
+      <PanelSkeleton
+        className="h-[1215px] md:h-[1040px]"
+        label="Loading trade history…"
+      />
     </div>
   );
 }

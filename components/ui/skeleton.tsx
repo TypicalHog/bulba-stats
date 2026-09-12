@@ -40,9 +40,20 @@ export function PanelSkeleton({
  * reserved height follows the same column count at every breakpoint instead of
  * being guessed per width. `count` must match the number of tiles rendered.
  */
-export function TileRowSkeleton({ count = 4 }: { count?: number }) {
+export function TileRowSkeleton({
+  count = 4,
+  cols = "md:grid-cols-3 xl:grid-cols-6",
+}: {
+  count?: number;
+  /**
+   * The real row's column classes from `md` up — every tile row on the site is
+   * 2-up on a phone, but the wider counts differ per row, and a skeleton that
+   * mirrors the wrong grid reserves the wrong number of rows.
+   */
+  cols?: string;
+}) {
   return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+    <div className={`grid grid-cols-2 gap-3 ${cols}`}>
       {Array.from({ length: count }, (_, i) => (
         /* Taller on the narrowest column count, where tile hints wrap. */
         <div key={i} className="panel h-[91px] animate-pulse sm:h-[88px]" />
