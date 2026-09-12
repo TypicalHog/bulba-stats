@@ -173,6 +173,38 @@ export default function AboutPage() {
             share moving from 40% to 43% has risen three points, not 3%.
           </Method>
 
+          <Method title="Niche variants">
+            Items flagged <span className="font-mono">niche</span> upstream —
+            odd enchant combinations that rarely trade — are hidden by
+            default, with a toggle to reveal them.
+          </Method>
+
+          <Method title="makerMid&apos;s provenance">
+            The upstream <span className="font-mono">makerMid</span> field is
+            a reference price of unknown origin. Docs imply a mid over maker
+            orders, but it matches none of house best mid, quantity-weighted
+            mid, house microprice, or trade VWAP for most listings that carry
+            it, and several unrelated items share the exact same value —
+            pointing at a configured number rather than a live computation.
+            Whether it moves over time isn&apos;t established. Shown beside
+            mid, never used as a quote.
+          </Method>
+
+          <Method title="Self-crosses">
+            A handful of trades have the same account as both taker and one
+            of the makers — filling against its own resting order. They stay
+            in every total: they are real fills that moved real inventory,
+            and dropping them would silently disagree with the upstream&apos;s
+            own volume figures. Nothing on the site implies intent.
+          </Method>
+
+          <Method title="The account roster is a floor">
+            There is no players index upstream. Accounts are discovered from
+            the trade record, from anyone who has moved funds, and
+            transitively through shared-bank membership — an account that has
+            done none of those three is unreachable and uncounted.
+          </Method>
+
           <Method title="How fresh the numbers are">
             Every figure is read server-side and cached, so a page view usually
             costs the upstream API nothing. The window depends on what it costs
