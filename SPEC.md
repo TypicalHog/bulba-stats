@@ -757,7 +757,7 @@ expressed in **percentage points**, since a share moving 40% → 43% has risen
 three points, not 3%.
 
 Concretely, the market table is built from four upstream requests and renders
-immediately; the depth-ownership panel below it needs the ~20,700-row order
+immediately; the depth-ownership panel below it needs the ~9,384-row order
 crawl and arrives separately. Item sparklines come from actual fill prices
 rather than a candle request per listing, which would have cost ~118 extra
 requests against a 120/min budget.
