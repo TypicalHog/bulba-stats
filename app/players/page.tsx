@@ -450,7 +450,8 @@ async function PlayersBody() {
                       ? `${(v.medianGapMs / 1000).toFixed(2)}s`
                       : "—"}{" "}
                     · variability{" "}
-                    {v.variability != null ? v.variability.toFixed(2) : "—"}
+                    {v.variability != null ? v.variability.toFixed(2) : "—"} ·{" "}
+                    {Math.round(v.subSecondShare * 100)}% sub-second
                   </span>
                 </li>
               ))}
