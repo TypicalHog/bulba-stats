@@ -316,6 +316,8 @@ export function NetworkGraph({
                   aria-pressed={selected === node.username}
                   aria-label={`${node.username}, ${diamondsCompact(node.volume)} traded`}
                   onMouseEnter={() => setHover(node.username)}
+                  onFocus={() => setHover(node.username)}
+                  onBlur={() => setHover(null)}
                   onClick={() =>
                     setSelected((prev) =>
                       prev === node.username ? null : node.username,
