@@ -73,7 +73,10 @@ export function automationVerdicts(
         variability: null,
         subSecondShare: 0,
         confidence: "too few",
-        because: `Only ${sorted.length} orders — not enough to say anything`,
+        because:
+          sorted.length < MIN_ORDERS
+            ? `Only ${sorted.length} orders — not enough to say anything`
+            : `${sorted.length} orders but only ${gaps.length} usable gaps between them — not enough to say anything`,
       });
       continue;
     }
@@ -144,5 +147,5 @@ export const AUTOMATION_CRITERIA = [
   `Likely — ${STRONG_ORDERS}+ orders, and either a median gap under ${FAST_MS / 1000}s with variability below ${REGULAR_VARIABILITY}, or over ${BURST_SHARE * 100}% of gaps under a second`,
   `Possible — ${MIN_ORDERS}+ orders and either a median gap under ${FAST_MS / 1000}s or most gaps under a second`,
   "No evidence — gaps irregular enough to look hand-placed",
-  `Too few — under ${MIN_ORDERS} orders, which says nothing either way`,
+  `Too few — under ${MIN_ORDERS} orders, or too few usable gaps between them, which says nothing either way`,
 ];
