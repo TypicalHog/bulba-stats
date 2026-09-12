@@ -1,5 +1,6 @@
 "use client";
 
+import { startTransition, useOptimistic } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { CandleInterval } from "@/lib/api/types";
 
@@ -20,11 +21,15 @@ export function IntervalPicker({
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
+  const [optimisticCurrent, setOptimisticCurrent] = useOptimistic(current);
 
   const select = (interval: CandleInterval) => {
     const next = new URLSearchParams(params);
     next.set("i", interval);
-    router.replace(`${pathname}?${next}`, { scroll: false });
+    startTransition(() => {
+      setOptimisticCurrent(interval);
+      router.push(`${pathname}?${next}`, { scroll: false });
+    });
   };
 
   return (
@@ -38,9 +43,9 @@ export function IntervalPicker({
           key={i}
           type="button"
           onClick={() => select(i)}
-          aria-pressed={i === current}
+          aria-pressed={i === optimisticCurrent}
           className={`cursor-pointer rounded px-2 py-1 font-mono text-[10px] transition-colors duration-150 ${
-            i === current
+            i === optimisticCurrent
               ? "bg-accent/15 text-accent"
               : "text-ink-3 hover:bg-panel-2 hover:text-ink-2"
           }`}
