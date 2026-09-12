@@ -276,9 +276,26 @@ async function loadRoster() {
   try {
     const raw = await readFile(join(OUT, "roster.json"), "utf8");
     const parsed = JSON.parse(raw);
-    return new Set(Array.isArray(parsed?.usernames) ? parsed.usernames : []);
-  } catch {
-    return new Set();
+    const usernames = Array.isArray(parsed?.usernames) ? parsed.usernames : [];
+    return { roster: new Set(usernames), unreadable: false };
+  } catch (err) {
+    /*
+     * Only a genuinely absent file means "first run ever". Anything else — a
+     * truncated write from a run the runner destroyed mid-capture, a hand edit,
+     * a checkout anomaly — means accounts exist that this process cannot see,
+     * and the write at the end of `main` would replace the whole accumulated
+     * roster with just what this hour happened to discover. Most of the roster
+     * is recoverable from recent activity, but the bank-only accounts are not:
+     * they appear in no feed, so no later run would ever find them again.
+     *
+     * Start empty so the run still works, but leave the file alone and let the
+     * run go red, exactly as `appendSeries` does for an unreadable day file.
+     */
+    if (err.code !== "ENOENT") {
+      errors.push(`roster.json: unreadable (${err.message}) — left as is`);
+      return { roster: new Set(), unreadable: true };
+    }
+    return { roster: new Set(), unreadable: false };
   }
 }
 
@@ -376,7 +393,7 @@ async function main() {
   const treasury = await get("/treasury");
   if (!treasury) errors.push("/treasury: no data");
 
-  const roster = await loadRoster();
+  const { roster, unreadable: rosterUnreadable } = await loadRoster();
   const { usernames, truncated } = await discoverPlayers(roster);
 
   // Shared banks appear identically on every member's profile, so they are
@@ -517,10 +534,13 @@ async function main() {
   // `roster.size === 0`, so writing a partial roster would mark it warm and
   // no later run would ever sweep history again. Leaving the file alone costs
   // this hour's discovery and buys the next run another go at the full sweep.
+  //
+  // A roster.json that exists but could not be read is the same exception for
+  // the same reason, and `loadRoster` has already reported it.
   const known = new Set([...fetched, ...queue]);
   if (truncated) {
     errors.push("roster.json left unwritten so the next run sweeps again");
-  } else {
+  } else if (!rosterUnreadable) {
     await writeFile(
       join(OUT, "roster.json"),
       `${JSON.stringify({ usernames: [...known].sort() }, null, 2)}\n`,

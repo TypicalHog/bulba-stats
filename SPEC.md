@@ -333,7 +333,11 @@ Four properties are deliberate:
   trading appears in no other feed, so dropping it would end its balance
   history permanently. A cold sweep that ends short — page cap, upstream
   failure or spent budget — leaves `roster.json` unwritten, so the next run is
-  still cold and sweeps again rather than inheriting the gap.
+  still cold and sweeps again rather than inheriting the gap. A `roster.json`
+  that exists but cannot be read is left alone for the same reason: only a
+  genuinely absent file means "first run ever", and anything else — a truncated
+  write, a bad hand edit — would otherwise be overwritten with one hour's
+  discovery, taking the bank-only accounts with it.
 - **Missing means `null`, never `0`.** In a series row the depth totals are
   null unless *every* listing's book was fetched, and `treasury` is null when
   `/treasury` did not answer. A market-wide total computed from a subset is not
