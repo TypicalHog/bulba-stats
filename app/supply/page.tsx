@@ -213,7 +213,7 @@ async function FlowBody() {
           )}
           <Caveat>
             Diamonds are the unit of account, not supply, so they are kept out
-            of every total above. Goods worth roughly{" "}
+            of every total above. Goods worth at least{" "}
             {diamondsCompact(totals.depositedValue)} at current mid have arrived
             against {num(currency?.deposited ?? 0)} diamonds deposited.
           </Caveat>
