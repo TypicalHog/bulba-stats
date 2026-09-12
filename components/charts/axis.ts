@@ -68,7 +68,7 @@ export const CHART_PAD = { top: 12, right: 12, bottom: 22, left: 46 } as const;
  * unreadable. Below this width the chart scrolls horizontally inside its panel
  * instead, the same way wide tables do, so labels stay at a legible size.
  */
-export const CHART_MIN_WIDTH = 560;
+export const CHART_MIN_WIDTH = 720;
 
 /**
  * Convert a client X coordinate into the SVG's own viewBox units.

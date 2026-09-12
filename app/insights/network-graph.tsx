@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { INK, SERIES, SURFACE } from "@/lib/design";
 import { avatarUrl, diamonds, diamondsCompact, num } from "@/lib/format";
+import { CHART_MIN_WIDTH } from "@/components/charts/axis";
 
 export type GraphNode = {
   username: string;
@@ -206,7 +207,7 @@ export function NetworkGraph({
       </div>
 
       <div className="scroll-x">
-        <div className="relative" style={{ minWidth: 560 }}>
+        <div className="relative" style={{ minWidth: CHART_MIN_WIDTH }}>
           <svg
             viewBox={`0 0 ${W} ${H}`}
             width="100%"
@@ -401,7 +402,7 @@ export function NetworkGraph({
               behind it would steal the hover.
             */
             <div
-              className={`absolute left-2 top-2 rounded border bg-panel-2 px-2.5 py-2 text-[10px] shadow-lg ${
+              className={`absolute left-2 top-2 rounded border bg-panel-2 px-2.5 py-2 text-[12px] shadow-lg ${
                 selected
                   ? "pointer-events-auto border-accent/50"
                   : "pointer-events-none border-line"
@@ -549,7 +550,7 @@ export function NetworkGraph({
         </div>
       )}
 
-      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] text-ink-3">
+      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-ink-3">
         <span className="flex items-center gap-1.5">
           <span
             aria-hidden

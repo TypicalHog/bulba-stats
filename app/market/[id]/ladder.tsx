@@ -63,7 +63,7 @@ export function OrderLadder({ book }: { book: OrderBook }) {
       <Side levels={bids} side="bid" maxQty={maxQty} />
 
       {(book.asks.length > MAX_LEVELS || book.bids.length > MAX_LEVELS) && (
-        <p className="border-t border-line px-3 py-1.5 text-[10px] text-ink-3">
+        <p className="border-t border-line px-3 py-1.5 text-[12px] text-ink-3">
           Showing the best {MAX_LEVELS} levels per side of{" "}
           {num(book.asks.length)} asks / {num(book.bids.length)} bids.
         </p>

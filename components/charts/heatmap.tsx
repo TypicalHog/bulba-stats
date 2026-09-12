@@ -107,7 +107,7 @@ function Row({
   return (
     <>
       <div
-        className={`flex items-center font-mono text-[9px] transition-colors duration-150 ${
+        className={`flex items-center font-mono text-[8px] transition-colors duration-150 ${
           hovered?.day === day ? "text-accent" : "text-ink-3"
         }`}
       >

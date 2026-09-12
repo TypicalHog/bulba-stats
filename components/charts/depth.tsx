@@ -188,7 +188,7 @@ export function DepthChart({
           </div>
 
           {geom.clipped && (
-            <p className="mb-1 text-[10px] text-ink-3">
+            <p className="mb-1 text-[12px] text-ink-3">
               Zoomed to the tradeable band around mid — orders resting further out
               are off this view. Totals below cover the whole book.
             </p>
@@ -310,7 +310,7 @@ export function DepthChart({
 
           {hover && info && (
             <div
-              className="pointer-events-none absolute top-8 z-10 rounded border border-line bg-panel-2 px-2 py-1.5 font-mono text-[10px] shadow-lg"
+              className="pointer-events-none absolute top-8 z-10 rounded border border-line bg-panel-2 px-2 py-1.5 font-mono text-[12px] shadow-lg"
               style={
                 hover.x > W / 2
                   ? { right: hover.rightPx + 8 }

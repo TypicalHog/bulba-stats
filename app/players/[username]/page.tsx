@@ -589,7 +589,7 @@ async function Holdings({ username }: { username: string }) {
                   {num(h.total)}
                   {h.reserved > 0 && (
                     <span
-                      className="block text-[9px] text-ink-3"
+                      className="block text-[12px] text-ink-3"
                       title="Locked in resting limit orders"
                     >
                       {num(h.reserved)} reserved

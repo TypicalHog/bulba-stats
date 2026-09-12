@@ -203,7 +203,7 @@ export function Treemap({
         </div>
       </div>
 
-      <p className="mt-2 text-[10px] text-ink-3">
+      <p className="mt-2 text-[12px] text-ink-3">
         Area is {active?.label.toLowerCase()}. Tiles too small to label carry
         their value in a tooltip; every tile links to its item.
       </p>

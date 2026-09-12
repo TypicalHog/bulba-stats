@@ -341,7 +341,7 @@ function MiniFact({
     <div>
       <p className="text-[10px] uppercase tracking-wider text-ink-3">{label}</p>
       <p className="mt-1 font-mono text-[15px] text-ink">{value}</p>
-      <p className="text-[10px] text-ink-3">{hint}</p>
+      <p className="text-[12px] text-ink-3">{hint}</p>
     </div>
   );
 }
