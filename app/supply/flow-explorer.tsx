@@ -216,6 +216,7 @@ export function FlowExplorer({
 
       <Panel bodyClassName="p-0">
         <SortableTable
+          key={mode}
           rows={rows}
           columns={columns}
           initialSort={isValue ? "net" : "deposited"}
