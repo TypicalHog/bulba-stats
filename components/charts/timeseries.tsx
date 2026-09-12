@@ -104,6 +104,29 @@ export function StackedBars({
 
   const seriesLabel = series.map((s) => s.label).join(" and ");
 
+  /*
+   * Shared by pointermove (mouse hover / touch drag) and pointerdown (a touch
+   * tap, which never generates a hover-only move) so a tap shows the same
+   * readout a mouse hover does. Pointer events also fire pointerleave when a
+   * touch lifts off — mouse events never do, which is what left a tapped
+   * tooltip stuck on screen.
+   */
+  const updateHover = (clientX: number) => {
+    const xInView = clientXToViewBox(svgRef.current, clientX);
+    if (xInView == null) return;
+    const i = Math.floor((xInView - CHART_PAD.left) / geom.slot);
+    if (i < 0 || i >= points.length) {
+      setHover(null);
+      return;
+    }
+    const centre = CHART_PAD.left + geom.slot * i + geom.slot / 2;
+    const leftPx =
+      viewBoxXToLocalPx(svgRef.current, wrapRef.current, centre) ?? 0;
+    const containerWidth =
+      wrapRef.current?.getBoundingClientRect().width ?? 0;
+    setHover({ i, leftPx, rightPx: containerWidth - leftPx });
+  };
+
   return (
     <div>
       <div
@@ -143,22 +166,9 @@ export function StackedBars({
             style={{ height: "auto", aspectRatio: `${W} / ${height}` }}
             role="img"
             aria-label={`${series.map((s) => s.label).join(" and ")} over ${points.length} periods`}
-            onMouseLeave={() => setHover(null)}
-            onMouseMove={(e) => {
-              const xInView = clientXToViewBox(svgRef.current, e.clientX);
-              if (xInView == null) return;
-              const i = Math.floor((xInView - CHART_PAD.left) / geom.slot);
-              if (i < 0 || i >= points.length) {
-                setHover(null);
-                return;
-              }
-              const centre = CHART_PAD.left + geom.slot * i + geom.slot / 2;
-              const leftPx =
-                viewBoxXToLocalPx(svgRef.current, wrapRef.current, centre) ?? 0;
-              const containerWidth =
-                wrapRef.current?.getBoundingClientRect().width ?? 0;
-              setHover({ i, leftPx, rightPx: containerWidth - leftPx });
-            }}
+            onPointerLeave={() => setHover(null)}
+            onPointerDown={(e) => updateHover(e.clientX)}
+            onPointerMove={(e) => updateHover(e.clientX)}
           >
             {ticks.map((t) => (
               <g key={t}>

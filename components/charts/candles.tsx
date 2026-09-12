@@ -89,6 +89,20 @@ export function CandleChart({
   const shown = active ?? last;
   const rising = shown.close >= shown.open;
 
+  /*
+   * Shared by pointermove (mouse hover / touch drag) and pointerdown (a touch
+   * tap, which never generates a hover-only move) so a tap shows the same
+   * readout a mouse hover does. Pointer events also fire pointerleave when a
+   * touch lifts off — mouse events never do, which is what left a tapped
+   * readout stuck on screen.
+   */
+  const updateHover = (clientX: number) => {
+    const xInView = clientXToViewBox(svgRef.current, clientX);
+    if (xInView == null) return;
+    const i = Math.floor((xInView - CHART_PAD.left) / geom.slot);
+    setHover(i >= 0 && i < candles.length ? i : null);
+  };
+
   return (
     <div>
       <div
@@ -125,13 +139,9 @@ export function CandleChart({
             style={{ height: "auto", aspectRatio: `${W} / ${height}` }}
             role="img"
             aria-label={`Candlestick chart, ${candles.length} ${interval} buckets`}
-            onMouseLeave={() => setHover(null)}
-            onMouseMove={(e) => {
-              const xInView = clientXToViewBox(svgRef.current, e.clientX);
-              if (xInView == null) return;
-              const i = Math.floor((xInView - CHART_PAD.left) / geom.slot);
-              setHover(i >= 0 && i < candles.length ? i : null);
-            }}
+            onPointerLeave={() => setHover(null)}
+            onPointerDown={(e) => updateHover(e.clientX)}
+            onPointerMove={(e) => updateHover(e.clientX)}
           >
             {ticks.map((t) => (
               <g key={t}>

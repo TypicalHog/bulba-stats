@@ -172,6 +172,33 @@ export function DepthChart({
 
   const info = hover ? atPrice(hover.price) : null;
 
+  /*
+   * Shared by pointermove (mouse hover / touch drag) and pointerdown (a touch
+   * tap, which never generates a hover-only move) so a tap shows the same
+   * readout a mouse hover does. Pointer events also fire pointerleave when a
+   * touch lifts off — mouse events never do, which is what left a tapped
+   * tooltip stuck on screen.
+   */
+  const updateHover = (clientX: number) => {
+    const xInView = clientXToViewBox(svgRef.current, clientX);
+    if (xInView == null) return;
+    if (xInView < CHART_PAD.left || xInView > W - CHART_PAD.right) {
+      setHover(null);
+      return;
+    }
+    const frac = (xInView - CHART_PAD.left) / plotW;
+    const leftPx =
+      viewBoxXToLocalPx(svgRef.current, wrapRef.current, xInView) ?? 0;
+    const containerWidth =
+      wrapRef.current?.getBoundingClientRect().width ?? 0;
+    setHover({
+      x: xInView,
+      leftPx,
+      rightPx: containerWidth - leftPx,
+      price: geom.xMin + frac * (geom.xMax - geom.xMin),
+    });
+  };
+
   return (
     <div>
       <div
@@ -207,27 +234,9 @@ export function DepthChart({
             style={{ height: "auto", aspectRatio: `${W} / ${height}` }}
             role="img"
             aria-label="Cumulative order book depth by price"
-            onMouseLeave={() => setHover(null)}
-            onMouseMove={(e) => {
-              const xInView = clientXToViewBox(svgRef.current, e.clientX);
-              if (xInView == null) return;
-              if (xInView < CHART_PAD.left || xInView > W - CHART_PAD.right) {
-                setHover(null);
-                return;
-              }
-              const frac = (xInView - CHART_PAD.left) / plotW;
-              const leftPx =
-                viewBoxXToLocalPx(svgRef.current, wrapRef.current, xInView) ??
-                0;
-              const containerWidth =
-                wrapRef.current?.getBoundingClientRect().width ?? 0;
-              setHover({
-                x: xInView,
-                leftPx,
-                rightPx: containerWidth - leftPx,
-                price: geom.xMin + frac * (geom.xMax - geom.xMin),
-              });
-            }}
+            onPointerLeave={() => setHover(null)}
+            onPointerDown={(e) => updateHover(e.clientX)}
+            onPointerMove={(e) => updateHover(e.clientX)}
           >
             {yTicks.map((t) => (
               <g key={t}>
