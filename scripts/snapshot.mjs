@@ -496,7 +496,7 @@ async function main() {
           depthStopped = true;
           break;
         }
-        const detail = await get(`/orderbook/${summary.listingId}`);
+        const detail = await get(`/orderbook/${encodeURIComponent(summary.listingId)}`);
         if (detail?.orderBook) books.set(summary.listingId, detail.orderBook);
       }
       // A missing book still nulls that listing's band columns (see
