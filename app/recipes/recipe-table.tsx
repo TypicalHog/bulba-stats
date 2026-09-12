@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { SortableTable, type Column } from "@/components/ui/sortable";
 import { Panel, Caveat } from "@/components/ui/panel";
 import { Badge, ItemLink } from "@/components/ui/entity";
-import { diamonds, num, percent } from "@/lib/format";
+import { diamonds, itemLabel, num, percent } from "@/lib/format";
 
 export type RecipeRow = {
   id: string;
@@ -117,6 +117,11 @@ export function RecipeTable({ rows }: { rows: RecipeRow[] }) {
         </span>
       ),
       sort: ({ row }) => (row.outputItemName ?? "").toLowerCase(),
+      csv: ({ row }) =>
+        itemLabel({
+          itemName: row.outputItemName,
+          variantName: row.outputVariantName,
+        }),
       descFirst: false,
     },
     {

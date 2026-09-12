@@ -6,7 +6,15 @@ import { breakEvenMove } from "@/lib/analytics/fees";
 import { WatchStar, useWatchlist } from "@/components/ui/watchlist";
 import { Badge, ItemLink } from "@/components/ui/entity";
 import { Sparkline } from "@/components/charts/sparkline";
-import { dateOnly, diamonds, duration, num, percent, price } from "@/lib/format";
+import {
+  dateOnly,
+  diamonds,
+  duration,
+  itemLabel,
+  num,
+  percent,
+  price,
+} from "@/lib/format";
 
 /**
  * How many items a price is quoted for.
@@ -120,6 +128,7 @@ export function MarketTable({
         </span>
       ),
       sort: (r) => `${r.itemName ?? ""}${r.variantName ?? ""}`,
+      csv: (r) => itemLabel(r),
       descFirst: false,
     },
     {

@@ -707,7 +707,9 @@ tells you it won't.
 table component rather than a per-page feature, so it applies uniformly and
 stays consistent as tables are added. Rows export in the order shown — the sort
 the reader chose is part of what they are taking away — and values come from
-each column's scalar accessor rather than its rendered markup.
+each column's scalar accessor rather than its rendered markup, with a separate
+export accessor wherever the sort key is folded for comparison, so a name
+exports with the spelling the table showed.
 
 **Long lists scroll rather than truncate.** Every table that ranks something
 carries the full set inside a fixed-height scroll container with a sticky

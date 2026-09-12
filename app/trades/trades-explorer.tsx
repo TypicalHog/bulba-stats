@@ -5,7 +5,7 @@ import { SortableTable, type Column } from "@/components/ui/sortable";
 import { Badge, ItemLink, PlayerLink, SideTag } from "@/components/ui/entity";
 import { SplitBar } from "@/components/charts/bars";
 import { SERIES } from "@/lib/design";
-import { dateTime, diamonds, num, price } from "@/lib/format";
+import { dateTime, diamonds, itemLabel, num, price } from "@/lib/format";
 
 export type TradeRow = {
   id: number;
@@ -141,6 +141,7 @@ export function TradesExplorer({ rows }: { rows: TradeRow[] }) {
         />
       ),
       sort: (r) => `${r.itemName ?? ""}${r.variantName ?? ""}`,
+      csv: (r) => itemLabel(r),
       descFirst: false,
     },
     {
@@ -153,6 +154,7 @@ export function TradesExplorer({ rows }: { rows: TradeRow[] }) {
           <span className="text-ink-3">—</span>
         ),
       sort: (r) => r.taker?.toLowerCase() ?? null,
+      csv: (r) => r.taker,
       descFirst: false,
     },
     {

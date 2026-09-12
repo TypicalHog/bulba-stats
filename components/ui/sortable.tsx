@@ -22,8 +22,10 @@ export type Column<T> = {
   descFirst?: boolean;
   className?: string;
   /**
-   * Plain value for CSV export. Falls back to `sort`, which is already a
-   * scalar accessor — `cell` cannot be used because it returns markup.
+   * Plain value for CSV export. Falls back to `sort` — `cell` cannot be used
+   * because it returns markup. Give one whenever `sort` is folded for
+   * comparison (lower-cased, concatenated), or the export takes the sort key
+   * rather than the value the reader saw.
    */
   csv?: (row: T) => string | number | null;
   /** Header text for CSV, when `header` is markup rather than a string. */

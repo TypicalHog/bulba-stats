@@ -6,7 +6,7 @@ import { SortableTable, type Column } from "@/components/ui/sortable";
 import { Panel, Caveat } from "@/components/ui/panel";
 import { ItemLink, Badge } from "@/components/ui/entity";
 import { SERIES } from "@/lib/design";
-import { dateOnly, diamonds, num } from "@/lib/format";
+import { dateOnly, diamonds, itemLabel, num } from "@/lib/format";
 
 export type FlowRow = {
   variantId: number;
@@ -95,6 +95,7 @@ export function FlowExplorer({
         </span>
       ),
       sort: (r) => (r.itemName ?? "").toLowerCase(),
+      csv: (r) => itemLabel(r),
       descFirst: false,
     },
     {

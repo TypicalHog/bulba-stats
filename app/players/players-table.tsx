@@ -100,6 +100,7 @@ export function PlayersTable({ rows }: { rows: PlayerRow[] }) {
         </span>
       ),
       sort: (r) => r.username.toLowerCase(),
+      csv: (r) => r.username,
       descFirst: false,
     },
     {
