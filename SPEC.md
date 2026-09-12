@@ -924,8 +924,9 @@ larger than a full color swap are never the only cue.
 ### 5.4 Typography
 
 Fira Sans for UI, Fira Code for all numerics and identifiers — a trading readout
-wants monospace digits. Tabular figures in table columns and axis ticks;
-proportional figures for hero numbers and stat-tile values.
+wants monospace digits. Fira Code ships no proportional-width digit
+glyphs, so every numeral — table columns, axis ticks, hero numbers,
+stat-tile values — renders tabular by construction.
 
 **12px is the floor for anything you read.** The dense dial originally put
 secondary text at 11px, which is below the threshold browsers and auditors

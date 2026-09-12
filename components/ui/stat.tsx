@@ -95,8 +95,7 @@ export function Stat({
 }
 
 /**
- * The single number a view leads with. Exactly one per page, proportional
- * figures (tabular-nums would look loose at this size).
+ * The single number a view leads with. Exactly one per page.
  */
 export function HeroStat({
   label,
@@ -114,10 +113,7 @@ export function HeroStat({
       <p className="text-[12px] uppercase tracking-[0.14em] text-ink-3">
         {label}
       </p>
-      <p
-        className="mt-1 font-mono text-[44px] leading-none font-semibold text-ink sm:text-[56px]"
-        style={{ fontVariantNumeric: "proportional-nums" }}
-      >
+      <p className="mt-1 font-mono text-[44px] leading-none font-semibold text-ink sm:text-[56px]">
         {value}
         {unit && (
           <span className="ml-1 text-[24px] font-normal text-ink-3">{unit}</span>
