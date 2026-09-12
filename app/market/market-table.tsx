@@ -142,7 +142,13 @@ export function MarketTable({
       align: "center",
       cell: (r) =>
         r.spark.length > 1 ? (
-          <Sparkline values={r.spark} width={64} height={16} />
+          <>
+            <Sparkline values={r.spark} width={64} height={16} />
+            <span className="sr-only">
+              {r.spark[r.spark.length - 1] >= r.spark[0] ? "rising" : "falling"}{" "}
+              from {r.spark[0]} to {r.spark[r.spark.length - 1]}
+            </span>
+          </>
         ) : (
           <span className="text-ink-3">—</span>
         ),
