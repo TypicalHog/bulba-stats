@@ -132,14 +132,19 @@ export const getListings = cache(async (): Promise<Listing[]> => {
  * The root layout fetches the whole catalog on every route to build the command
  * palette, and a catalog row is byte-identical to what `/listings/:id` returns
  * — verified against the live host, including the three inactive listings the
- * catalog turns out to carry. So the common case is a lookup in something
- * already cached, and the request only happens for an id the catalog does not
- * have, which is the one case only that endpoint can answer.
+ * catalog turns out to carry. So a catalog that loaded is the whole answer:
+ * an id it does not list does not exist, and saying so costs nothing.
+ *
+ * The per-id request is therefore only the fallback for a catalog that failed
+ * to load. It used to run for every unknown id as well, which meant any id in
+ * the URL — the space is every safe integer — became a live upstream GET and a
+ * fresh fetch-cache entry, so sweeping /market/:id spent the shared read budget
+ * on ids that were never real. The cost is a listing added upstream within the
+ * catalog's 20-second window, which 404s until the catalog refreshes.
  */
 export const getListing = cache(async (id: number): Promise<Listing | null> => {
-  const catalog = await getListings().catch(() => [] as Listing[]);
-  const found = catalog.find((listing) => listing.id === id);
-  if (found) return found;
+  const catalog = await getListings().catch(() => null);
+  if (catalog) return catalog.find((listing) => listing.id === id) ?? null;
   return apiGetOrNull<Listing>(`/listings/${id}`, { revalidate: TTL.near });
 });
 

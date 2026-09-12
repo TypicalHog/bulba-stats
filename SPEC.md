@@ -25,7 +25,7 @@ auth. BulbaStats never writes.
 | Endpoint | Used for |
 |---|---|
 | `GET /listings` | Item catalog: 184 listings, incl. `stackAmount`, `niche`, `lendingEnabled` |
-| `GET /listings/:id` | Single listing |
+| `GET /listings/:id` | Single listing — fallback only, when the catalog fetch fails |
 | `GET /orderbook` | Best bid/ask/mid/`makerMid`/spread for every listing — one call |
 | `GET /orderbook/:id` | Full aggregated depth; `?includePlayers=true` adds per-order owners |
 | `GET /orderbook/:id/view` | Listing + book + recent fills in one round trip |
@@ -273,6 +273,13 @@ Crawls are sequential (cursor pagination is inherently serial), fan-outs are
 bounded to 6 concurrent requests, and every crawl has a hard page cap so a
 runaway dataset can't spiral. All fetching happens server-side, so a page view
 costs the upstream API nothing when cached.
+
+Identifiers taken out of the URL are settled before anything is fetched.
+`/market/:id` accepts canonical decimal digits and is then answered from the
+cached catalog, which carries inactive listings too; `/players/:name` accepts a
+Minecraft username (3–16 of `[A-Za-z0-9_]`). An id or a name that cannot exist
+404s without a request, so walking either route can't spend the shared budget
+one entry at a time.
 
 The hourly capture job (§1.5) is the one sustained load. It paces itself to
 60 req/min — a fifth of the allowance — and so spends ~160 s per run.

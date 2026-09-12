@@ -39,6 +39,20 @@ import {
   price,
 } from "@/lib/format";
 
+/**
+ * Is this path segment shaped like an account name at all?
+ *
+ * A Minecraft username is 3–16 characters of `[A-Za-z0-9_]`, and every name the
+ * exchange has ever reported is one. Without this check any string in the URL
+ * became a live upstream `GET /players/:name` — decided before the page could
+ * know the account doesn't exist — so sweeping the route with fresh random
+ * names spent the shared read budget one request at a time and grew the fetch
+ * cache by an entry per name. Names that cannot exist now 404 for free.
+ */
+function isUsername(name: string): boolean {
+  return /^[A-Za-z0-9_]{3,16}$/.test(name);
+}
+
 export async function generateMetadata({
   params,
 }: PageProps<"/players/[username]">) {
@@ -63,6 +77,7 @@ export default async function PlayerPage({
 }: PageProps<"/players/[username]">) {
   const { username: raw } = await params;
   const username = decodeURIComponent(raw);
+  if (!isUsername(username)) notFound();
 
   const profile = await getPlayer(username);
 
