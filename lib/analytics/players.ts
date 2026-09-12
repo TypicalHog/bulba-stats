@@ -142,7 +142,9 @@ export function playerStats(legs: TradeLeg[]): Map<string, PlayerStats> {
       username,
       uuid: rows[0].uuid,
       isMarketMaker: username === MARKET_MAKER,
-      trades: rows.length,
+      // Distinct trades, not legs: a self-cross names this player on both
+      // sides of one trade and must not count twice.
+      trades: new Set(rows.map((l) => l.tradeId)).size,
       takerTrades: rows.filter((l) => !l.isMaker).length,
       makerTrades: rows.filter((l) => l.isMaker).length,
       volume,
