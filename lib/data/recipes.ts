@@ -15,7 +15,10 @@
  * books) are either expressed in terms of the compressed form that *is* listed,
  * or left out. The enchanted golden apple is left out too: its eight-gold-block
  * recipe was removed from Java Edition in 1.9, so the item is chest loot rather
- * than a conversion, and there is nothing to price against buying it.
+ * than a conversion, and there is nothing to price against buying it. honey_block
+ * is left out for a different reason: crafting it from honey_bottle returns
+ * four empty glass_bottle, and this table has no way to net a craft's
+ * byproducts back out of its cost.
  *
  * Enchanted tools are **not** here. They are derived from the catalog itself —
  * every listing carrying `nbt` becomes a recipe of its plain base item plus one
@@ -114,12 +117,6 @@ export const RECIPES: Recipe[] = [
     method: "craft",
     inputs: [{ listing: "ice", amount: 9 }],
     output: { listing: "packed_ice", amount: 1 },
-  },
-  {
-    id: "honey_block",
-    method: "craft",
-    inputs: [{ listing: "honey_bottle", amount: 4 }],
-    output: { listing: "honey_block", amount: 1 },
   },
 
   // --- simple crafts -------------------------------------------------------
