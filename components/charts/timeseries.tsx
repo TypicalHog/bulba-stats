@@ -212,7 +212,7 @@ export function StackedBars({
 
               return (
                 <g
-                  key={p.label}
+                  key={`${p.label}-${i}`}
                   style={active ? { filter: "brightness(1.35)" } : undefined}
                 >
                   {series.map((s, si) => {
@@ -315,8 +315,8 @@ export function StackedBars({
             align: "right" as const,
           })),
         ]}
-        rows={points.map((p) => ({
-          key: p.label,
+        rows={points.map((p, i) => ({
+          key: `${p.label}-${i}`,
           cells: [
             p.label,
             ...series.map((s) => valueFormat(p.values[s.key] ?? 0)),
