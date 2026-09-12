@@ -463,9 +463,10 @@ const CLOSED_STATUS = "filled,cancelled,expired";
  * Resting orders folded to one row per (side, listing, bank account) — the
  * whole open book in a single request.
  *
- * Undocumented upstream; see the note on `OrderSummaryGroup` for what it can
- * and cannot answer. Soft, because everything that depends on it degrades to
- * running the crawl unpinned.
+ * Documented upstream as of Aug 2026; gained a `groupBy` parameter (see the
+ * note on `OrderSummaryGroup` for what this ungrouped form can and cannot
+ * answer). Soft, because everything that depends on it degrades to running
+ * the crawl unpinned.
  */
 export const getOrderSummary = cache(
   async (status: string = OPEN_STATUS): Promise<OrderSummaryGroup[] | null> =>
