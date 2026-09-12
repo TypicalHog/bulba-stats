@@ -429,7 +429,9 @@ meaning. Everything below is computed in `lib/analytics/`.
 
 - **Realized P&L** by weighted-average cost basis, per item and total, with an
   explicit note on its assumptions (§4)
-- **Inventory** valued at current mid → net worth estimate
+- **Inventory** valued at current mid → net worth estimate, from personal
+  banks only; shared banks the player can reach are listed beside it, valued
+  but credited to nobody (§2.4)
 - Volume, trade count, fees paid, buy/sell split, maker vs taker ratio
 - Open orders: count, capital committed on the bid side, inventory committed on
   the ask side

@@ -168,8 +168,25 @@ async function PlayerTiles({ username }: { username: string }) {
       .map((s) => [s.variantId!, s.mid!]),
   );
 
-  const balances = (profile?.bankAccounts ?? []).flatMap((b) => b.balances);
-  const { totalValue, unpricedCount } = valueHoldings(balances, midByVariant);
+  /*
+   * Personal banks only. A shared bank appears identically on every member's
+   * profile, so crediting its contents here would hand the same treasury to
+   * each member in full — the §2.4 rule the rich list already follows. The
+   * shared banks this account can reach are shown, valued, in Holdings.
+   */
+  const banks = profile?.bankAccounts ?? [];
+  const sharedCount = banks.filter((b) => !b.isPersonal).length;
+  const { totalValue, unpricedCount } = valueHoldings(
+    banks.filter((b) => b.isPersonal).flatMap((b) => b.balances),
+    midByVariant,
+  );
+  const inventoryHint =
+    [
+      unpricedCount ? `${num(unpricedCount)} unpriced` : null,
+      sharedCount ? `${num(sharedCount)} shared excluded` : null,
+    ]
+      .filter(Boolean)
+      .join(" · ") || "at current mid";
 
   return (
     <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
@@ -193,7 +210,7 @@ async function PlayerTiles({ username }: { username: string }) {
       <Stat
         label="Inventory value"
         value={diamondsCompact(totalValue)}
-        hint={unpricedCount ? `${unpricedCount} unpriced` : "at current mid"}
+        hint={inventoryHint}
       />
       <Stat
         label="Maker share"
@@ -435,7 +452,22 @@ async function Holdings({ username }: { username: string }) {
       .map((s) => [s.variantId!, s.listingId]),
   );
 
-  const balances = profile.bankAccounts.flatMap((b) => b.balances);
+  /*
+   * Personal banks are this account's own. The shared banks it can reach are
+   * listed separately below, valued but not totalled, per §2.4.
+   */
+  const personal = profile.bankAccounts.filter((b) => b.isPersonal);
+  const shared = profile.bankAccounts
+    .filter((b) => !b.isPersonal)
+    .map((b) => ({
+      id: b.id,
+      name: b.name,
+      members: (b.members ?? []).length,
+      value: valueHoldings(b.balances, midByVariant).totalValue,
+    }))
+    .sort((a, b) => b.value - a.value);
+
+  const balances = personal.flatMap((b) => b.balances);
   const { holdings, totalValue, unpricedCount } = valueHoldings(
     balances,
     midByVariant,
@@ -445,7 +477,7 @@ async function Holdings({ username }: { username: string }) {
   return (
     <Panel
       title="Holdings"
-      subtitle={`${num(profile.bankAccounts.length)} ${profile.bankAccounts.length === 1 ? "bank" : "banks"} · valued at current mid`}
+      subtitle={`${num(personal.length)} personal ${personal.length === 1 ? "bank" : "banks"} · valued at current mid`}
       bodyClassName="p-0"
       action={
         <span className="font-mono text-[12px] text-ink">
@@ -510,7 +542,7 @@ async function Holdings({ username }: { username: string }) {
         </DataTable>
       ) : (
         <p className="px-3 py-6 text-center text-[12px] text-ink-3">
-          No balances held.
+          No balances held in a personal bank.
         </p>
       )}
 
@@ -519,6 +551,35 @@ async function Holdings({ username }: { username: string }) {
           <Caveat>
             {num(unpricedCount)} held items have no quoted mid and are excluded
             from the total rather than valued at zero.
+          </Caveat>
+        </div>
+      )}
+
+      {shared.length > 0 && (
+        <div className="border-t border-line px-3 py-2.5">
+          <p className="text-[10px] font-medium uppercase tracking-wider text-ink-3">
+            Shared bank access
+          </p>
+          <ul className="mt-1.5 flex flex-col gap-1">
+            {shared.map((b) => (
+              <li
+                key={b.id}
+                className="flex items-baseline justify-between gap-3 text-[12px]"
+              >
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <span className="truncate font-mono text-ink-2">{b.name}</span>
+                  {b.members > 0 && <Badge>{`${num(b.members)}-member`}</Badge>}
+                </span>
+                <span className="shrink-0 font-mono text-ink-3">
+                  {diamondsCompact(b.value)}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <Caveat>
+            A shared bank appears identically on every member&apos;s profile, so
+            its contents are credited to nobody in particular and are excluded
+            from the total above.
           </Caveat>
         </div>
       )}
