@@ -403,6 +403,12 @@ async function discoverPlayers(roster) {
   const trades = cold
     ? await sweep("trades", tradePath, 25)
     : ((await get(tradePath(null))) ?? []);
+  // A warm page this full means more history sits right behind it that the
+  // single unpaginated GET above never follows — surface that instead of
+  // silently dropping it, the same way a truncated cold sweep is surfaced.
+  if (!cold && trades.length >= 200) {
+    errors.push("trades: warm page was full (200 rows) — newer activity may be missing");
+  }
   for (const trade of trades) {
     if (isValidUsername(trade.taker?.username)) roster.add(trade.taker.username);
     for (const maker of trade.makers ?? []) {
@@ -417,6 +423,9 @@ async function discoverPlayers(roster) {
   const ops = cold
     ? await sweep("bank movements", bankPath, 40)
     : ((await get(bankPath(null))) ?? []);
+  if (!cold && ops.length >= 200) {
+    errors.push("bank movements: warm page was full (200 rows) — newer activity may be missing");
+  }
   for (const op of ops) if (isValidUsername(op.player?.username)) roster.add(op.player.username);
 
   return { usernames: [...roster].sort(), truncated };

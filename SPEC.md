@@ -346,7 +346,9 @@ Four properties are deliberate:
   identically on every member's profile, so storing per player would multiply
   `BulbaTeam`'s holdings by its five members.
 - **Account discovery is self-healing and transitive.** A cold roster sweeps
-  full trade and bank-movement history; a warm one reads only the newest page.
+  full trade and bank-movement history; a warm one reads only the newest page,
+  and logs a note in `errors` if that page comes back full, since more history
+  may sit right behind it that the single unpaginated GET never follows.
   Shared-bank membership is then followed as its own discovery channel — which
   is the only way `ayayabot`, an account appearing in no trade and no bank
   movement, is found at all. The roster only ever grows: a profile fetch that
