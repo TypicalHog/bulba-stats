@@ -61,7 +61,13 @@ export function padDomain(
   return [min - pad, max + pad];
 }
 
-export const CHART_PAD = { top: 12, right: 12, bottom: 22, left: 46 } as const;
+/**
+ * `left` leaves 52 units for the right-anchored y-axis label (58 minus the
+ * 6-unit gap to the tick line) — enough for a 9-character tick like
+ * "1,000,000" or "12,345.67" at the 9px Fira Code used for tick text
+ * (~5.4 units/char) without clipping against the SVG's left edge.
+ */
+export const CHART_PAD = { top: 12, right: 12, bottom: 22, left: 58 } as const;
 
 /**
  * Minimum on-screen width for a plotted chart.
