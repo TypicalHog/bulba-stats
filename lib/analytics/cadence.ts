@@ -20,7 +20,7 @@ export type BookCadence = {
   itemName: string | null;
   variantName: string | null;
   orders: number;
-  /** Median seconds a quote rested before being pulled. */
+  /** Median milliseconds a quote rested before being pulled. */
   medianLifetimeMs: number | null;
   p90LifetimeMs: number | null;
   /** Most recent requote seen in the window. */
