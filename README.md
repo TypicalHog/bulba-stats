@@ -131,9 +131,9 @@ database. Two settings are non-default and worth understanding:
   inferred from the upstream's `.uk` domain — if it is actually hosted
   elsewhere, change this to the nearest region and the cold-cache pages get
   proportionally faster.
-- **`maxDuration = 60` on `/market`, `/orders`, `/players` and `/recipes`.** The
-  first three depend on that crawl, which takes ~10 s and would be killed by the
-  default serverless timeout on a cold cache; `/recipes` skips the crawl but
+- **`maxDuration = 60` on `/market`, `/orders`, `/players`, `/house` and
+  `/recipes`.** The first four depend on that crawl, which takes ~10 s and
+  would be killed by the default serverless timeout on a cold cache; `/recipes` skips the crawl but
   pulls the whole price-level book in one multi-megabyte request, which is no
   quicker. 60 s is the Hobby-tier ceiling, so it is safe on any
   plan. Warm requests return from cache immediately — and stay warm across a
