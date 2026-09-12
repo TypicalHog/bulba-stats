@@ -865,54 +865,63 @@ async function Lifecycle() {
           </Caveat>
         </Panel>
 
-        <Panel level={3}
-          title="Fill rate by trader"
-          subtitle="Share of their completed orders that filled — 5+ orders"
-          bodyClassName="p-0"
-        >
-          {players.length ? (
-            <DataTable>
-              <thead>
-                <tr>
-                  <Th>Account</Th>
-                  <Th align="right">Orders</Th>
-                  <Th align="right">Filled</Th>
-                  <Th align="right">Cancelled</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {players.map((p) => (
-                  <Tr key={p.username}>
-                    <Td>
-                      <PlayerLink
-                        username={p.username}
-                        uuid={p.uuid}
-                        size={16}
-                      />
-                    </Td>
-                    <Td align="right" mono className="text-ink-2">
-                      {num(p.total)}
-                    </Td>
-                    <Td align="right" mono>
-                      <span className="text-up">
-                        {percent(p.fillRate * 100, 0)}
-                      </span>
-                    </Td>
-                    <Td align="right" mono>
-                      <span className="text-down">
-                        {percent(p.cancelRate * 100, 0)}
-                      </span>
-                    </Td>
-                  </Tr>
-                ))}
-              </tbody>
-            </DataTable>
-          ) : (
-            <p className="px-4 py-8 text-center text-[12px] text-ink-3">
-              Not enough completed orders yet.
-            </p>
+        <div>
+          <Panel level={3}
+            title="Fill rate by trader"
+            subtitle="Share of their completed orders that filled — 5+ orders"
+            bodyClassName="p-0"
+          >
+            {players.length ? (
+              <DataTable>
+                <thead>
+                  <tr>
+                    <Th>Account</Th>
+                    <Th align="right">Orders</Th>
+                    <Th align="right">Filled</Th>
+                    <Th align="right">Cancelled</Th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {players.map((p) => (
+                    <Tr key={p.username}>
+                      <Td>
+                        <PlayerLink
+                          username={p.username}
+                          uuid={p.uuid}
+                          size={16}
+                        />
+                      </Td>
+                      <Td align="right" mono className="text-ink-2">
+                        {num(p.total)}
+                      </Td>
+                      <Td align="right" mono>
+                        <span className="text-up">
+                          {percent(p.fillRate * 100, 0)}
+                        </span>
+                      </Td>
+                      <Td align="right" mono>
+                        <span className="text-down">
+                          {percent(p.cancelRate * 100, 0)}
+                        </span>
+                      </Td>
+                    </Tr>
+                  ))}
+                </tbody>
+              </DataTable>
+            ) : (
+              <p className="px-4 py-8 text-center text-[12px] text-ink-3">
+                Not enough completed orders yet.
+              </p>
+            )}
+          </Panel>
+          {!complete && (
+            <Caveat>
+              Based on the most recent {num(closed.length)} completed orders
+              rather than the full archive, so a trader mostly active outside
+              this window can show a skewed rate.
+            </Caveat>
           )}
-        </Panel>
+        </div>
       </div>
     </div>
   );
