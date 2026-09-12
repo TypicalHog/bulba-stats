@@ -49,15 +49,17 @@ const UPSTREAM_TIMEOUT_MS = 45_000;
  * Revalidation tiers, in seconds. Chosen against measured upstream cost —
  * see SPEC.md §1.2/§1.3.
  *
- * Sized against the read allowance, using the measured page counts: a full
- * aggregate refresh is 19 requests (2 trades + 17 bank ops) and the
- * heavy crawl is 47. Sustained worst case, with someone watching a page in
- * each tier continuously, is roughly 26 + 21 + 12 + 3 ≈ 62 req/min.
+ * Sized against the read allowance. With someone watching a page in every tier
+ * continuously, the sustained worst case is **~47 req/min** while the book is
+ * still and rises toward ~102 when it is continuously active — but then the
+ * crawl is running because the book moved, which is the only reason it should.
+ * SPEC §1.3 carries that measurement; this comment deliberately keeps no
+ * second copy of the arithmetic, which is how the two came to disagree.
  *
  * The allowance is **300 req/min**, not the 120 these tiers were first priced
  * against — the published figure was wrong and upstream corrected it in August
  * 2026 — and cached reads do not count against it at all. So there is far more
- * headroom here than the numbers below assume, and the hourly capture's burst
+ * headroom here than the tiers below assume, and the hourly capture's burst
  * can overlap without either being throttled.
  *
  * The tiers are deliberately *not* being loosened to spend that headroom. The
