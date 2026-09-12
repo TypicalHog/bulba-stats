@@ -106,7 +106,7 @@ export function Affordability({ rows }: { rows: AffordRow[] }) {
     },
     {
       key: "cost",
-      header: "Cost",
+      header: withFee ? "Cost (incl. fee)" : "Cost",
       align: "right",
       mono: true,
       cell: ({ cost }) => (
