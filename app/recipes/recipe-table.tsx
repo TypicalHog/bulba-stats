@@ -5,6 +5,7 @@ import { SortableTable, type Column } from "@/components/ui/sortable";
 import { Panel, Caveat } from "@/components/ui/panel";
 import { Badge, ItemLink } from "@/components/ui/entity";
 import { diamonds, itemLabel, num, percent } from "@/lib/format";
+import { TAKER_FEE } from "@/lib/analytics/fees";
 
 export type RecipeRow = {
   id: string;
@@ -36,8 +37,6 @@ export type RecipeRow = {
   missing: string[];
 };
 
-const FEE = 0.04;
-
 type Toggles = {
   buyFee: boolean;
   sellFee: boolean;
@@ -67,8 +66,8 @@ export function RecipeTable({ rows }: { rows: RecipeRow[] }) {
     setToggles((t) => ({ ...t, [key]: !t[key] }));
 
   const priced = useMemo(() => {
-    const buyMult = toggles.buyFee ? 1 + FEE : 1;
-    const sellMult = toggles.sellFee ? 1 - FEE : 1;
+    const buyMult = toggles.buyFee ? 1 + TAKER_FEE : 1;
+    const sellMult = toggles.sellFee ? 1 - TAKER_FEE : 1;
 
     return rows
       .filter((r) => kind === "all" || r.kind === kind)

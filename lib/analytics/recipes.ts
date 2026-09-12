@@ -27,9 +27,6 @@ import {
  *   assembling them comes from the optimiser in `anvil.ts`.
  */
 
-/** The upstream taker fee. Charged on both sides — verified against live rows. */
-export const TAKER_FEE = 0.04;
-
 export type PricedLeg = {
   listingId: number | null;
   listingName: string;
