@@ -413,6 +413,13 @@ Four properties are deliberate:
   skip null samples rather than coerce them, which is why the depth and spread
   charts drop those points instead of plotting zero. The per-snapshot file
   always keeps the true per-listing nulls, so a degraded run can be rebuilt.
+  Wealth has no per-row null to carry a shortfall — a failed profile fetch or
+  a walk the budget cut short just makes `banks` and `players` shorter — so
+  the snapshot states it instead: `meta.playersKnown` equals
+  `meta.playersResolved` only when every account that run knew of was read,
+  and only then is a sum over `banks` the whole market. An account that has
+  been deleted leaves a permanent gap of one, since a 404 and three failed
+  attempts are the same `null` to the walk.
 
 **Reading it back.** `lib/api/snapshots.ts` fetches the per-day series from the
 branch over `raw.githubusercontent.com`, overridable with `BULBA_DATA_BASE`.

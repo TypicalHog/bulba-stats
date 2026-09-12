@@ -597,6 +597,11 @@ async function main() {
     errors.push(`capture aborted: ${err?.message ?? err} — wrote what was gathered`);
   }
 
+  // Every account this run knows of — attempted, plus the bank members the
+  // last pass surfaced. Used in `meta` below and written to roster.json at
+  // the end of `main`, where the reasoning is.
+  const known = new Set([...fetched, ...queue]);
+
   const snapshot = {
     version: VERSION,
     capturedAt,
@@ -609,6 +614,13 @@ async function main() {
       // never fetched (missing, or --no-depth). The two sources agree in
       // practice, but this says when a total is standing in for the other.
       depthFromSummary: summaries.length - books.size,
+      // Wealth has no per-row null to carry a shortfall the way the depth
+      // columns do: a profile fetch that fails, or a walk the budget cut
+      // short, just makes `players` and `banks` shorter. These two say so —
+      // equal means every account this run knew of was read, and only then is
+      // a sum over `banks` the whole market's wealth.
+      playersKnown: known.size,
+      playersResolved: players.length,
       errors,
     },
     listings: {
@@ -697,7 +709,6 @@ async function main() {
   // the same reason, and `loadRoster` has already reported it. So is a capture
   // that aborted part way: `known` is then only as far as it got, and writing it
   // would drop every account the run had not reached yet.
-  const known = new Set([...fetched, ...queue]);
   if (truncated) {
     errors.push("roster.json left unwritten so the next run sweeps again");
   } else if (!rosterUnreadable && !aborted) {
