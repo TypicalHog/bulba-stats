@@ -46,6 +46,31 @@ function dayKey(ms: number): string {
   return new Date(ms).toISOString().slice(0, 10);
 }
 
+// Next's fetch cache only stores 200s (see fetch.md), so on a data-branch-less
+// deploy the 14-day fan-out below would 404 — and re-hit the network — on
+// every ISR regeneration. This per-instance timestamp remembers a miss for
+// TTL.aggregate so those regenerations short-circuit instead of re-probing.
+// Lost on cold start; that's fine, it just costs one more probe.
+let branchMissUntil = 0;
+
+async function branchExists(): Promise<boolean> {
+  if (Date.now() < branchMissUntil) return false;
+  try {
+    const res = await fetch(`${DATA_BASE}/latest.json`, {
+      signal: AbortSignal.timeout(10_000),
+      next: { revalidate: TTL.aggregate, tags: [UPSTREAM_TAG, "snapshots"] },
+    });
+    if (!res.ok) {
+      branchMissUntil = Date.now() + TTL.aggregate * 1000;
+      return false;
+    }
+    return true;
+  } catch {
+    branchMissUntil = Date.now() + TTL.aggregate * 1000;
+    return false;
+  }
+}
+
 async function fetchDay(day: string, isToday: boolean): Promise<MarketSample[]> {
   try {
     const res = await fetch(`${DATA_BASE}/series/${day}.json`, {
@@ -85,6 +110,8 @@ async function fetchDay(day: string, isToday: boolean): Promise<MarketSample[]> 
  */
 export const getMarketHistory = cache(
   async (days = 14, now = Date.now()): Promise<MarketSample[]> => {
+    if (!(await branchExists())) return [];
+
     const keys = Array.from({ length: Math.max(1, days) }, (_, i) =>
       dayKey(now - (days - 1 - i) * 86_400_000),
     );
