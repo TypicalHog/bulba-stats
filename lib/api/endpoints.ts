@@ -26,11 +26,9 @@ import {
   type OrderStatus,
   type OrderLevel,
   type OrderSummaryGroup,
-  type OrderbookDetail,
   type OrderbookSummary,
   type OrderbookView,
   type Player,
-  type PriceQuote,
   type Trade,
   type Treasury,
   type TreasuryDistribution,
@@ -181,21 +179,6 @@ export const getOrderbookSummaryStale = cache(
   },
 );
 
-export const getOrderbook = cache(
-  async (
-    listingId: number,
-    { includePlayers = false, depth }: { includePlayers?: boolean; depth?: number } = {},
-  ): Promise<OrderbookDetail | null> => {
-    const q = new URLSearchParams();
-    if (includePlayers) q.set("includePlayers", "true");
-    if (depth) q.set("depth", String(depth));
-    const qs = q.size ? `?${q}` : "";
-    return apiGetOrNull<OrderbookDetail>(`/orderbook/${listingId}${qs}`, {
-      revalidate: TTL.live,
-    });
-  },
-);
-
 /** Listing + book + recent fills in one round trip. */
 export const getOrderbookView = cache(
   async (
@@ -222,19 +205,6 @@ export const getCandles = cache(
     );
     return data ?? [];
   },
-);
-
-/** Simulated fill against the live book — the basis of the slippage curve. */
-export const getPriceQuote = cache(
-  async (
-    listingId: number,
-    amount: number,
-    side: "buy" | "sell",
-  ): Promise<PriceQuote | null> =>
-    apiGetSoft<PriceQuote>(
-      `/orderbook/${listingId}/price?amount=${amount}&side=${side}`,
-      { revalidate: TTL.live },
-    ),
 );
 
 /**
@@ -420,30 +390,6 @@ export const getTrades = cache(
     if (params.username) q.set("username", params.username);
     if (params.before) q.set("before", String(params.before));
     const { data, meta } = await apiGet<Trade[]>(`/transactions?${q}`, {
-      revalidate: TTL.live,
-    });
-    const next = meta?.nextBefore;
-    return { rows: data, nextBefore: typeof next === "number" ? next : null };
-  },
-);
-
-export const getFills = cache(
-  async (params: {
-    listingId?: number;
-    username?: string;
-    limit?: number;
-    before?: number;
-    types?: string;
-  }): Promise<{ rows: Fill[]; nextBefore: number | null }> => {
-    const q = new URLSearchParams({
-      view: "fills",
-      limit: String(params.limit ?? 50),
-    });
-    if (params.types) q.set("type", params.types);
-    if (params.listingId) q.set("listingId", String(params.listingId));
-    if (params.username) q.set("username", params.username);
-    if (params.before) q.set("before", String(params.before));
-    const { data, meta } = await apiGet<Fill[]>(`/transactions?${q}`, {
       revalidate: TTL.live,
     });
     const next = meta?.nextBefore;
@@ -661,21 +607,6 @@ export const getTreasuryDistributions = cache(
       `/treasury/distributions?limit=${limit}`,
       { revalidate: TTL.aggregate },
     ),
-);
-
-/** Lending market. Live but empty upstream at the time of writing. */
-export const getLendingOrders = cache(
-  async (limit = 50): Promise<unknown[]> =>
-    (await apiGetSoft<unknown[]>(`/lending/orders?limit=${limit}`, {
-      revalidate: TTL.aggregate,
-    })) ?? [],
-);
-
-export const getLendingLoans = cache(
-  async (limit = 50): Promise<unknown[]> =>
-    (await apiGetSoft<unknown[]>(`/lending/loans?limit=${limit}`, {
-      revalidate: TTL.aggregate,
-    })) ?? [],
 );
 
 export const getCommands = cache(
