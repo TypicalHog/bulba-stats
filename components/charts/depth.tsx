@@ -204,7 +204,7 @@ export function DepthChart({
             ref={svgRef}
             viewBox={`0 0 ${W} ${height}`}
             width="100%"
-            height={height}
+            style={{ height: "auto", aspectRatio: `${W} / ${height}` }}
             role="img"
             aria-label="Cumulative order book depth by price"
             onMouseLeave={() => setHover(null)}

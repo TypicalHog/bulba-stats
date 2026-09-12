@@ -140,7 +140,7 @@ export function StackedBars({
             ref={svgRef}
             viewBox={`0 0 ${W} ${height}`}
             width="100%"
-            height={height}
+            style={{ height: "auto", aspectRatio: `${W} / ${height}` }}
             role="img"
             aria-label={`${series.map((s) => s.label).join(" and ")} over ${points.length} periods`}
             onMouseLeave={() => setHover(null)}

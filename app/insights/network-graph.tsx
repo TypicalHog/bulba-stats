@@ -211,7 +211,7 @@ export function NetworkGraph({
           <svg
             viewBox={`0 0 ${W} ${H}`}
             width="100%"
-            height={H}
+            style={{ height: "auto", aspectRatio: `${W} / ${H}` }}
             role="img"
             aria-label={`Trading network: ${visible.nodes.length} accounts, ${visible.edges.length} relationships`}
             onMouseLeave={() => setHover(null)}
