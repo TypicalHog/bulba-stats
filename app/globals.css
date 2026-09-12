@@ -153,3 +153,14 @@
     scroll-behavior: auto !important;
   }
 }
+
+/*
+ * Chart SVGs encode data in their fill/stroke colors (series, up/down,
+ * heatmap intensity). Windows High Contrast Mode otherwise flattens those
+ * to system colors, losing the distinctions the color is there to show.
+ */
+@media (forced-colors: active) {
+  svg {
+    forced-color-adjust: none;
+  }
+}
