@@ -176,8 +176,10 @@ database. Two settings are non-default and worth understanding:
   got, the job pushes it, and *then* the run is failed on purpose. A partial hour is worth keeping — it is the only record
   of that moment there will ever be — but a green check over a capture that lost
   every book is worse than a red one, because nobody inspects a passing job. The
-  snapshot's `meta.errors` lists what failed, and the series columns it affected
-  are `null` rather than `0`.
+  job log lists what failed in full; the snapshot's `meta.errors` lists the
+  endpoint failures (a write-phase failure, such as an unreadable series file,
+  can't be in it — that file is serialised before the write), and the series
+  columns affected are `null` rather than `0`.
 
 - **The `data` branch must never deploy.** The snapshot job pushes to it hourly,
   and each push would otherwise trigger a build. Deployment is disabled from

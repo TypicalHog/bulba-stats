@@ -225,5 +225,5 @@ jobs:
       - name: Fail a degraded capture
         if: always() && steps.capture.outputs.degraded == 'true'
         run: |
-          echo "::error::Capture was incomplete — one or more endpoints failed after retries. The snapshot's meta.errors lists them; affected series columns are null."
+          echo "::error::Capture was incomplete. The step log above lists every failure; endpoint failures are also in the snapshot's meta.errors, and affected series columns are null."
           exit 1
