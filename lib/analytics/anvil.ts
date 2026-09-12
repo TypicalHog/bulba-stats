@@ -73,8 +73,13 @@ const BOOK_MULTIPLIER: Record<string, number> = {
 /** Survival refuses any single combine costing this much or more. */
 export const TOO_EXPENSIVE = 40;
 
-/** Beyond this the exhaustive search stops being instant; no listing is close. */
-const MAX_BOOKS = 8;
+/**
+ * Beyond this the exhaustive search stops being instant. 9 is vanilla's
+ * practical ceiling (e.g. a fully-enchanted pair of boots), so the cap sits
+ * one above it rather than at a round number that would silently drop a
+ * legal listing.
+ */
+const MAX_BOOKS = 9;
 
 export type AnvilStep = {
   /** What was combined into what, in plain terms. */
@@ -91,7 +96,12 @@ export type AnvilPlan = {
   /** At least one step is refused by survival mode. */
   tooExpensive: boolean;
   steps: AnvilStep[];
-  /** Enchantments with no known multiplier, so the total is a floor. */
+  /**
+   * Enchantments left out of the total, so it is a floor rather than an exact
+   * figure — either because their multiplier isn't in `BOOK_MULTIPLIER`, or
+   * because the listing exceeds `MAX_BOOKS` and they were dropped from the
+   * search entirely.
+   */
   unknown: string[];
 };
 
@@ -141,10 +151,10 @@ function label(entries: readonly NbtEntry[]): string {
 export function optimalAnvilPlan(enchants: readonly NbtEntry[]): AnvilPlan {
   // Potion effects and firework attributes also arrive as nbt, and neither is
   // applied with an anvil. Costing them as books would invent a level total.
-  const books = enchants
-    .filter((entry) => entry.type === "enchant")
-    .slice(0, MAX_BOOKS);
-  const allUnknown = enchantCost(books).unknown;
+  const allEnchants = enchants.filter((entry) => entry.type === "enchant");
+  const books = allEnchants.slice(0, MAX_BOOKS);
+  const dropped = allEnchants.slice(MAX_BOOKS).map((entry) => entry.name);
+  const allUnknown = [...enchantCost(allEnchants).unknown, ...dropped];
 
   if (!books.length) {
     return { levels: 0, maxStep: 0, tooExpensive: false, steps: [], unknown: [] };
