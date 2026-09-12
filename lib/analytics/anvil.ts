@@ -146,9 +146,11 @@ function label(entries: readonly NbtEntry[]): string {
  * a balanced tree keeps every item's prior-work count low, while a sequential
  * chain drives the base item's penalty up by a doubling each time.
  *
- * Search is over subsets, keeping the cheapest plan per (subset, prior-work)
- * pair. A plan that costs more *and* leaves a higher penalty can never win, so
- * only that frontier is carried forward. Equally cheap plans are separated by
+ * Search is over subsets, keeping only the cheapest plan per (subset,
+ * prior-work) pair — a plan that costs more *and* leaves a higher penalty can
+ * never win, but this dedupe doesn't sweep for that domination across
+ * prior-work values, so a few such losers can still ride along. Equally cheap
+ * plans are separated by
  * the experience they need: levels are what the anvil charges, but experience
  * is what the page prices, and spreading the same level total over balanced
  * steps buys it for less.
