@@ -33,6 +33,7 @@ export function ItemIcon({
       height={size}
       loading="lazy"
       decoding="async"
+      referrerPolicy="no-referrer"
       className={`pixel shrink-0 ${className}`}
       style={{ width: size, height: size }}
     />
@@ -119,6 +120,7 @@ export function Avatar({
       height={size}
       loading="lazy"
       decoding="async"
+      referrerPolicy="no-referrer"
       className={`pixel shrink-0 rounded-[2px] ${className}`}
       style={{ width: size, height: size }}
     />
