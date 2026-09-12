@@ -8,7 +8,7 @@ import {
   getTreasuryRevenue,
 } from "@/lib/api/endpoints";
 import { itemStats } from "@/lib/analytics/item";
-import { dailyActivity } from "@/lib/analytics/market";
+import { dailyActivity, dayKey } from "@/lib/analytics/market";
 import { stockYield } from "@/lib/analytics/stock";
 import { Panel, Caveat, SectionTitle } from "@/components/ui/panel";
 import { Stat, Meter } from "@/components/ui/stat";
@@ -92,13 +92,24 @@ async function TreasuryBody() {
    * Revenue days arrive sparse: a key is absent, not zero, on days with no fees
    * of that kind. Gap-filling keeps the time axis honest.
    */
-  const revenuePoints = revenue.map((d) => ({
-    label: d.day.slice(5),
-    values: {
-      physical: d.physical_fees ?? 0,
-      storage: d.storage_fees ?? 0,
-    },
-  }));
+  const revenueByDay = new Map(revenue.map((d) => [d.day, d]));
+  const revenueDays = [...revenueByDay.keys()].sort();
+  const revenuePoints = [];
+  if (revenueDays.length) {
+    const start = Date.parse(`${revenueDays[0]}T00:00:00Z`);
+    const end = Date.parse(`${revenueDays[revenueDays.length - 1]}T00:00:00Z`);
+    for (let t = start; t <= end; t += 86_400_000) {
+      const key = dayKey(t);
+      const d = revenueByDay.get(key);
+      revenuePoints.push({
+        label: key.slice(5),
+        values: {
+          physical: d?.physical_fees ?? 0,
+          storage: d?.storage_fees ?? 0,
+        },
+      });
+    }
+  }
 
   const totalPhysicalFees = revenue.reduce(
     (a, d) => a + (d.physical_fees ?? 0),
