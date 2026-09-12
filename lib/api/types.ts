@@ -306,6 +306,23 @@ export type OrderLevel = {
   latestId: number;
 };
 
+/**
+ * The part of an `OrderLevel` a book is rebuilt from.
+ *
+ * An `OrderLevel` satisfies it, so the crawl-free path and the raw rows are
+ * interchangeable. It exists because the whole rows cannot be cached —
+ * `getOpenBookLevels` keeps these fields and drops the rest.
+ */
+export type BookLevelRow = {
+  side: "buy" | "sell";
+  listing: { id: number } | null;
+  player?: PlayerRef | null;
+  price: number;
+  /** Orders folded into this row. */
+  count: number;
+  remainingAmount: number;
+};
+
 export type Balance = VariantFields & {
   /** All units held, free or locked. */
   total: number;

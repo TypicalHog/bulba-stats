@@ -1,5 +1,6 @@
 import type {
   BookLevel,
+  BookLevelRow,
   BookOrder,
   LimitOrder,
   OrderBook,
@@ -119,10 +120,10 @@ export function reconstructBooks(
 }
 
 /**
- * The same books, built from `/orders/summary?groupBy=listing,side,player,price`
+ * The same books, built from `/orders/summary?groupBy=listing,side[,player],price`
  * instead of the crawl.
  *
- * The rows arrive already folded to one per (listing, side, player, price), so
+ * The rows arrive already folded to one per (listing, side[, player], price), so
  * this is the same aggregation as `reconstructBooks` with the inner loop
  * already done upstream — one request rather than forty-seven. Checked against
  * `GET /orderbook`: both agree with the official best bid and ask on 118 of 118
@@ -139,7 +140,7 @@ export function reconstructBooks(
  *   which these books are checked against.
  */
 export function booksFromLevels(
-  levels: readonly OrderLevel[],
+  levels: readonly BookLevelRow[],
 ): Map<number, ReconstructedBook> {
   const acc = new Map<
     number,

@@ -21,9 +21,13 @@ export const metadata = {
 };
 
 /*
- * Prices come from the whole open book, which is now one request rather than a
- * forty-seven-page crawl, so this route no longer needs a raised ceiling.
+ * Prices come from the whole open book, which is one request rather than a
+ * forty-seven-page crawl — but a ~5.7 MB body that takes seconds to answer, and
+ * the request has to be paid in full whenever its 90-second tier lapses. Kept
+ * at the same ceiling as the crawl routes so a cold regeneration is not killed
+ * by the default serverless timeout.
  */
+export const maxDuration = 60;
 
 export default function RecipesPage() {
   return (

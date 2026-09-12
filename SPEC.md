@@ -68,8 +68,8 @@ cannot be attributed to whoever wrote it.
 
 | `groupBy` | Rows | Answers |
 |---|---|---|
-| `listing,side,price` | ~9,220 | the entire price-level book, one request |
-| `listing,side,player,price` | ~9,319 | the same, attributed per player |
+| `listing,side,price` | ~13,500 | the entire price-level book, one request |
+| `listing,side,player,price` | ~13,700 | the same, attributed per player |
 | `player` | 7 | resting capital per trader |
 
 Both book forms were checked against `GET /orderbook` and reproduce the official
@@ -112,7 +112,7 @@ Measured against the live API. These drive the caching strategy.
 | Trade fills (`view=fills`) | ~3,965 | 20 | ~4.8 s |
 | Bank operations (deposit/withdraw/transfer/pay) | ~15,000 | ~75 | ~20 s |
 | Open limit orders | ~9,384 | 47 | ~9.9 s |
-| Open book as price levels (`groupBy`) | ~9,319 | **1** | ~0.6 s |
+| Open book as price levels (`groupBy`, ~5.7 MB) | ~13,500 | **1** | ~3.3 s |
 | Closed limit orders | ~265,000 | ~1,327 | not crawlable |
 | Listings / order books | 184 / 118 | 1 each | <1 s |
 
@@ -146,10 +146,16 @@ price levels the two agree on every quantity **and** on every per-player amount
 behind each level.
 
 `/recipes` reads the grouped rows and no longer crawls at all — it prices every
-recipe by sweeping books it gets for one request, and its `maxDuration = 60` is
-gone with the crawl that needed it. The remaining crawl callers are `/orders`,
-`/market`, `/players` and `/house`, which each still want something order-level
-alongside their books.
+recipe by sweeping books it gets for one request. It asks for the unattributed
+form, because nothing it computes cares who is behind a level, and it caches a
+*packed* copy of those rows: the raw response is ~5.7 MB, and the fetch data
+cache silently drops any entry over 2 MB, so the response itself has never been
+cacheable and the 90-second tier never applied to it. Packed down to the five
+fields a book is made of it is ~330 KB, which the cache does keep — see
+`getOpenBookLevels`. Its `maxDuration = 60` stays, because the request behind
+that cache still takes seconds every time the tier lapses. The remaining crawl
+callers are `/orders`, `/market`, `/players` and `/house`, which each still want
+something order-level alongside their books.
 
 The closed-order set is genuinely out of reach. Order ids run to ~274,700
 against ~9,400 still open, so roughly **265,000 orders have closed** — some
@@ -216,7 +222,9 @@ a wrong digest could go unnoticed.
 Measured by prerendering every route twice, the second time with every tier
 expired: **424 upstream requests and 34.4 MB before, 80 requests and 1.74 MB
 after** — 81% fewer requests, 95% less data. Not one page of either order crawl
-ran; both were served whole from their pinned keys.
+ran; both were served whole from their pinned keys. That run predates `/recipes`
+moving to the grouped book, which adds one request and ~5.7 MB to the "after"
+figure.
 
 What remains is mostly the thing neither mechanism can help with. Of those 80
 requests, 44 are the 22 profile fetches behind the player directory, because

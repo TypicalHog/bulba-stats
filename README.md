@@ -98,7 +98,9 @@ sits still for hours. Instead:
 
 Prerendering every route with all caches expired: **424 upstream requests and
 34.4 MB before this, 80 requests and 1.74 MB after** — 81% fewer requests and
-95% less data, with no change to any figure on the site. The split crawl was
+95% less data, with no change to any figure on the site. (Measured before
+`/recipes` moved to the grouped book, which adds one request and ~5.7 MB to the
+"after" figure.) The split crawl was
 checked against the plain one row by row: same rows, same order, no gaps and no
 duplicates. See [SPEC.md §1.3](SPEC.md#13-caching).
 
@@ -128,9 +130,11 @@ database. Two settings are non-default and worth understanding:
   inferred from the upstream's `.uk` domain — if it is actually hosted
   elsewhere, change this to the nearest region and the cold-cache pages get
   proportionally faster.
-- **`maxDuration = 60` on `/market`, `/orders` and `/players`.** All depend on that crawl,
-  which takes ~10 s and would be killed by the default serverless
-  timeout on a cold cache. 60 s is the Hobby-tier ceiling, so it is safe on any
+- **`maxDuration = 60` on `/market`, `/orders`, `/players` and `/recipes`.** The
+  first three depend on that crawl, which takes ~10 s and would be killed by the
+  default serverless timeout on a cold cache; `/recipes` skips the crawl but
+  pulls the whole price-level book in one multi-megabyte request, which is no
+  quicker. 60 s is the Hobby-tier ceiling, so it is safe on any
   plan. Warm requests return from cache immediately — and stay warm across a
   revalidation now that the crawl is keyed by the book's content rather than by
   a timer, so paying that cold cost twice in a row takes a change in the book.

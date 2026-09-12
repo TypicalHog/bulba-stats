@@ -1,5 +1,6 @@
 import "server-only";
 import { createHash } from "node:crypto";
+import { unstable_cache } from "next/cache";
 import { cache } from "react";
 import {
   apiGet,
@@ -10,10 +11,12 @@ import {
   mapLimit,
   TTL,
 } from "./client";
+import { UPSTREAM_TAG } from "./constants";
 import {
   BANK_TYPES,
   TRADE_TYPES,
   type ApiDoc,
+  type BookLevelRow,
   type Candle,
   type CandleInterval,
   type CommandsDoc,
@@ -439,29 +442,77 @@ export const getOrderSummary = cache(
     }),
 );
 
+/** A level packed for the cache: `[listingId, side, price, remaining, orders]`. */
+type PackedLevel = [number, "buy" | "sell", number, number, number];
+
 /**
- * The whole open book as price levels, attributed per player — one request.
+ * The whole open book as price levels, packed small enough to cache.
+ *
+ * The fetch data cache refuses any entry over 2 MB — it warns and drops the
+ * write, so the read silently misses forever and the tier below is inert. This
+ * body is ~5.7 MB over ~13,500 rows and has never once been under that ceiling,
+ * which meant re-downloading it on every regeneration of `/recipes` (every 20 s
+ * under traffic, from `getListings`' tier) rather than every 90 s.
+ *
+ * So each row is packed down to the five fields a book is made of before
+ * anything is stored: ~330 KB, six times under the ceiling and with room for a
+ * market several times this size. `unstable_cache` rather than `use cache`,
+ * which needs the `cacheComponents` flag this project does not set.
+ *
+ * `UPSTREAM_TAG` has to be repeated here: `apiGet` applies it centrally, but
+ * nothing inside `unstable_cache` reaches the fetch cache — Next treats every
+ * fetch in that scope as `force-no-store` — so the wrapper is the only thing
+ * Refresh can expire.
+ */
+const readPackedLevels = unstable_cache(
+  async (): Promise<PackedLevel[]> => {
+    const { data } = await apiGet<OrderLevel[]>(
+      `/orders/summary?groupBy=listing,side,price&status=${OPEN_STATUS}`,
+    );
+    const packed: PackedLevel[] = [];
+    for (const row of data) {
+      if (!row.listing) continue;
+      packed.push([
+        row.listing.id,
+        row.side,
+        row.price,
+        row.remainingAmount,
+        row.count,
+      ]);
+    }
+    return packed;
+  },
+  ["open-book-levels"],
+  { revalidate: TTL.aggregate, tags: [UPSTREAM_TAG, "open-orders"] },
+);
+
+/**
+ * The whole open book as price levels — one request.
  *
  * This is what `getAllOpenOrders` exists to reconstruct, computed upstream
- * instead. ~9,300 rows in ~600 ms against 47 requests and ~10 s, and verified
- * to reproduce the official best bid and ask on 118 of 118 listings exactly,
- * identically to the crawl.
+ * instead: one request against 47, and verified to reproduce the official best
+ * bid and ask on 118 of 118 listings exactly, identically to the crawl.
  *
  * Prefer it for anything that needs *books*. It carries no timestamps, so order
- * ages, fill rates and time-to-fill still need the crawl.
+ * ages, fill rates and time-to-fill still need the crawl, and it is not
+ * attributed — `organicBooksFromLevels` needs the `player` column added back to
+ * the request and to the packing above.
  *
  * Not soft: everything downstream of it is the page's actual content, so a
  * failure should surface rather than render an empty market as though it were
  * a real one.
  */
 export const getOpenBookLevels = cache(
-  async (): Promise<OrderLevel[]> => {
-    const { data } = await apiGet<OrderLevel[]>(
-      `/orders/summary?groupBy=listing,side,player,price&status=${OPEN_STATUS}`,
-      { revalidate: TTL.aggregate, tags: ["open-orders"] },
-    );
-    return data;
-  },
+  async (): Promise<BookLevelRow[]> =>
+    (await readPackedLevels()).map(
+      ([id, side, price, remainingAmount, count]) => ({
+        side,
+        listing: { id },
+        price,
+        remainingAmount,
+        count,
+      }),
+    ),
 );
 
 /**
@@ -476,11 +527,13 @@ export const getOpenBookLevels = cache(
  *
  * It halved in August 2026 when the house bot moved to aggregated levels
  * (~22,100 rows over 111 pages before). It can go further: upstream now serves
- * `/orders/summary?groupBy=listing,side,player,price`, which returns the whole
- * price-level book with per-player attribution in **one** request — measured at
- * 9,319 rows in ~600 ms against 47 requests and ~10 s here, and verified to
- * reproduce the official best bid and ask on 118 of 118 listings. Everything
- * that only needs books rather than individual orders should move to it.
+ * `/orders/summary?groupBy=listing,side[,player],price`, which returns the whole
+ * price-level book — optionally attributed per player — in **one** request:
+ * ~13,500 rows and ~5.7 MB in ~3.3 s against 47 requests and ~10 s here,
+ * verified to reproduce the official best bid and ask on 118 of 118 listings.
+ * Everything that only needs books rather than individual orders should move to
+ * it, and read `getOpenBookLevels` first for what a body that size costs to
+ * cache.
  *
  * `complete: false` means the page cap was hit — surface that rather than
  * presenting a truncated crawl as the whole book.
