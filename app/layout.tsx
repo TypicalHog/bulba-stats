@@ -115,7 +115,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             </Suspense>
           }
         />
-        <WatchAlerts />
         <main
           id="main"
           tabIndex={-1}
@@ -124,6 +123,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           {children}
         </main>
         <SiteFooter />
+        {/*
+          After <main> and the footer, not between the header and <main>: this
+          is a `fixed` overlay, so DOM order never affects where it paints, but
+          it does set its place in tab order. A keyboard user tabbing out of
+          the header used to land on a toast link instead of the page — one
+          that can vanish on its own linger timer mid-tab. Now it comes last.
+        */}
+        <WatchAlerts />
         {/*
           Both components always inject a <script> tag client-side, on every
           route. Off Vercel it only resolves into a working collector on the

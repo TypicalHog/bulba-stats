@@ -69,6 +69,47 @@ export function WatchAlerts() {
 
   const watching = ids.length > 0;
 
+  /*
+   * Each alert's dismissal timer, keyed by alert id, so hovering or focusing
+   * a toast can pause it instead of letting it vanish under the pointer or a
+   * keyboard user's focus. `timer` is null while paused; `remaining` and
+   * `startedAt` are enough to resume with the time actually left.
+   */
+  const timerMapRef = useRef(
+    new Map<
+      number,
+      { timer: ReturnType<typeof setTimeout> | null; remaining: number; startedAt: number }
+    >(),
+  );
+  const pausedRef = useRef(false);
+
+  const armTimer = (id: number, ms: number) => {
+    const startedAt = Date.now();
+    const timer = setTimeout(() => {
+      timerMapRef.current.delete(id);
+      setAlerts((prev) => prev.filter((a) => a.id !== id));
+    }, ms);
+    timerMapRef.current.set(id, { timer, remaining: ms, startedAt });
+  };
+
+  const pauseLinger = () => {
+    pausedRef.current = true;
+    for (const entry of timerMapRef.current.values()) {
+      if (!entry.timer) continue;
+      clearTimeout(entry.timer);
+      entry.remaining -= Date.now() - entry.startedAt;
+      entry.timer = null;
+    }
+  };
+
+  const resumeLinger = () => {
+    pausedRef.current = false;
+    for (const [id, entry] of timerMapRef.current) {
+      if (entry.timer) continue;
+      armTimer(id, Math.max(entry.remaining, 0));
+    }
+  };
+
   useEffect(() => {
     if (!watching) return;
 
@@ -86,13 +127,6 @@ export function WatchAlerts() {
       released = true;
       releaseLiveSocket();
     };
-    /*
-     * Each alert schedules its own dismissal. Those timers have to be tracked
-     * to be cancelled: unstarring everything, or navigating away, tears the
-     * socket down but would otherwise leave up to MAX_VISIBLE of them pending,
-     * each firing setAlerts on an unmounted tree.
-     */
-    const lingerTimers = new Set<ReturnType<typeof setTimeout>>();
 
     /*
      * Deferred by a tick for the same reason as the trade ticker: React mounts
@@ -136,11 +170,15 @@ export function WatchAlerts() {
             ? prev
             : [alert, ...prev].slice(0, MAX_VISIBLE),
         );
-        const linger = setTimeout(() => {
-          lingerTimers.delete(linger);
-          setAlerts((prev) => prev.filter((a) => a.id !== alert.id));
-        }, LINGER_MS);
-        lingerTimers.add(linger);
+        if (pausedRef.current) {
+          timerMapRef.current.set(alert.id, {
+            timer: null,
+            remaining: LINGER_MS,
+            startedAt: 0,
+          });
+        } else {
+          armTimer(alert.id, LINGER_MS);
+        }
       };
 
       socket.on("connect", subscribe);
@@ -156,11 +194,18 @@ export function WatchAlerts() {
       };
     }, 0);
 
+    // Captured here rather than read in the cleanup: the ref could point at a
+    // different Map by the time teardown runs, and the timers to cancel are
+    // the ones this effect run armed.
+    const timers = timerMapRef.current;
+
     return () => {
       cancelled = true;
       clearTimeout(timer);
-      for (const t of lingerTimers) clearTimeout(t);
-      lingerTimers.clear();
+      for (const entry of timers.values()) {
+        if (entry.timer) clearTimeout(entry.timer);
+      }
+      timers.clear();
       detach?.();
       release();
       /*
@@ -177,15 +222,29 @@ export function WatchAlerts() {
     <div
       aria-live="polite"
       role="status"
+      onMouseEnter={pauseLinger}
+      onMouseLeave={resumeLinger}
+      onFocus={pauseLinger}
+      onBlur={(e) => {
+        if (
+          !(e.relatedTarget instanceof Node) ||
+          !e.currentTarget.contains(e.relatedTarget)
+        ) {
+          resumeLinger();
+        }
+      }}
       className="pointer-events-none fixed bottom-4 right-4 z-40 flex flex-col gap-2"
     >
       {alerts.map((alert) => (
         <Link
           key={alert.id}
           href={`/market/${alert.listingId}`}
-          onClick={() =>
-            setAlerts((prev) => prev.filter((a) => a.id !== alert.id))
-          }
+          onClick={() => {
+            const entry = timerMapRef.current.get(alert.id);
+            if (entry?.timer) clearTimeout(entry.timer);
+            timerMapRef.current.delete(alert.id);
+            setAlerts((prev) => prev.filter((a) => a.id !== alert.id));
+          }}
           className="panel pointer-events-auto flex items-center gap-2 px-3 py-2 text-[12px] shadow-lg transition-colors hover:border-accent/40"
         >
           <ItemIcon itemName={alert.itemName} size={18} />
