@@ -12,10 +12,10 @@ export type ItemStats = {
   low: number | null;
   firstTradeAt: number | null;
   lastTradeAt: number | null;
-  avgTradeSize: number;
+  avgTradeSize: number | null;
   /** Share of volume where the taker was buying, 0..1. */
-  buyShare: number;
-  physicalShare: number;
+  buyShare: number | null;
+  physicalShare: number | null;
   fees: number;
 };
 
@@ -57,13 +57,13 @@ export function itemStats(trades: Trade[], listingId: number): ItemStats {
     low,
     firstTradeAt: firstAt,
     lastTradeAt: lastAt,
-    avgTradeSize: rows.length ? volume / rows.length : 0,
+    avgTradeSize: rows.length ? volume / rows.length : null,
     buyShare: volume
       ? sum(rows, (t) => (t.side === "buy" ? t.total : 0)) / volume
-      : 0,
+      : null,
     physicalShare: volume
       ? sum(rows, (t) => (t.venue === "physical" ? t.total : 0)) / volume
-      : 0,
+      : null,
     fees: sum(rows, (t) => t.fee ?? 0),
   };
 }
