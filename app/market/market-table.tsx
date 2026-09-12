@@ -30,6 +30,9 @@ const SHULKER_SLOTS = 27;
 /** Past this, an item reads as dormant rather than merely quiet. */
 const STALE_MS = 7 * 24 * 60 * 60 * 1000;
 
+/** Stable reference so `filtered` doesn't re-run on every watchlist change when unused. */
+const NO_WATCHED: number[] = [];
+
 
 export function unitMultiplier(unit: PriceUnit, stackAmount: number): number {
   const stack = stackAmount > 0 ? stackAmount : 1;
@@ -92,18 +95,20 @@ export function MarketTable({
   const scaled = (r: MarketRow, v: number | null) =>
     v == null ? null : v * mul(r);
 
+  const watchedForFilter = onlyWatched ? watched : NO_WATCHED;
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return rows.filter((r) => {
       if (!showNiche && r.niche) return false;
       if (onlyQuoted && r.mid == null) return false;
       if (onlyTraded && r.trades === 0) return false;
-      if (onlyWatched && !watched.includes(r.listingId)) return false;
+      if (onlyWatched && !watchedForFilter.includes(r.listingId)) return false;
       if (!q) return true;
       const name = `${r.itemName ?? ""} ${r.variantName ?? ""}`.toLowerCase();
       return name.includes(q);
     });
-  }, [rows, query, showNiche, onlyQuoted, onlyTraded, onlyWatched, watched]);
+  }, [rows, query, showNiche, onlyQuoted, onlyTraded, onlyWatched, watchedForFilter]);
 
   const nicheCount = rows.filter((r) => r.niche).length;
 
