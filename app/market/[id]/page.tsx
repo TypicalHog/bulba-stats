@@ -611,69 +611,67 @@ async function RecentFills({ listingId }: { listingId: number }) {
       bodyClassName="p-0"
     >
       {trades.length ? (
-        <div className="scroll-y max-h-[460px]">
-          <DataTable>
-            <thead>
-              <tr>
-                <Th>When</Th>
-                <Th>Side</Th>
-                <Th>Taker</Th>
-                <Th align="right">Amount</Th>
-                <Th align="right">Avg price</Th>
-                <Th align="right">Total</Th>
-                <Th
-                  align="right"
-                  title="4% taker fee, on top of the base total"
-                >
-                  Fee
-                </Th>
-                <Th>Filled against</Th>
-                <Th>Venue</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {trades.map((t) => (
-                <Tr key={t.id}>
-                  <Td className="text-ink-3">
-                    {dateTime(t.completedAt ?? t.createdAt)}
-                  </Td>
-                  <Td>
-                    <SideTag side={t.side} />
-                  </Td>
-                  <Td>
-                    {t.taker ? (
-                      <PlayerLink
-                        username={t.taker.username}
-                        uuid={t.taker.uuid}
-                        size={16}
-                      />
-                    ) : (
-                      <span className="text-ink-3">—</span>
-                    )}
-                  </Td>
-                  <Td align="right" mono className="text-ink-2">
-                    {num(t.filledAmount)}
-                  </Td>
-                  <Td align="right" mono className="text-ink">
-                    {price(t.avgPrice)}
-                  </Td>
-                  <Td align="right" mono className="text-ink">
-                    {diamonds(t.total)}
-                  </Td>
-                  <Td align="right" mono className="text-ink-3">
-                    {diamonds(t.fee)}
-                  </Td>
-                  <Td>
-                    <MakerSummary makers={t.makers} />
-                  </Td>
-                  <Td>
-                    <Badge>{t.venue}</Badge>
-                  </Td>
-                </Tr>
-              ))}
-            </tbody>
-          </DataTable>
-        </div>
+        <DataTable maxHeight={460}>
+          <thead>
+            <tr>
+              <Th>When</Th>
+              <Th>Side</Th>
+              <Th>Taker</Th>
+              <Th align="right">Amount</Th>
+              <Th align="right">Avg price</Th>
+              <Th align="right">Total</Th>
+              <Th
+                align="right"
+                title="4% taker fee, on top of the base total"
+              >
+                Fee
+              </Th>
+              <Th>Filled against</Th>
+              <Th>Venue</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {trades.map((t) => (
+              <Tr key={t.id}>
+                <Td className="text-ink-3">
+                  {dateTime(t.completedAt ?? t.createdAt)}
+                </Td>
+                <Td>
+                  <SideTag side={t.side} />
+                </Td>
+                <Td>
+                  {t.taker ? (
+                    <PlayerLink
+                      username={t.taker.username}
+                      uuid={t.taker.uuid}
+                      size={16}
+                    />
+                  ) : (
+                    <span className="text-ink-3">—</span>
+                  )}
+                </Td>
+                <Td align="right" mono className="text-ink-2">
+                  {num(t.filledAmount)}
+                </Td>
+                <Td align="right" mono className="text-ink">
+                  {price(t.avgPrice)}
+                </Td>
+                <Td align="right" mono className="text-ink">
+                  {diamonds(t.total)}
+                </Td>
+                <Td align="right" mono className="text-ink-3">
+                  {diamonds(t.fee)}
+                </Td>
+                <Td>
+                  <MakerSummary makers={t.makers} />
+                </Td>
+                <Td>
+                  <Badge>{t.venue}</Badge>
+                </Td>
+              </Tr>
+            ))}
+          </tbody>
+        </DataTable>
       ) : (
         <p className="px-3 py-6 text-center text-[12px] text-ink-3">
           This item has never traded.

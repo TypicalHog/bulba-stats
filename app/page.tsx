@@ -663,43 +663,41 @@ function SpreadList({
 
   return (
     /* Scrolls rather than truncating, so every quoted book is reachable. */
-    <div className="scroll-y max-h-[300px]">
-      <DataTable>
-        <thead>
-          <tr>
-            <Th>Item</Th>
-            <Th align="right">Bid</Th>
-            <Th align="right">Ask</Th>
-            <Th align="right">Spread</Th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((s) => (
-            <Tr key={s.listingId}>
-              <Td>
-                <ItemLink
-                  listingId={s.listingId}
-                  itemName={s.itemName}
-                  variantName={s.variantName}
-                  size={16}
-                />
-              </Td>
-              <Td align="right" mono>
-                <span className="text-up">{price(s.bestBid)}</span>
-              </Td>
-              <Td align="right" mono>
-                <span className="text-down">{price(s.bestAsk)}</span>
-              </Td>
-              <Td align="right" mono className="text-ink-2">
-                {s.spread != null && s.mid
-                  ? percent((s.spread / s.mid) * 100)
-                  : "—"}
-              </Td>
-            </Tr>
-          ))}
-        </tbody>
-      </DataTable>
-    </div>
+    <DataTable maxHeight={300}>
+      <thead>
+        <tr>
+          <Th>Item</Th>
+          <Th align="right">Bid</Th>
+          <Th align="right">Ask</Th>
+          <Th align="right">Spread</Th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((s) => (
+          <Tr key={s.listingId}>
+            <Td>
+              <ItemLink
+                listingId={s.listingId}
+                itemName={s.itemName}
+                variantName={s.variantName}
+                size={16}
+              />
+            </Td>
+            <Td align="right" mono>
+              <span className="text-up">{price(s.bestBid)}</span>
+            </Td>
+            <Td align="right" mono>
+              <span className="text-down">{price(s.bestAsk)}</span>
+            </Td>
+            <Td align="right" mono className="text-ink-2">
+              {s.spread != null && s.mid
+                ? percent((s.spread / s.mid) * 100)
+                : "—"}
+            </Td>
+          </Tr>
+        ))}
+      </tbody>
+    </DataTable>
   );
 }
 

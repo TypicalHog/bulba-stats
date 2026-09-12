@@ -1175,43 +1175,41 @@ function SpreadVolumeTable({
 
   return (
     /* Scrolls rather than truncating, so every traded book is reachable. */
-    <div className="scroll-y max-h-[340px]">
-      <DataTable>
-        <thead>
-          <tr>
-            <Th>Item</Th>
-            <Th align="right">Spread</Th>
-            <Th align="right">Volume</Th>
-            <Th align="right">Trades</Th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => (
-            <Tr key={r.listingId}>
-              <Td>
-                <ItemLink
-                  listingId={r.listingId}
-                  itemName={r.itemName}
-                  variantName={r.variantName}
-                  size={16}
-                />
-              </Td>
-              <Td align="right" mono>
-                <span className={r.spreadPct < 5 ? "text-up" : "text-down"}>
-                  {percent(r.spreadPct)}
-                </span>
-              </Td>
-              <Td align="right" mono className="text-ink">
-                {diamondsCompact(r.volume)}
-              </Td>
-              <Td align="right" mono className="text-ink-3">
-                {num(r.trades)}
-              </Td>
-            </Tr>
-          ))}
-        </tbody>
-      </DataTable>
-    </div>
+    <DataTable maxHeight={340}>
+      <thead>
+        <tr>
+          <Th>Item</Th>
+          <Th align="right">Spread</Th>
+          <Th align="right">Volume</Th>
+          <Th align="right">Trades</Th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((r) => (
+          <Tr key={r.listingId}>
+            <Td>
+              <ItemLink
+                listingId={r.listingId}
+                itemName={r.itemName}
+                variantName={r.variantName}
+                size={16}
+              />
+            </Td>
+            <Td align="right" mono>
+              <span className={r.spreadPct < 5 ? "text-up" : "text-down"}>
+                {percent(r.spreadPct)}
+              </span>
+            </Td>
+            <Td align="right" mono className="text-ink">
+              {diamondsCompact(r.volume)}
+            </Td>
+            <Td align="right" mono className="text-ink-3">
+              {num(r.trades)}
+            </Td>
+          </Tr>
+        ))}
+      </tbody>
+    </DataTable>
   );
 }
 
@@ -1391,35 +1389,33 @@ async function Network() {
         >
           {humanEdges.length ? (
             <>
-              <div className="scroll-y max-h-[360px]">
-                <DataTable>
-                  <thead>
-                    <tr>
-                      <Th title="Diamonds flowed from the left account to the right one">
-                        Paid → received
-                      </Th>
-                      <Th
-                        align="right"
-                        title="Net diamonds that ended up with the receiving account, after flows in both directions cancel"
-                      >
-                        Net flow
-                      </Th>
-                      <Th
-                        align="right"
-                        title="Gross value traded, both directions"
-                      >
-                        Gross
-                      </Th>
-                      <Th align="right">Fills</Th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {humanEdges.map((e) => (
-                      <FlowRow key={`${e.a}-${e.b}`} edge={e} />
-                    ))}
-                  </tbody>
-                </DataTable>
-              </div>
+              <DataTable maxHeight={360}>
+                <thead>
+                  <tr>
+                    <Th title="Diamonds flowed from the left account to the right one">
+                      Paid → received
+                    </Th>
+                    <Th
+                      align="right"
+                      title="Net diamonds that ended up with the receiving account, after flows in both directions cancel"
+                    >
+                      Net flow
+                    </Th>
+                    <Th
+                      align="right"
+                      title="Gross value traded, both directions"
+                    >
+                      Gross
+                    </Th>
+                    <Th align="right">Fills</Th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {humanEdges.map((e) => (
+                    <FlowRow key={`${e.a}-${e.b}`} edge={e} />
+                  ))}
+                </tbody>
+              </DataTable>
               <div className="px-3 pb-3 pt-2">
                 <Caveat>
                   <span className="text-down">Red</span> paid diamonds out,{" "}

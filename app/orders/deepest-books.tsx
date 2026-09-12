@@ -178,16 +178,15 @@ export function DeepestBooks({ rows }: { rows: BookRow[] }) {
         </span>
       </div>
 
-      <div className="scroll-y max-h-[520px]">
-        <SortableTable
-          rows={ranked}
-          columns={columns}
-          initialSort="value"
-          rowKey={(r) => r.listingId}
-          emptyMessage="No orders rest that close to mid."
-          exportName="bulbastats-deepest-books"
-        />
-      </div>
+      <SortableTable
+        rows={ranked}
+        columns={columns}
+        initialSort="value"
+        rowKey={(r) => r.listingId}
+        emptyMessage="No orders rest that close to mid."
+        exportName="bulbastats-deepest-books"
+        maxHeight={520}
+      />
     </div>
   );
 }
