@@ -254,6 +254,14 @@ which is what `updateTag` is for. The trade-off is that it expires the cache for
 everyone, since there is no per-user cache to scope it to, and that the next
 visit to a heavy page pays a cold crawl.
 
+The action is also a public POST endpoint — a Server Action's id ships in the
+client bundle, and the framework checks only `Origin` against `Host`, which a
+scripted caller sets freely. So real purges coalesce to one per 30 seconds per
+server instance. That gap is shorter than the shortest tier, so a coalesced
+click still returns data newer than any tier would have served, and a loop of
+anonymous POSTs cannot hold the site in a permanent cold crawl against the
+budget in §1.4.
+
 ### 1.4 Etiquette
 
 Read tier is **300 req/min** per IP, and cached reads do not count against it.
