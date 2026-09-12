@@ -1001,7 +1001,8 @@ commit.
 app/
   layout.tsx            shell, fonts, nav, theme
   page.tsx              overview
-  market/, players/, trades/, orders/, treasury/, insights/, about/
+  market/, players/, trades/, orders/, treasury/, insights/, about/,
+  compare/, house/, recipes/, supply/
 components/
   charts/               SVG primitives
   ui/                   panels, stat tiles, tables, badges, icons
@@ -1009,8 +1010,12 @@ components/
 lib/
   api/                  typed client, envelope handling, pagination, caching
   analytics/            all derived statistics
+  data/recipes.ts       static recipe data
   format.ts             numbers, diamonds, dates, item names
   design.ts             palette tokens shared by TS and CSS
+  round.ts              client-boundary number rounding (§5.5)
+  search-index.ts       client-side search index
+  time.ts               time/date helpers
 scripts/
   snapshot.mjs          hourly capture (§1.5); standalone, no lib/ imports
 ```
