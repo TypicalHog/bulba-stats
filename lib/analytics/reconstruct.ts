@@ -238,6 +238,8 @@ export type BookCheck = {
   reconstructedAsk: number | null;
   summaryBid: number | null;
   summaryAsk: number | null;
+  reconstructedMid: number | null;
+  summaryMid: number | null;
 };
 
 export type CrossCheck = {
@@ -269,9 +271,18 @@ export function crossCheck(
     const book = books.get(summary.listingId);
     const reconstructedBid = book?.bids[0]?.price ?? null;
     const reconstructedAsk = book?.asks[0]?.price ?? null;
+    const reconstructedMid = book?.mid ?? null;
+    // On a one-sided book the reconstruction deliberately reports mid as null
+    // rather than upstream's best-bid/best-ask fallback, so that mismatch is
+    // expected and isn't checked here.
+    const midOk =
+      reconstructedBid == null || reconstructedAsk == null
+        ? true
+        : same(reconstructedMid, summary.mid);
     const ok =
       same(reconstructedBid, summary.bestBid) &&
-      same(reconstructedAsk, summary.bestAsk);
+      same(reconstructedAsk, summary.bestAsk) &&
+      midOk;
 
     if (ok) matched++;
     else
@@ -283,6 +294,8 @@ export function crossCheck(
         reconstructedAsk,
         summaryBid: summary.bestBid,
         summaryAsk: summary.bestAsk,
+        reconstructedMid,
+        summaryMid: summary.mid,
       });
   }
 
