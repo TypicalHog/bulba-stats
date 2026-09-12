@@ -90,11 +90,6 @@ export function MarketTable({
   const [onlyWatched, setOnlyWatched] = useState(false);
   const { ids: watched } = useWatchlist();
 
-  /* Prices scale per row; ratios like spread% and totals like volume do not. */
-  const mul = (r: MarketRow) => unitMultiplier(unit, r.stackAmount);
-  const scaled = (r: MarketRow, v: number | null) =>
-    v == null ? null : v * mul(r);
-
   const watchedForFilter = onlyWatched ? watched : NO_WATCHED;
 
   const filtered = useMemo(() => {
@@ -112,7 +107,13 @@ export function MarketTable({
 
   const nicheCount = rows.filter((r) => r.niche).length;
 
-  const columns: Column<MarketRow>[] = [
+  const columns: Column<MarketRow>[] = useMemo(() => {
+    /* Prices scale per row; ratios like spread% and totals like volume do not. */
+    const mul = (r: MarketRow) => unitMultiplier(unit, r.stackAmount);
+    const scaled = (r: MarketRow, v: number | null) =>
+      v == null ? null : v * mul(r);
+
+    return [
     {
       key: "item",
       header: "Item",
@@ -331,8 +332,9 @@ export function MarketTable({
       // Never-traded sorts last rather than first: "no data" is not "oldest".
       sort: (r) => (r.lastTradeAt ? anchor - r.lastTradeAt : null),
       csv: (r) => (r.lastTradeAt ? new Date(r.lastTradeAt).toISOString() : null),
-    },
-  ];
+      },
+    ];
+  }, [unit, anchor]);
 
   return (
     <div>
