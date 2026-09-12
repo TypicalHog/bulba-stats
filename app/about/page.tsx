@@ -180,8 +180,11 @@ export default function AboutPage() {
             22,000-row order crawl is not on a timer at all — it is keyed to a
             one-request digest of the book, so it is re-read when the book
             actually moves rather than every {TTL.heavy}s regardless. A number
-            can therefore sit behind the market by up to its tier, which is the
-            wrong trade exactly once —{" "}
+            can therefore sit behind the market by up to its tier while the
+            page is being actively read — a page nobody has opened in a
+            while only regenerates on the next visit, so the first view
+            after a quiet spell can be older than that. This is the wrong
+            trade exactly once —{" "}
             <strong>when you have just traded and want to see it</strong>. The
             Refresh control in the header discards every cached read and
             refetches the page you are on.
