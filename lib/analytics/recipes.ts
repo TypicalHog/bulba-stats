@@ -227,6 +227,7 @@ export function priceRecipes(
     const anvil = nbt?.length ? optimalAnvilPlan(nbt) : null;
     const xpBottles = anvil ? bottlesForXp(xpForPlan(anvil)) : null;
     const xpCost = xpBottles != null ? priceOne(xpBottle, xpBottles) : null;
+    if (xpBottles && xpCost == null) missing.push("experience_bottle");
 
     return {
       id: recipe.id,

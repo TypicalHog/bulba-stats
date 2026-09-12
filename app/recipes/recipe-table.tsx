@@ -75,7 +75,9 @@ export function RecipeTable({ rows }: { rows: RecipeRow[] }) {
       .map((r) => {
         const parts: (number | null)[] = [r.inputCost];
         if (toggles.baseItem && r.kind === "enchant") parts.push(r.baseCost);
-        if (toggles.xp && r.xpCost != null) parts.push(r.xpCost);
+        // Keyed on whether the build needs bottles at all, not on whether they
+        // could be priced — an unfillable XP leg nulls the build like any other.
+        if (toggles.xp && r.xpBottles) parts.push(r.xpCost);
         // A leg the book cannot fill makes the whole build unpriceable — a
         // partial sum would read as a real, and cheaper, answer.
         const buildable = parts.every((p) => p != null);
