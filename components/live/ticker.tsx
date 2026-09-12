@@ -175,7 +175,7 @@ export function LiveTicker({ seed }: { seed: TickerRow[] }) {
     <div>
       <div className="flex items-center gap-2 border-b border-line px-4 py-2 text-[12px]">
         <StatusDot status={status} />
-        <span className="text-ink-3">
+        <span className="text-ink-3" role="status">
           {status === "live"
             ? "Connected to live feed"
             : status === "connecting"
