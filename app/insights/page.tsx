@@ -134,7 +134,7 @@ async function BookHistory() {
         <SectionTitle hint="From the hourly capture">
           How the book has moved
         </SectionTitle>
-        <Panel title="Book history">
+        <Panel level={3} title="Book history">
           <EmptyState>
             No captured history yet. The order book is only ever exposed as it
             stands right now, so spread and depth over time cannot be
@@ -178,7 +178,7 @@ async function BookHistory() {
         How the book has moved
       </SectionTitle>
       <div className="grid gap-4 lg:grid-cols-2">
-        <Panel
+        <Panel level={3}
           title="Depth near mid"
           subtitle="Diamonds resting within ±5% of mid, bid and ask side"
         >
@@ -197,7 +197,7 @@ async function BookHistory() {
           </Caveat>
         </Panel>
 
-        <Panel
+        <Panel level={3}
           title="Median spread"
           subtitle="Across every two-sided book, at each capture"
         >
@@ -286,7 +286,7 @@ async function Tape() {
       <SectionTitle hint={`${num(priced.length)} trades with a recent reference`}>
         Where trades actually print
       </SectionTitle>
-      <Panel
+      <Panel level={3}
         title="Distance from the previous trade"
         subtitle="How far each fill landed from the last price on the same item"
       >
@@ -324,7 +324,7 @@ async function Tape() {
       </Panel>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        <Panel
+        <Panel level={3}
           title="In person versus bank to bank"
           subtitle="Execution against the previous print, and how long each takes to settle"
         >
@@ -373,7 +373,7 @@ async function Tape() {
           </Caveat>
         </Panel>
 
-        <Panel
+        <Panel level={3}
           title="How long a trade takes"
           subtitle="An in-person trade needs two people to open a trade window; a bank transfer does not"
         >
@@ -401,7 +401,7 @@ async function Tape() {
       </div>
 
       <div className="mt-4">
-        <Panel
+        <Panel level={3}
           title="Notable events"
           subtitle="Firsts, outsized trades and price gaps, newest first"
           bodyClassName="p-0"
@@ -503,7 +503,7 @@ async function ReferencePrice() {
       <SectionTitle hint={`${num(rows.length)} of ${num(summary.length)} books`}>
         Where the market disagrees with the house
       </SectionTitle>
-      <Panel
+      <Panel level={3}
         title="Reference price vs traded price"
         subtitle="The house carries a fixed internal valuation for some items; this is how far the market has moved from it"
         bodyClassName="p-0"
@@ -587,7 +587,7 @@ async function Affiliations() {
       </SectionTitle>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Panel
+        <Panel level={3}
           title="House banks"
           subtitle="The accounts the exchange itself operates through"
         >
@@ -602,7 +602,7 @@ async function Affiliations() {
           </Caveat>
         </Panel>
 
-        <Panel
+        <Panel level={3}
           title="Shared banks"
           subtitle="Treasuries more than one account can draw on"
         >
@@ -621,7 +621,7 @@ async function Affiliations() {
 
       {houseMembers.length > 0 && (
         <div className="mt-4">
-          <Panel
+          <Panel level={3}
             title="Accounts with house access"
             subtitle="Membership of one or more house banks"
           >
@@ -712,14 +712,14 @@ async function Rhythm() {
     <div>
       <SectionTitle hint="All times UTC">When the market trades</SectionTitle>
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
-        <Panel
+        <Panel level={3}
           title="Activity by hour and weekday"
           subtitle="Traded value per slot, summed across the market's life"
         >
           <ActivityHeatmap grid={grid} />
         </Panel>
 
-        <Panel title="Rhythm" subtitle="What the grid adds up to">
+        <Panel level={3} title="Rhythm" subtitle="What the grid adds up to">
           <div className="grid grid-cols-2 gap-4 text-[12px]">
             <div>
               <p className="text-ink-3">Busiest hour</p>
@@ -835,7 +835,7 @@ async function Behaviour() {
     <div>
       <SectionTitle>How people trade</SectionTitle>
       <div className="grid gap-4 lg:grid-cols-3">
-        <Panel
+        <Panel level={3}
           title="Do traders round?"
           subtitle="Fractional part of every taker fill price"
         >
@@ -878,7 +878,7 @@ async function Behaviour() {
           </p>
         </Panel>
 
-        <Panel
+        <Panel level={3}
           title="Trade sizes"
           subtitle="Minecraft stacks are 64, so stack-aligned sizes are deliberate"
         >
@@ -928,7 +928,7 @@ async function Behaviour() {
           </div>
         </Panel>
 
-        <Panel
+        <Panel level={3}
           title="Bank activity"
           subtitle="Movements that aren't trades — the plumbing around the market"
           bodyClassName="p-0"
@@ -1063,7 +1063,7 @@ async function Liquidity() {
     <div>
       <SectionTitle>How liquid the market really is</SectionTitle>
       <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
-        <Panel
+        <Panel level={3}
           title="Catalog coverage"
           subtitle={`${num(active.length)} active listings, cross-tabbed`}
         >
@@ -1100,14 +1100,14 @@ async function Liquidity() {
         </Panel>
 
         <div className="grid gap-4 md:grid-cols-2">
-          <Panel
+          <Panel level={3}
             title="Tight and traded"
             subtitle={`Narrow spreads that also see real volume — all ${num(tightAndBusy.length)}`}
             bodyClassName="p-0"
           >
             <SpreadVolumeTable rows={tightAndBusy} />
           </Panel>
-          <Panel
+          <Panel level={3}
             title="Expensive to cross"
             subtitle={`Traded despite a wide spread — all ${num(wideAndBusy.length)}`}
             bodyClassName="p-0"
@@ -1118,7 +1118,7 @@ async function Liquidity() {
       </div>
 
       <div className="mt-4">
-        <Panel
+        <Panel level={3}
           title="What's moving"
           subtitle="Most-traded items over a selectable window, ending at the market's last trade"
         >
@@ -1297,7 +1297,7 @@ async function Network() {
       </SectionTitle>
 
       <div className="mb-4">
-        <Panel
+        <Panel level={3}
           title="Who trades with whom"
           subtitle="Select an account to pin its relationships and open its profile; hide any account to see the structure behind it"
         >
@@ -1310,7 +1310,7 @@ async function Network() {
         </Panel>
       </div>
       <div className="grid gap-4 lg:grid-cols-3">
-        <Panel title="Shape of the network">
+        <Panel level={3} title="Shape of the network">
           <div className="grid grid-cols-2 gap-4 text-[12px]">
             <div>
               <p className="text-ink-3">Traders</p>
@@ -1349,7 +1349,7 @@ async function Network() {
           </p>
         </Panel>
 
-        <Panel
+        <Panel level={3}
           title="Most connected"
           subtitle="Traders with the most distinct counterparties"
           bodyClassName="p-0"
@@ -1384,7 +1384,7 @@ async function Network() {
           </DataTable>
         </Panel>
 
-        <Panel
+        <Panel level={3}
           title="Trader-to-trader flow"
           subtitle="Pairs that traded without the market maker between them"
           bodyClassName="p-0"

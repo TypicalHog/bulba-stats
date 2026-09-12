@@ -164,7 +164,7 @@ async function Organic() {
       <SectionTitle hint={`${num(rows.length)} of ${num(quotedBooks)} books`}>
         The market without the house
       </SectionTitle>
-      <Panel
+      <Panel level={3}
         title="Organic book"
         subtitle="Best bid and ask written by someone other than the house market maker"
         bodyClassName="p-0"
@@ -308,7 +308,7 @@ async function Liquidity() {
       <SectionTitle hint={`${num(rows.length)} two-sided books`}>
         Where size can actually trade
       </SectionTitle>
-      <Panel
+      <Panel level={3}
         title="Slippage matrix"
         subtitle="Cost to sweep a given number of units, against mid"
       >
@@ -338,7 +338,7 @@ async function Liquidity() {
       </Panel>
 
       <div className="mt-4">
-        <Panel
+        <Panel level={3}
           title="What a budget buys"
           subtitle="Fix the money rather than the size, and see what is actually reachable"
         >
@@ -354,7 +354,7 @@ async function Liquidity() {
       </div>
 
       <div className="mt-4">
-        <Panel
+        <Panel level={3}
           title="Days of supply"
           subtitle="How long the resting ask side would last at recent demand"
         >
@@ -533,7 +533,7 @@ async function RestingBook() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
-        <Panel
+        <Panel level={3}
           title="How far quotes sit from mid"
           subtitle="A book is only as good as the orders near the touch"
         >
@@ -557,7 +557,7 @@ async function RestingBook() {
           </Caveat>
         </Panel>
 
-        <Panel
+        <Panel level={3}
           title="Who writes the orders"
           subtitle="By order count — the market maker quotes every level it can"
         >
@@ -579,7 +579,7 @@ async function RestingBook() {
         <SectionTitle hint={`All ${num(books.length)} books`}>
           Deepest books
         </SectionTitle>
-        <Panel bodyClassName="p-0">
+        <Panel level={3} bodyClassName="p-0">
           <DeepestBooks rows={books} />
         </Panel>
         <Caveat>
@@ -764,7 +764,7 @@ async function Lifecycle() {
       </SectionTitle>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
-        <Panel
+        <Panel level={3}
           title="What happens to an order"
           subtitle={`Across ${num(flow.total)} completed orders`}
         >
@@ -789,7 +789,7 @@ async function Lifecycle() {
           </Caveat>
         </Panel>
 
-        <Panel
+        <Panel level={3}
           title="How fast the house re-prices"
           subtitle="Median time a house quote rests before being pulled and reposted"
         >
@@ -835,7 +835,7 @@ async function Lifecycle() {
           </Caveat>
         </Panel>
 
-        <Panel
+        <Panel level={3}
           title="Fill rate by trader"
           subtitle="Share of their completed orders that filled — 5+ orders"
           bodyClassName="p-0"

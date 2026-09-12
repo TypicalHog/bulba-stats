@@ -313,7 +313,7 @@ async function PlayersBody() {
         <SectionTitle hint="Cumulative — each stage implies the ones before it">
           How far accounts get
         </SectionTitle>
-        <Panel
+        <Panel level={3}
           title="The funnel"
           subtitle="From registering to actually trading"
         >
@@ -349,7 +349,7 @@ async function PlayersBody() {
       <div>
         <SectionTitle hint="Market maker excluded">Leaderboards</SectionTitle>
         <div className="grid gap-4 lg:grid-cols-3">
-          <Panel title="By volume" subtitle="Total value traded, both sides">
+          <Panel level={3} title="By volume" subtitle="Total value traded, both sides">
             <PagedBars
               rows={topVolume.map((r) => ({
                 key: r.username,
@@ -363,7 +363,7 @@ async function PlayersBody() {
             />
           </Panel>
 
-          <Panel
+          <Panel level={3}
             title="By realized P&L"
             subtitle="Weighted-average cost basis over market trades"
           >
@@ -386,7 +386,7 @@ async function PlayersBody() {
             </Caveat>
           </Panel>
 
-          <Panel
+          <Panel level={3}
             title="By maker share"
             subtitle="Liquidity providers — filled while resting"
           >
@@ -412,7 +412,7 @@ async function PlayersBody() {
         <SectionTitle hint="Holdings valued at current mid">
           Who holds what
         </SectionTitle>
-        <Panel
+        <Panel level={3}
           title="Net worth"
           subtitle="Diamonds and goods across every account and shared bank"
         >
@@ -439,7 +439,7 @@ async function PlayersBody() {
         <SectionTitle hint="By the week the account was created">
           Registration cohorts
         </SectionTitle>
-        <Panel
+        <Panel level={3}
           title="When accounts arrived"
           subtitle="And how many of each intake went on to trade"
         >
@@ -469,7 +469,7 @@ async function PlayersBody() {
         <SectionTitle hint="From order timing alone">
           Automated or hand-placed
         </SectionTitle>
-        <Panel
+        <Panel level={3}
           title="Order timing"
           subtitle="A person places orders in bursts; a program places them on a clock"
         >
@@ -517,7 +517,7 @@ async function PlayersBody() {
 
       <div>
         <SectionTitle>All traders</SectionTitle>
-        <Panel bodyClassName="p-0">
+        <Panel level={3} bodyClassName="p-0">
           <PlayersTable rows={rows} />
         </Panel>
       </div>
@@ -526,7 +526,7 @@ async function PlayersBody() {
         <SectionTitle hint="Ranked by traded value between the pair">
           Strongest trading relationships
         </SectionTitle>
-        <Panel bodyClassName="p-0">
+        <Panel level={3} bodyClassName="p-0">
           <RelationshipList edges={edges.slice(0, 15)} />
         </Panel>
       </div>

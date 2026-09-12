@@ -11,6 +11,7 @@ export function Panel({
   children,
   className = "",
   bodyClassName = "p-4",
+  level = 2,
 }: {
   title?: ReactNode;
   subtitle?: ReactNode;
@@ -18,16 +19,19 @@ export function Panel({
   children: ReactNode;
   className?: string;
   bodyClassName?: string;
+  /** Heading level for `title` — 3 when the panel sits under a `SectionTitle`. */
+  level?: 2 | 3;
 }) {
+  const Heading = level === 3 ? "h3" : "h2";
   return (
     <section className={`panel flex flex-col ${className}`}>
       {(title || action) && (
         <header className="flex items-start justify-between gap-3 border-b border-line px-4 py-3">
           <div className="min-w-0">
             {title && (
-              <h2 className="truncate text-[13px] font-semibold tracking-wide text-ink">
+              <Heading className="truncate text-[13px] font-semibold tracking-wide text-ink">
                 {title}
-              </h2>
+              </Heading>
             )}
             {subtitle && (
               <p className="mt-0.5 text-[12px] leading-snug text-ink-3">
