@@ -833,9 +833,9 @@ each appears:
   only. Items obtained in-world (mined, crafted, gifted) enter with **no cost
   basis**, so a player who sells self-gathered goods shows their full proceeds as
   profit. It measures trading performance, not wealth creation.
-- **Net worth** values inventory at current mid. Illiquid items with a wide or
-  one-sided book make this unreliable; items with no book are excluded from the
-  total rather than valued at zero, and counted separately.
+- **Net worth** values inventory at current mid, which requires a two-sided
+  book. Items with no book, or resting orders on only one side, are excluded
+  from the total rather than valued at zero, and counted separately.
 - **Volatility** is the standard deviation of log returns over available candles,
   which for a month-old market with sparse trading is indicative, not rigorous.
 - **The 4% taker fee** is redistributive, not deflationary — it is debited from

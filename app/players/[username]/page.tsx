@@ -252,7 +252,7 @@ async function PlayerTiles({ username }: { username: string }) {
 
   const midByVariant = new Map(
     summary
-      .filter((s) => s.mid != null && s.variantId != null)
+      .filter((s) => s.bestBid != null && s.bestAsk != null && s.variantId != null)
       .map((s) => [s.variantId!, s.mid!]),
   );
 
@@ -534,7 +534,7 @@ async function Holdings({ username }: { username: string }) {
 
   const midByVariant = new Map(
     summary
-      .filter((s) => s.mid != null && s.variantId != null)
+      .filter((s) => s.bestBid != null && s.bestAsk != null && s.variantId != null)
       .map((s) => [s.variantId!, s.mid!]),
   );
   /* Balances are keyed by variant; the market page is keyed by listing. */
