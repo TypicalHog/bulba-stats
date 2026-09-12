@@ -76,7 +76,12 @@ export default async function PlayerPage({
   params,
 }: PageProps<"/players/[username]">) {
   const { username: raw } = await params;
-  const username = decodeURIComponent(raw);
+  let username: string;
+  try {
+    username = decodeURIComponent(raw);
+  } catch {
+    notFound();
+  }
   if (!isUsername(username)) notFound();
 
   const profile = await getPlayer(username);
