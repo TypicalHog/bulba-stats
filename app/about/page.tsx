@@ -8,6 +8,10 @@ import { DataTable, Td, Th, Tr } from "@/components/ui/table";
 import { Badge } from "@/components/ui/entity";
 import { dateTime, num } from "@/lib/format";
 
+// The default API_BASE derivation, duplicated so an operator override never
+// gets echoed to the public page — see BSM-161.
+const PUBLIC_API_BASE = `${SITE_ORIGIN}/upstream/api/v1`;
+
 export const metadata = {
   title: "About",
   description:
@@ -226,7 +230,9 @@ export default function AboutPage() {
       </div>
 
       <div>
-        <SectionTitle hint={API_BASE}>Data sources</SectionTitle>
+        <SectionTitle hint={API_BASE === PUBLIC_API_BASE ? API_BASE : undefined}>
+          Data sources
+        </SectionTitle>
         <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
           <Panel
             title="Endpoints read"
