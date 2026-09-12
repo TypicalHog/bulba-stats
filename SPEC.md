@@ -856,7 +856,7 @@ validator.
 |---|---|---|
 | `--bg` | `#0B0F14` | Page |
 | `--panel` | `#131A22` | Card / chart surface |
-| `--panel-2` | `#1A222C` | Raised, table header, hover |
+| `--panel-2` | `#1A222C` | Raised, sticky matrix header, hover |
 | `--border` | `#232D39` | Hairline |
 | `--text` | `#E6EDF3` | Primary — 14.8:1 on panel |
 | `--text-secondary` | `#9BAAB9` | Secondary — 7.4:1 |
@@ -911,7 +911,7 @@ secondary text at 11px, which is below the threshold browsers and auditors
 treat as legible on a phone — it was a third of all text on the page. Body
 copy, table cells, labels, hints and captions are 12px or larger. Below that
 sits only non-prose chrome that is never read as a sentence: 10px for
-uppercase micro-labels and badges, 9px for the ⌘K hint, 8px for axis
+uppercase micro-labels, 9px for badges and the ⌘K hint, 8px for axis
 annotations. Density comes from spacing and line height, not from shrinking
 text people have to read.
 
