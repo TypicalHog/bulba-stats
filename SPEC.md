@@ -398,17 +398,17 @@ meaning. Everything below is computed in `lib/analytics/`.
 
 ### 2.1 Market-wide
 
-- **Volume** in diamonds and units, per day / per venue (physical vs storage) /
-  per mechanism (market vs limit)
+- **Volume** in diamonds and units, per day / per venue (physical vs storage)
 - **Fee revenue** (4% taker fee) per day, cross-checked against treasury revenue
-- **Book value**: total bid-side capital and ask-side inventory at mid, per
-  listing and market-wide — the closest thing to a market cap
-- **Liquidity score** per listing: depth within ±5% of mid, normalized
+- **Book value**: total bid-side capital and ask-side inventory at their
+  resting prices, per listing and market-wide — the closest thing to a market
+  cap
+- **Liquidity score** per listing: depth within ±5% of mid
 - **Slippage matrix**: cost to sweep 1 / 10 / 64 / 256 / 1024 units on every
   two-sided book, buy side and sell side, as a single item × size grid. Answers
   "where can size actually trade" in one glance, and costs no upstream requests
   because it runs on the reconstructed books
-- **Spread distribution**: absolute and as % of mid; median, tightest, widest
+- **Spread distribution**: as % of mid; median, tightest, widest
 - **Break-even move**: how far mid must rise before buying an item and later
   selling it breaks even, after crossing the spread twice and paying the 4%
   taker fee on both legs. On a tight book the fee dominates completely — a
@@ -433,7 +433,7 @@ meaning. Everything below is computed in `lib/analytics/`.
   first — "no data" is not "oldest"
 - **Breadth**: listings with a two-sided book, one-sided, or none at all
 - **Concentration**: Herfindahl index over per-player volume share, and the
-  market-maker's share of resting liquidity
+  market-maker's share of resting orders
 - **Reconstructed books**: every order book rebuilt from the resting-order
   crawl rather than from 118 per-listing requests. The crawl is already fetched
   for other panels and its rows carry everything a book is made of, so
@@ -516,9 +516,9 @@ Regularity rather than speed is the signal; batch placement is handled
 separately, since hundreds of orders landing at one instant makes the variance
 test read as irregular.
 
-Each account carries a one-word **archetype** — maker, accumulator,
-distributor, round-tripper, one-off — derived from maker share and buy/sell
-skew. Deliberately a label on existing metrics rather than a classifier: with
+Each account carries a one-word **archetype** — house, maker, accumulator,
+distributor, round-tripper, one-off, quiet — derived from maker share and
+buy/sell skew. Deliberately a label on existing metrics rather than a classifier: with
 this few humans a reader can see the whole population anyway, so the value is
 in naming the pattern quickly. Every rule is stated in the badge's tooltip.
 
@@ -673,7 +673,7 @@ never crossed the boundary.
 
 - Hour-of-day × day-of-week activity heatmap
 - Venue mix and taker-side mix over time, as a toggle on the same columns
-- Order lifecycle: fill rate, cancel rate, time-to-fill distribution
+- Order lifecycle: fill rate, cancel rate, median time to fill
 - Price-level clustering — do traders round to whole diamonds?
 - **Notable events** — an anomaly feed derived from the whole trade record:
   first-ever trades, outsized fills, price gaps and self-crosses. Thresholds
