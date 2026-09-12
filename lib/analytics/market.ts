@@ -260,11 +260,12 @@ export function volumeByItem(trades: Trade[]): ItemVolume[] {
  *
  * 1 means a single participant is the entire market; near 0 means volume is
  * spread evenly. With a house market maker in the mix this runs high, which is
- * the point of measuring it.
+ * the point of measuring it. Returns NaN for an empty or all-zero input,
+ * since there is no market to measure concentration over.
  */
 export function herfindahl(shares: number[]): number {
   const total = shares.reduce((a, b) => a + b, 0);
-  if (total <= 0) return 0;
+  if (total <= 0) return NaN;
   return shares.reduce((acc, s) => acc + (s / total) ** 2, 0);
 }
 

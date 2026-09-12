@@ -600,7 +600,7 @@ async function MarketStructure() {
               All participants
             </p>
             <p className="mt-1 font-mono text-[22px] text-ink">
-              {hhi.toFixed(3)}
+              {Number.isNaN(hhi) ? "—" : hhi.toFixed(3)}
             </p>
           </div>
           <div>
@@ -608,7 +608,7 @@ async function MarketStructure() {
               Excluding market maker
             </p>
             <p className="mt-1 font-mono text-[22px] text-ink">
-              {humanHhi.toFixed(3)}
+              {Number.isNaN(humanHhi) ? "—" : humanHhi.toFixed(3)}
             </p>
           </div>
         </div>
