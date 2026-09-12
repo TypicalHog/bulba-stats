@@ -8,6 +8,7 @@ import {
 } from "@/lib/design";
 import { diamondsCompact, num } from "@/lib/format";
 import { ItemIcon } from "@/components/ui/entity";
+import { ChartTable } from "./chart-table";
 
 export type TreemapNode = {
   key: string;
@@ -206,6 +207,27 @@ export function Treemap({
         Area is {active?.label.toLowerCase()}. Tiles too small to label carry
         their value in a tooltip; every tile links to its item.
       </p>
+
+      <ChartTable
+        caption={`${active?.label ?? "Value"} by item, as a table`}
+        columns={[
+          { key: "item", label: "Item" },
+          {
+            key: "value",
+            label: active?.label ?? "Value",
+            align: "right",
+          },
+        ]}
+        rows={rects.map((rect) => ({
+          key: rect.node.key,
+          cells: [
+            rect.node.label,
+            active?.format === "diamonds"
+              ? diamondsCompact(rect.node.values[metric] ?? 0)
+              : `${num(rect.node.values[metric] ?? 0)} units`,
+          ],
+        }))}
+      />
     </div>
   );
 }

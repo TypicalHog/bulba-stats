@@ -916,6 +916,17 @@ volume histogram gets its own band and baseline), legend whenever there are ≥2
 series, direct labels used sparingly, hover crosshair + tooltip on every plot,
 and a table view available for the data behind each chart.
 
+**The table view is a `<details>` disclosure under the plot**, closed by default
+so the dense look survives. It is also the only path to the numbers that does
+not need a mouse — the crosshair reveals one point at a time and only under a
+pointer, so on its own it left every earlier bar, candle and depth level
+unreadable to a keyboard or screen-reader user. `StackedBars`, `CandleChart`,
+`DepthChart` and the treemap each hand their own plotted rows to `ChartTable`;
+the depth table lists the whole book, including the levels the chart's window
+around mid clips away. The ranked and paged bar charts are already real DOM
+rows, and the activity heatmap carries every cell's value in an `aria-label`
+instead — 168 one-value rows read worse than the grid it already describes.
+
 Behaviours worth stating because they were wrong first time and fixed after
 rendering the pages and measuring them in a browser:
 

@@ -11,6 +11,7 @@ import {
   niceTicks,
   viewBoxXToLocalPx,
 } from "./axis";
+import { ChartTable } from "./chart-table";
 
 export type SeriesDef = {
   key: string;
@@ -101,189 +102,212 @@ export function StackedBars({
   const baseline = CHART_PAD.top + plotH;
   const single = series.length === 1;
 
+  const seriesLabel = series.map((s) => s.label).join(" and ");
+
   return (
-    <div className="scroll-x">
-      <div
-        ref={wrapRef}
-        className="relative"
-        style={{ minWidth: CHART_MIN_WIDTH }}
-      >
-        {/* A legend is always present for two or more series. */}
-        {!single && (
-          <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px]">
-            {series.map((s, i) => (
-              <span
-                key={s.key}
-                className="flex items-center gap-1.5 text-ink-3"
-              >
-                <span
-                  aria-hidden
-                  className="inline-block h-2 w-2 rounded-[2px]"
-                  style={{ background: s.color ?? seriesColor(i) }}
-                />
-                {s.label}
-              </span>
-            ))}
-          </div>
-        )}
-
-        <svg
-          ref={svgRef}
-          viewBox={`0 0 ${W} ${height}`}
-          width="100%"
-          height={height}
-          role="img"
-          aria-label={`${series.map((s) => s.label).join(" and ")} over ${points.length} periods`}
-          onMouseLeave={() => setHover(null)}
-          onMouseMove={(e) => {
-            const xInView = clientXToViewBox(svgRef.current, e.clientX);
-            if (xInView == null) return;
-            const i = Math.floor((xInView - CHART_PAD.left) / geom.slot);
-            if (i < 0 || i >= points.length) {
-              setHover(null);
-              return;
-            }
-            const centre = CHART_PAD.left + geom.slot * i + geom.slot / 2;
-            const leftPx =
-              viewBoxXToLocalPx(svgRef.current, wrapRef.current, centre) ?? 0;
-            const containerWidth =
-              wrapRef.current?.getBoundingClientRect().width ?? 0;
-            setHover({ i, leftPx, rightPx: containerWidth - leftPx });
-          }}
+    <div>
+      <div className="scroll-x">
+        <div
+          ref={wrapRef}
+          className="relative"
+          style={{ minWidth: CHART_MIN_WIDTH }}
         >
-          {ticks.map((t) => (
-            <g key={t}>
-              <line
-                x1={CHART_PAD.left}
-                x2={W - CHART_PAD.right}
-                y1={geom.y(t)}
-                y2={geom.y(t)}
-                stroke={SURFACE.grid}
-                strokeWidth={1}
-              />
-              <text
-                x={CHART_PAD.left - 6}
-                y={geom.y(t) + 3}
-                textAnchor="end"
-                fontSize={9}
-                fill={INK.muted}
-                fontFamily="var(--font-fira-code), monospace"
-              >
-                {valueFormat(t)}
-              </text>
-            </g>
-          ))}
-
-          {points.map((p, i) => {
-            const x =
-              CHART_PAD.left + geom.slot * i + (geom.slot - geom.barW) / 2;
-            let cursor = baseline;
-            /*
-             * Highlight the hovered column by brightening it, rather than
-             * dimming the other twenty-eight.
-             *
-             * Dimming inverts on a near-black ground: `opacity: 0.5` blends a
-             * saturated fill toward #0b0f14, so the untouched bars turn muddy
-             * and the chart reads as "some bars are randomly darker" instead of
-             * "this one is selected". Brightening touches only the bar the
-             * pointer is actually on, so every other bar keeps the exact colour
-             * its legend swatch promises.
-             */
-            const active = hover != null && hover.i === i;
-
-            return (
-              <g
-                key={p.label}
-                style={active ? { filter: "brightness(1.35)" } : undefined}
-              >
-                {series.map((s, si) => {
-                  const v = p.values[s.key] ?? 0;
-                  if (v <= 0) return null;
-                  const h = baseline - geom.y(v);
-                  /*
-                   * 2px surface gap between touching segments, shaved off this
-                   * segment's bottom edge — the edge that meets the one below.
-                   *
-                   * `cursor` still advances by the segment's full height, so
-                   * the gap costs the stack nothing: the top of the last
-                   * segment stays at the true cumulative total. Advancing by
-                   * the drawn height instead loses 2px at every boundary, and
-                   * putting the gap on the top edge would just move the seam.
-                   */
-                  const gap = cursor === baseline ? 0 : 2;
-                  const top = cursor - h;
-                  const drawH = Math.max(h - gap, 0.5);
-                  cursor = top;
-                  const isTop = si === lastNonZero(p, series);
-                  return (
-                    <rect
-                      key={s.key}
-                      x={x}
-                      y={top}
-                      width={geom.barW}
-                      height={drawH}
-                      fill={s.color ?? seriesColor(si)}
-                      /* 4px rounded data-end, square at the baseline. */
-                      rx={isTop ? Math.min(4, geom.barW / 2) : 0}
-                    />
-                  );
-                })}
-              </g>
-            );
-          })}
-
-          <line
-            x1={CHART_PAD.left}
-            x2={W - CHART_PAD.right}
-            y1={baseline}
-            y2={baseline}
-            stroke={SURFACE.border}
-            strokeWidth={1}
-          />
-
-          {[0, points.length - 1]
-            .filter((i, idx, arr) => arr.indexOf(i) === idx && i >= 0)
-            .map((i) => (
-              <text
-                key={`x${i}`}
-                x={CHART_PAD.left + geom.slot * i + geom.slot / 2}
-                y={height - 6}
-                textAnchor={i === 0 ? "start" : "end"}
-                fontSize={9}
-                fill={INK.muted}
-                fontFamily="var(--font-fira-code), monospace"
-              >
-                {points[i].label}
-              </text>
-            ))}
-        </svg>
-
-        {hover != null && (
-          <div
-            className="pointer-events-none absolute z-10 rounded border border-line bg-panel-2 px-2 py-1.5 text-[10px] shadow-lg"
-            style={
-              hover.i > points.length / 2
-                ? { top: 8, right: hover.rightPx + 8 }
-                : { top: 8, left: hover.leftPx + 8 }
-            }
-          >
-            <div className="font-mono text-ink-2">{points[hover.i].label}</div>
-            {series.map((s, i) => (
-              <div key={s.key} className="mt-0.5 flex items-center gap-1.5">
+          {/* A legend is always present for two or more series. */}
+          {!single && (
+            <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px]">
+              {series.map((s, i) => (
                 <span
-                  aria-hidden
-                  className="inline-block h-2 w-2 rounded-[2px]"
-                  style={{ background: s.color ?? seriesColor(i) }}
-                />
-                <span className="text-ink-3">{s.label}</span>
-                <span className="ml-auto pl-3 font-mono text-ink">
-                  {valueFormat(points[hover.i].values[s.key] ?? 0)}
+                  key={s.key}
+                  className="flex items-center gap-1.5 text-ink-3"
+                >
+                  <span
+                    aria-hidden
+                    className="inline-block h-2 w-2 rounded-[2px]"
+                    style={{ background: s.color ?? seriesColor(i) }}
+                  />
+                  {s.label}
                 </span>
-              </div>
+              ))}
+            </div>
+          )}
+
+          <svg
+            ref={svgRef}
+            viewBox={`0 0 ${W} ${height}`}
+            width="100%"
+            height={height}
+            role="img"
+            aria-label={`${series.map((s) => s.label).join(" and ")} over ${points.length} periods`}
+            onMouseLeave={() => setHover(null)}
+            onMouseMove={(e) => {
+              const xInView = clientXToViewBox(svgRef.current, e.clientX);
+              if (xInView == null) return;
+              const i = Math.floor((xInView - CHART_PAD.left) / geom.slot);
+              if (i < 0 || i >= points.length) {
+                setHover(null);
+                return;
+              }
+              const centre = CHART_PAD.left + geom.slot * i + geom.slot / 2;
+              const leftPx =
+                viewBoxXToLocalPx(svgRef.current, wrapRef.current, centre) ?? 0;
+              const containerWidth =
+                wrapRef.current?.getBoundingClientRect().width ?? 0;
+              setHover({ i, leftPx, rightPx: containerWidth - leftPx });
+            }}
+          >
+            {ticks.map((t) => (
+              <g key={t}>
+                <line
+                  x1={CHART_PAD.left}
+                  x2={W - CHART_PAD.right}
+                  y1={geom.y(t)}
+                  y2={geom.y(t)}
+                  stroke={SURFACE.grid}
+                  strokeWidth={1}
+                />
+                <text
+                  x={CHART_PAD.left - 6}
+                  y={geom.y(t) + 3}
+                  textAnchor="end"
+                  fontSize={9}
+                  fill={INK.muted}
+                  fontFamily="var(--font-fira-code), monospace"
+                >
+                  {valueFormat(t)}
+                </text>
+              </g>
             ))}
-          </div>
-        )}
+
+            {points.map((p, i) => {
+              const x =
+                CHART_PAD.left + geom.slot * i + (geom.slot - geom.barW) / 2;
+              let cursor = baseline;
+              /*
+               * Highlight the hovered column by brightening it, rather than
+               * dimming the other twenty-eight.
+               *
+               * Dimming inverts on a near-black ground: `opacity: 0.5` blends a
+               * saturated fill toward #0b0f14, so the untouched bars turn muddy
+               * and the chart reads as "some bars are randomly darker" instead of
+               * "this one is selected". Brightening touches only the bar the
+               * pointer is actually on, so every other bar keeps the exact colour
+               * its legend swatch promises.
+               */
+              const active = hover != null && hover.i === i;
+
+              return (
+                <g
+                  key={p.label}
+                  style={active ? { filter: "brightness(1.35)" } : undefined}
+                >
+                  {series.map((s, si) => {
+                    const v = p.values[s.key] ?? 0;
+                    if (v <= 0) return null;
+                    const h = baseline - geom.y(v);
+                    /*
+                     * 2px surface gap between touching segments, shaved off this
+                     * segment's bottom edge — the edge that meets the one below.
+                     *
+                     * `cursor` still advances by the segment's full height, so
+                     * the gap costs the stack nothing: the top of the last
+                     * segment stays at the true cumulative total. Advancing by
+                     * the drawn height instead loses 2px at every boundary, and
+                     * putting the gap on the top edge would just move the seam.
+                     */
+                    const gap = cursor === baseline ? 0 : 2;
+                    const top = cursor - h;
+                    const drawH = Math.max(h - gap, 0.5);
+                    cursor = top;
+                    const isTop = si === lastNonZero(p, series);
+                    return (
+                      <rect
+                        key={s.key}
+                        x={x}
+                        y={top}
+                        width={geom.barW}
+                        height={drawH}
+                        fill={s.color ?? seriesColor(si)}
+                        /* 4px rounded data-end, square at the baseline. */
+                        rx={isTop ? Math.min(4, geom.barW / 2) : 0}
+                      />
+                    );
+                  })}
+                </g>
+              );
+            })}
+
+            <line
+              x1={CHART_PAD.left}
+              x2={W - CHART_PAD.right}
+              y1={baseline}
+              y2={baseline}
+              stroke={SURFACE.border}
+              strokeWidth={1}
+            />
+
+            {[0, points.length - 1]
+              .filter((i, idx, arr) => arr.indexOf(i) === idx && i >= 0)
+              .map((i) => (
+                <text
+                  key={`x${i}`}
+                  x={CHART_PAD.left + geom.slot * i + geom.slot / 2}
+                  y={height - 6}
+                  textAnchor={i === 0 ? "start" : "end"}
+                  fontSize={9}
+                  fill={INK.muted}
+                  fontFamily="var(--font-fira-code), monospace"
+                >
+                  {points[i].label}
+                </text>
+              ))}
+          </svg>
+
+          {hover != null && (
+            <div
+              className="pointer-events-none absolute z-10 rounded border border-line bg-panel-2 px-2 py-1.5 text-[10px] shadow-lg"
+              style={
+                hover.i > points.length / 2
+                  ? { top: 8, right: hover.rightPx + 8 }
+                  : { top: 8, left: hover.leftPx + 8 }
+              }
+            >
+              <div className="font-mono text-ink-2">{points[hover.i].label}</div>
+              {series.map((s, i) => (
+                <div key={s.key} className="mt-0.5 flex items-center gap-1.5">
+                  <span
+                    aria-hidden
+                    className="inline-block h-2 w-2 rounded-[2px]"
+                    style={{ background: s.color ?? seriesColor(i) }}
+                  />
+                  <span className="text-ink-3">{s.label}</span>
+                  <span className="ml-auto pl-3 font-mono text-ink">
+                    {valueFormat(points[hover.i].values[s.key] ?? 0)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
+
+      <ChartTable
+        caption={`${seriesLabel} by period, as a table`}
+        columns={[
+          { key: "period", label: "Period" },
+          ...series.map((s) => ({
+            key: s.key,
+            label: s.label,
+            align: "right" as const,
+          })),
+        ]}
+        rows={points.map((p) => ({
+          key: p.label,
+          cells: [
+            p.label,
+            ...series.map((s) => valueFormat(p.values[s.key] ?? 0)),
+          ],
+        }))}
+      />
     </div>
   );
 }

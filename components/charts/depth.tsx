@@ -13,6 +13,7 @@ import {
   niceTicks,
   viewBoxXToLocalPx,
 } from "./axis";
+import { ChartTable } from "./chart-table";
 
 /**
  * Order-book depth: cumulative bid and ask curves either side of mid.
@@ -171,158 +172,186 @@ export function DepthChart({
   const info = hover ? atPrice(hover.price) : null;
 
   return (
-    <div className="scroll-x">
-      <div
-        ref={wrapRef}
-        className="relative"
-        style={{ minWidth: CHART_MIN_WIDTH }}
-      >
-        <div className="mb-2 flex items-center gap-4 text-[12px]">
-          <LegendKey color={DIRECTION.up} label="Bids (cumulative)" />
-          <LegendKey color={DIRECTION.down} label="Asks (cumulative)" />
-          <span className="ml-auto font-mono text-ink-3">
-            Mid <span className="text-ink-2">{diamonds(geom.mid)}</span>
-          </span>
-        </div>
-
-        {geom.clipped && (
-          <p className="mb-1 text-[10px] text-ink-3">
-            Zoomed to the tradeable band around mid — orders resting further out
-            are off this view. Totals below cover the whole book.
-          </p>
-        )}
-
-        <svg
-          ref={svgRef}
-          viewBox={`0 0 ${W} ${height}`}
-          width="100%"
-          height={height}
-          role="img"
-          aria-label="Cumulative order book depth by price"
-          onMouseLeave={() => setHover(null)}
-          onMouseMove={(e) => {
-            const xInView = clientXToViewBox(svgRef.current, e.clientX);
-            if (xInView == null) return;
-            if (xInView < CHART_PAD.left || xInView > W - CHART_PAD.right) {
-              setHover(null);
-              return;
-            }
-            const frac = (xInView - CHART_PAD.left) / plotW;
-            const leftPx =
-              viewBoxXToLocalPx(svgRef.current, wrapRef.current, xInView) ??
-              0;
-            const containerWidth =
-              wrapRef.current?.getBoundingClientRect().width ?? 0;
-            setHover({
-              x: xInView,
-              leftPx,
-              rightPx: containerWidth - leftPx,
-              price: geom.xMin + frac * (geom.xMax - geom.xMin),
-            });
-          }}
+    <div>
+      <div className="scroll-x">
+        <div
+          ref={wrapRef}
+          className="relative"
+          style={{ minWidth: CHART_MIN_WIDTH }}
         >
-          {yTicks.map((t) => (
-            <g key={t}>
+          <div className="mb-2 flex items-center gap-4 text-[12px]">
+            <LegendKey color={DIRECTION.up} label="Bids (cumulative)" />
+            <LegendKey color={DIRECTION.down} label="Asks (cumulative)" />
+            <span className="ml-auto font-mono text-ink-3">
+              Mid <span className="text-ink-2">{diamonds(geom.mid)}</span>
+            </span>
+          </div>
+
+          {geom.clipped && (
+            <p className="mb-1 text-[10px] text-ink-3">
+              Zoomed to the tradeable band around mid — orders resting further out
+              are off this view. Totals below cover the whole book.
+            </p>
+          )}
+
+          <svg
+            ref={svgRef}
+            viewBox={`0 0 ${W} ${height}`}
+            width="100%"
+            height={height}
+            role="img"
+            aria-label="Cumulative order book depth by price"
+            onMouseLeave={() => setHover(null)}
+            onMouseMove={(e) => {
+              const xInView = clientXToViewBox(svgRef.current, e.clientX);
+              if (xInView == null) return;
+              if (xInView < CHART_PAD.left || xInView > W - CHART_PAD.right) {
+                setHover(null);
+                return;
+              }
+              const frac = (xInView - CHART_PAD.left) / plotW;
+              const leftPx =
+                viewBoxXToLocalPx(svgRef.current, wrapRef.current, xInView) ??
+                0;
+              const containerWidth =
+                wrapRef.current?.getBoundingClientRect().width ?? 0;
+              setHover({
+                x: xInView,
+                leftPx,
+                rightPx: containerWidth - leftPx,
+                price: geom.xMin + frac * (geom.xMax - geom.xMin),
+              });
+            }}
+          >
+            {yTicks.map((t) => (
+              <g key={t}>
+                <line
+                  x1={CHART_PAD.left}
+                  x2={W - CHART_PAD.right}
+                  y1={geom.y(t)}
+                  y2={geom.y(t)}
+                  stroke={SURFACE.grid}
+                  strokeWidth={1}
+                />
+                <text
+                  x={CHART_PAD.left - 6}
+                  y={geom.y(t) + 3}
+                  textAnchor="end"
+                  fontSize={9}
+                  fill={INK.muted}
+                  fontFamily="var(--font-fira-code), monospace"
+                >
+                  {num(t, yDecimals)}
+                </text>
+              </g>
+            ))}
+
+            <path
+              d={geom.stepPath(geom.bids, "bid")}
+              fill={DIRECTION.up}
+              opacity={0.1}
+            />
+            <path
+              d={geom.stepPath(geom.asks, "ask")}
+              fill={DIRECTION.down}
+              opacity={0.1}
+            />
+            <path
+              d={geom.stepPath(geom.bids, "bid")}
+              fill="none"
+              stroke={DIRECTION.up}
+              strokeWidth={2}
+              strokeLinejoin="round"
+            />
+            <path
+              d={geom.stepPath(geom.asks, "ask")}
+              fill="none"
+              stroke={DIRECTION.down}
+              strokeWidth={2}
+              strokeLinejoin="round"
+            />
+
+            <line
+              x1={geom.x(geom.mid)}
+              x2={geom.x(geom.mid)}
+              y1={CHART_PAD.top}
+              y2={CHART_PAD.top + plotH}
+              stroke={INK.muted}
+              strokeWidth={1}
+              strokeDasharray="3 3"
+            />
+
+            {hover && (
               <line
-                x1={CHART_PAD.left}
-                x2={W - CHART_PAD.right}
-                y1={geom.y(t)}
-                y2={geom.y(t)}
-                stroke={SURFACE.grid}
+                x1={hover.x}
+                x2={hover.x}
+                y1={CHART_PAD.top}
+                y2={CHART_PAD.top + plotH}
+                stroke={INK.secondary}
                 strokeWidth={1}
+                pointerEvents="none"
               />
+            )}
+
+            {xTicks.map((t) => (
               <text
-                x={CHART_PAD.left - 6}
-                y={geom.y(t) + 3}
-                textAnchor="end"
+                key={`x${t}`}
+                x={geom.x(t)}
+                y={height - 6}
+                textAnchor="middle"
                 fontSize={9}
                 fill={INK.muted}
                 fontFamily="var(--font-fira-code), monospace"
               >
-                {num(t, yDecimals)}
+                {price(t)}
               </text>
-            </g>
-          ))}
+            ))}
+          </svg>
 
-          <path
-            d={geom.stepPath(geom.bids, "bid")}
-            fill={DIRECTION.up}
-            opacity={0.1}
-          />
-          <path
-            d={geom.stepPath(geom.asks, "ask")}
-            fill={DIRECTION.down}
-            opacity={0.1}
-          />
-          <path
-            d={geom.stepPath(geom.bids, "bid")}
-            fill="none"
-            stroke={DIRECTION.up}
-            strokeWidth={2}
-            strokeLinejoin="round"
-          />
-          <path
-            d={geom.stepPath(geom.asks, "ask")}
-            fill="none"
-            stroke={DIRECTION.down}
-            strokeWidth={2}
-            strokeLinejoin="round"
-          />
-
-          <line
-            x1={geom.x(geom.mid)}
-            x2={geom.x(geom.mid)}
-            y1={CHART_PAD.top}
-            y2={CHART_PAD.top + plotH}
-            stroke={INK.muted}
-            strokeWidth={1}
-            strokeDasharray="3 3"
-          />
-
-          {hover && (
-            <line
-              x1={hover.x}
-              x2={hover.x}
-              y1={CHART_PAD.top}
-              y2={CHART_PAD.top + plotH}
-              stroke={INK.secondary}
-              strokeWidth={1}
-              pointerEvents="none"
-            />
-          )}
-
-          {xTicks.map((t) => (
-            <text
-              key={`x${t}`}
-              x={geom.x(t)}
-              y={height - 6}
-              textAnchor="middle"
-              fontSize={9}
-              fill={INK.muted}
-              fontFamily="var(--font-fira-code), monospace"
+          {hover && info && (
+            <div
+              className="pointer-events-none absolute top-8 z-10 rounded border border-line bg-panel-2 px-2 py-1.5 font-mono text-[10px] shadow-lg"
+              style={
+                hover.x > W / 2
+                  ? { right: hover.rightPx + 8 }
+                  : { left: hover.leftPx + 8 }
+              }
             >
-              {price(t)}
-            </text>
-          ))}
-        </svg>
-
-        {hover && info && (
-          <div
-            className="pointer-events-none absolute top-8 z-10 rounded border border-line bg-panel-2 px-2 py-1.5 font-mono text-[10px] shadow-lg"
-            style={
-              hover.x > W / 2
-                ? { right: hover.rightPx + 8 }
-                : { left: hover.leftPx + 8 }
-            }
-          >
-            <div className={info.side === "bid" ? "text-up" : "text-down"}>
-              {info.side === "bid" ? "BIDS" : "ASKS"} to {price(hover.price)}
+              <div className={info.side === "bid" ? "text-up" : "text-down"}>
+                {info.side === "bid" ? "BIDS" : "ASKS"} to {price(hover.price)}
+              </div>
+              <div className="text-ink-2">{num(info.units)} units</div>
+              <div className="text-ink-3">{diamonds(info.value)}</div>
             </div>
-            <div className="text-ink-2">{num(info.units)} units</div>
-            <div className="text-ink-3">{diamonds(info.value)}</div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
+
+      {/*
+        The table lists the whole book, not just the band the chart windows to —
+        the levels parked far from mid are exactly the ones the drawing drops.
+      */}
+      <ChartTable
+        caption="Cumulative depth by price, as a table"
+        columns={[
+          { key: "side", label: "Side" },
+          { key: "price", label: "Price", align: "right" },
+          { key: "units", label: "Cumulative units", align: "right" },
+          { key: "value", label: "Cumulative value", align: "right" },
+        ]}
+        rows={[
+          ...geom.bids.map((p) => ({ side: "Bid", point: p })),
+          ...geom.asks.map((p) => ({ side: "Ask", point: p })),
+        ].map(({ side, point }) => ({
+          key: `${side}-${point.price}`,
+          cells: [
+            side,
+            price(point.price),
+            num(point.cumUnits),
+            diamonds(point.cumValue),
+          ],
+        }))}
+      />
     </div>
   );
 }
