@@ -34,14 +34,16 @@ export default async function ComparePage({
    * the same row — for the header and every body row — and duplicates also ate
    * the MAX_ITEMS budget, so `?ids=2,2,2,2,6` silently dropped listing 6.
    */
-  const ids = [
+  const parsed = [
     ...new Set(
       (raw ?? "")
         .split(",")
         .map((part) => Number(part.trim()))
         .filter((id) => Number.isInteger(id) && id > 0),
     ),
-  ].slice(0, MAX_ITEMS);
+  ];
+  const ids = parsed.slice(0, MAX_ITEMS);
+  const dropped = parsed.length - ids.length;
 
   return (
     <div className="flex flex-col gap-4">
@@ -56,13 +58,19 @@ export default async function ComparePage({
       <Suspense
         fallback={<PanelSkeleton height={360} label="Loading listings…" />}
       >
-        <CompareBody ids={ids} />
+        <CompareBody ids={ids} dropped={dropped} />
       </Suspense>
     </div>
   );
 }
 
-async function CompareBody({ ids }: { ids: number[] }) {
+async function CompareBody({
+  ids,
+  dropped,
+}: {
+  ids: number[];
+  dropped: number;
+}) {
   const [listings, summary, trades] = await Promise.all([
     getListings(),
     getOrderbookSummary(),
@@ -116,6 +124,8 @@ async function CompareBody({ ids }: { ids: number[] }) {
       };
     })
     .filter((c): c is NonNullable<typeof c> => c != null);
+
+  const missing = ids.filter((id) => !byId.has(id));
 
   if (!columns.length) {
     return (
@@ -198,6 +208,14 @@ async function CompareBody({ ids }: { ids: number[] }) {
         </table>
       </div>
       <div className="px-3 pb-3">
+        {(dropped > 0 || missing.length > 0) && (
+          <Caveat>
+            {dropped > 0 &&
+              `Showing the first ${MAX_ITEMS} of ${MAX_ITEMS + dropped} ids given. `}
+            {missing.length > 0 &&
+              `No listing with id ${missing.join(", ")}.`}
+          </Caveat>
+        )}
         <Caveat>
           Prices are per single item. Stack sizes differ — the row is shown so a
           per-stack comparison can be done deliberately rather than accidentally.
