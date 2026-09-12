@@ -18,7 +18,7 @@
  *
  *   node scripts/snapshot.mjs --out ./data-branch
  *   node scripts/snapshot.mjs --out /tmp/x --dry-run   # fetch, report, write nothing
- *   node scripts/snapshot.mjs --out /tmp/x --no-depth  # skip the 118-book fan-out
+ *   node scripts/snapshot.mjs --out /tmp/x --no-depth  # skip the price levels
  *   node scripts/snapshot.mjs --out /tmp/x --budget-ms 60000  # cap the wall clock
  */
 
@@ -54,12 +54,15 @@ const API_BASE = resolveBase(
 /**
  * Requests per minute. The upstream read tier allows 300/min per IP; this job
  * runs unattended once an hour, so it takes a fifth of that budget and
- * spends ~160s rather than racing.
+ * paces itself rather than racing.
  */
 const RATE_PER_MIN = 60;
 
 /** Depth bands recorded either side of mid, as fractions. */
 const BANDS = [0.05, 0.1];
+
+/** The two statuses that mean an order is still resting on the book. */
+const OPEN_STATUS = "pending,partially_filled";
 
 const args = process.argv.slice(2);
 const flag = (name) => args.includes(`--${name}`);
@@ -99,9 +102,10 @@ const WITH_DEPTH = !flag("no-depth");
  *
  * The workflow allows the job 20 minutes. Without a deadline the retry
  * arithmetic can blow straight past that: three attempts at a 30 s request
- * timeout plus backoff is 93 s for a single path, and depth is one sequential
- * request per listing, so a hanging upstream reaches roughly three hours. Even
- * a mild wobble — one timeout each on half the listings — lands at ~33 minutes.
+ * timeout plus backoff is 93 s for a single path, and the profile walk is one
+ * sequential request per account, so a hanging upstream reaches ~40 minutes on
+ * today's roster and longer on every account added to it. Even a mild wobble —
+ * one timeout each on half the accounts — eats a third of the job's ceiling.
  * The runner is then destroyed mid-capture, the commit step never runs, and the
  * hour is lost with most of the data already fetched.
  *
@@ -362,8 +366,8 @@ function listingRow(summary, book) {
   const [askUnits, askValue] = sideDepth(asks, mid, null);
 
   // `/orderbook` (the summary) already carries the six *total* depth columns
-  // for every listing in one call — the per-book fan-out only adds the bands,
-  // which genuinely need the individual levels. So a missing book falls back
+  // for every listing in one call — the levels only add the bands, which
+  // genuinely need the individual prices. So a missing book falls back
   // to the summary's totals rather than nulling figures that were never in
   // doubt; only the band columns are unrecoverable without the book.
   return [
@@ -374,7 +378,7 @@ function listingRow(summary, book) {
     r(summary.bestBid),
     r(summary.bestAsk),
     r(summary.spread),
-    r(summary.tick ?? bids[0]?.tick ?? asks[0]?.tick ?? null),
+    r(summary.tick ?? null),
     book ? bidUnits : (summary.bidUnits ?? null),
     book ? askUnits : (summary.askUnits ?? null),
     book ? bidValue : r(summary.bidValue),
@@ -524,30 +528,35 @@ async function main() {
   let requestsBeforeProfiles = null;
 
   try {
-    // Depth needs one request per listing — there is no bulk depth endpoint.
+    // Every listing's price levels in one request — upstream's documented
+    // "bulk pattern", which replaces a request per listing. Checked against
+    // the per-listing books it replaces: units, value, level count and best
+    // prices agree exactly on all 181 listings.
     if (WITH_DEPTH) {
-      let depthStopped = false;
-      for (const summary of summaries) {
-        // The one loop long enough to run away — stop it explicitly rather than
-        // letting 118 already-doomed calls each log their own failure.
-        if (budgetLeft() <= 0) {
-          errors.push(
-            `depth: time budget exhausted after ${books.size}/${summaries.length} listings`,
-          );
-          depthStopped = true;
-          break;
+      const levels = await get(`/orders/summary?groupBy=listing,side,price&status=${OPEN_STATUS}`);
+      if (!levels) {
+        errors.push("/orders/summary: no levels — totals fall back to the summary, bands are null");
+      } else {
+        // Only the listings `/orderbook` quoted: it omits those with no open
+        // orders, and a row for one of those would put a book in the map that
+        // no snapshot row reads and make `depthFromSummary` negative.
+        const quoted = new Set(summaries.map((summary) => summary.listingId));
+        for (const level of levels) {
+          const id = level.listing?.id;
+          if (id == null || !quoted.has(id)) continue;
+          let book = books.get(id);
+          if (!book) books.set(id, (book = { bids: [], asks: [] }));
+          (level.side === "buy" ? book.bids : book.asks).push({
+            price: level.price,
+            quantity: level.remainingAmount,
+          });
         }
-        const detail = await get(`/orderbook/${encodeURIComponent(summary.listingId)}`);
-        if (detail?.orderBook) books.set(summary.listingId, detail.orderBook);
-      }
-      // A missing book still nulls that listing's band columns (see
-      // `listingRow`), so the shortfall is recorded here rather than left to
-      // be read off a null column. `get` is silent about the ways a listing
-      // can go missing without failing — a 404 because it was delisted
-      // mid-walk, or an answer carrying no `orderBook` — and those are exactly
-      // the ones that would otherwise null the bands under a green run.
-      if (!depthStopped && books.size < summaries.length) {
-        errors.push(`depth: ${summaries.length - books.size}/${summaries.length} books missing`);
+        // A listing with no levels still nulls its band columns (see
+        // `listingRow`), so the shortfall is recorded here rather than left
+        // to be read off a null column.
+        if (books.size < summaries.length) {
+          errors.push(`depth: ${summaries.length - books.size}/${summaries.length} books missing`);
+        }
       }
     }
 
@@ -572,7 +581,7 @@ async function main() {
     for (let pass = 0; pass < 3 && queue.length; pass++) {
       const discovered = new Set();
       for (const username of queue) {
-        // The other loop long enough to run away: the roster only ever grows,
+        // The one loop long enough to run away: the roster only ever grows,
         // so stop it explicitly rather than letting every remaining username
         // log its own "time budget exhausted".
         if (budgetLeft() <= 0) {
@@ -652,9 +661,9 @@ async function main() {
       requests: requestCount,
       depth: WITH_DEPTH,
       // Listings whose total depth columns came from the `/orderbook` summary
-      // rather than the per-listing fan-out, because that listing's book was
-      // never fetched (missing, or --no-depth). The two sources agree in
-      // practice, but this says when a total is standing in for the other.
+      // rather than from the price levels, because that listing had none
+      // (missing, or --no-depth). The two sources agree in practice, but this
+      // says when a total is standing in for the other.
       depthFromSummary: summaries.length - books.size,
       // Wealth has no per-row null to carry a shortfall the way the depth
       // columns do: a profile fetch that fails, or a walk the budget cut

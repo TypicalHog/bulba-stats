@@ -314,7 +314,9 @@ Minecraft username (3–16 of `[A-Za-z0-9_]`). An id or a name that cannot exist
 one entry at a time.
 
 The hourly capture job (§1.5) is the one sustained load. It paces itself to
-60 req/min — a fifth of the allowance — and so spends ~160 s per run. A 429 is
+60 req/min — a fifth of the allowance — and so spends ~30 s per run: every
+listing's price levels arrive in one `/orders/summary?groupBy=listing,side,price`
+request — upstream's bulk pattern — rather than one request per listing. A 429 is
 paced rather than backed off from: upstream's `Retry-After` is fed back into
 that same cursor, capped at a minute, so one wait holds every caller instead of
 a local sleep stacking on top of the global one.
@@ -404,7 +406,7 @@ Four properties are deliberate:
   bank's balance reaches that hour's snapshot. Seeding the walk from newly
   discovered accounts alone would cost less and quietly break "balances for
   every bank account" above. The price is that this leg grows linearly with
-  the roster: ~26 of ~148 requests today, and at hundreds of accounts it would
+  the roster: ~26 of ~31 requests today, and at hundreds of accounts it would
   start to crowd the 15-minute budget. The run summary breaks that leg out as
   its own line, so the crowding shows up in a job log long before it shows up
   as a run that hits the budget. The remedy then is a stated staleness

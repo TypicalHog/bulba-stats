@@ -69,7 +69,7 @@ npm run snapshot # capture one market snapshot into ./.snapshot-out
 ```
 
 CI runs the same script hourly with `--out data-branch`; `npm run snapshot` is what you'd run locally to inspect
-the captured shape. Add `--no-depth` to skip the 118-book fan-out, or
+the captured shape. Add `--no-depth` to skip the price levels, or
 `--dry-run` to fetch and report without writing. `--budget-ms` caps the whole
 capture's wall clock (default 15 minutes, floor 1 minute); past it the script
 stops fetching and writes what it already has rather than being killed with
