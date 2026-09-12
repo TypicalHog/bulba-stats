@@ -637,7 +637,10 @@ them in bundles, so the pieces can be priced against the whole:
   listed tool carries, and 6 on tools that no book supplies. A tool in the
   second group cannot be built from parts at any price, so it still appears in
   the buy-or-build table — with the missing part named, since "you cannot buy
-  the parts at any price" is itself the answer.
+  the parts at any price" is itself the answer. Matching is by exact
+  enchantment level, so a tool wanting `efficiency_2` counts as a gap even
+  when the market lists `efficiency_5` — correct for the level actually
+  needed, but not evidence the enchantment is unpriced.
 
 Value comes from the book listing plus a residual rather than from regressing
 tool prices on their enchantment sets: ~23 enchanted listings against 24
