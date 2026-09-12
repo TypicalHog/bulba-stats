@@ -27,8 +27,10 @@ export const metadata = {
 
 /**
  * The depth-ownership panel shares the ~20 s resting-order crawl, so this route
- * needs the same headroom as /orders on a cold cache. The quote table above it
- * streams in first regardless.
+ * needs the same headroom as /orders on a cold cache: this page is a static ISR
+ * route, so every boundary below resolves at prerender time and the finished
+ * HTML is served whole — a cold entry pays that full crawl as one blocking
+ * regeneration rather than a request-time stream.
  */
 export const maxDuration = 60;
 
@@ -48,8 +50,10 @@ export default function MarketPage() {
       </Suspense>
 
       {/*
-        Depth ownership needs the full ~20k-row resting-order crawl, so it
-        streams separately rather than holding up the quote table.
+        Depth ownership needs the full ~20k-row resting-order crawl. It gets its
+        own boundary for prerender ordering and code isolation, not for
+        request-time streaming — this route is static ISR, so every boundary is
+        already resolved by the time a cache hit serves the page.
       */}
       <Suspense
         fallback={<PanelSkeleton height={420} label="Laying out the market…" />}

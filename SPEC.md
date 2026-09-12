@@ -766,9 +766,12 @@ teaches crawlers to ignore the field. It is built from the same two cached reads
 as the search palette, and soft-fails to the fixed routes if upstream is down.
 
 **Progressive disclosure.** Overview and item pages lead with what matters and
-render instantly. Anything expensive (full-history aggregates, the open-order
-crawl, the counterparty graph) streams in behind its own `<Suspense>` boundary —
-nothing makes a visitor wait 20 seconds for a first paint.
+render instantly on the common cache-hit path. Anything expensive (full-history
+aggregates, the open-order crawl, the counterparty graph) sits behind its own
+`<Suspense>` boundary — on the dynamic routes that streams in at request time;
+on the static ISR routes (`/`, `/market`, `/players`, `/house`) every boundary
+is already resolved when the cached HTML is served, so a cold cache entry pays
+the full cost as one blocking regeneration instead.
 
 **The watchlist is per-browser, and says so.** There is no account system and
 the site never writes upstream, so starred listings can only live in
