@@ -168,7 +168,7 @@ export function FlowExplorer({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex rounded border border-line p-0.5" role="group">
+        <div className="flex rounded border border-line p-0.5" role="group" aria-label="Flow measure">
           {(
             [
               { key: "units", label: "Units" },

@@ -110,7 +110,7 @@ export function DaysOfSupply({ rows }: { rows: SupplyRow[] }) {
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <div className="flex rounded border border-line p-0.5" role="group">
+        <div className="flex rounded border border-line p-0.5" role="group" aria-label="Lookback window">
           {WINDOWS.map((w) => (
             <button
               key={w.key}
