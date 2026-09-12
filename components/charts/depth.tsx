@@ -105,13 +105,14 @@ export function DepthChart({
       if (!pts.length) return "";
       const baseY = CHART_PAD.top + plotH;
       const edge = side === "bid" ? xMin : xMax;
+      const best = Math.max(xMin, Math.min(xMax, pts[0].price));
       const parts: string[] = [
-        `M${x(mid)},${baseY}`,
-        `L${x(mid)},${y(pts[0].cumUnits)}`,
+        `M${x(best)},${baseY}`,
+        `L${x(best)},${y(pts[0].cumUnits)}`,
       ];
 
       let last = pts[0].cumUnits;
-      for (const p of pts) {
+      for (const p of pts.slice(1)) {
         const clampedPrice = Math.max(xMin, Math.min(xMax, p.price));
         // Horizontal run at the previous depth, then the step up.
         parts.push(`L${x(clampedPrice)},${y(last)}`);
