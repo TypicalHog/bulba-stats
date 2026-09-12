@@ -593,7 +593,9 @@ been worked, and that penalty doubles with each use, so applying five books one
 at a time can cost half again what merging them in pairs first does — and can
 hit the 40-level "Too Expensive" wall survival refuses. The optimiser is
 exhaustive over merge orders, keeping the cheapest plan per (book subset, prior
-work) pair, and reports the winning order step by step. Worked example: five
+work) pair, and reports the winning order step by step. Orders that tie on
+levels are separated by the experience behind them: levels are not a linear
+currency, so the same total spread over balanced steps costs fewer bottles. Worked example: five
 books onto a bow costs **26 levels optimally against 42 sequentially**.
 
 Four independent toggles, because "what does this cost me" has four honest

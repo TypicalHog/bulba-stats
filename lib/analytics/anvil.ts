@@ -110,6 +110,8 @@ type Node = {
   mask: number;
   pwp: number;
   cost: number;
+  /** Experience behind `cost`, used to break ties between equal-level plans. */
+  xp: number;
   maxStep: number;
   steps: AnvilStep[];
   /** The item being built, rather than a stack of books. */
@@ -146,7 +148,10 @@ function label(entries: readonly NbtEntry[]): string {
  *
  * Search is over subsets, keeping the cheapest plan per (subset, prior-work)
  * pair. A plan that costs more *and* leaves a higher penalty can never win, so
- * only that frontier is carried forward.
+ * only that frontier is carried forward. Equally cheap plans are separated by
+ * the experience they need: levels are what the anvil charges, but experience
+ * is what the page prices, and spreading the same level total over balanced
+ * steps buys it for less.
  */
 export function optimalAnvilPlan(enchants: readonly NbtEntry[]): AnvilPlan {
   // Potion effects and firework attributes also arrive as nbt, and neither is
@@ -174,6 +179,8 @@ export function optimalAnvilPlan(enchants: readonly NbtEntry[]): AnvilPlan {
     for (const node of nodes) {
       const existing = best.get(node.pwp);
       if (!existing || node.cost < existing.cost) best.set(node.pwp, node);
+      else if (node.cost === existing.cost && node.xp < existing.xp)
+        best.set(node.pwp, node);
     }
     return [...best.values()].sort((a, b) => a.cost - b.cost);
   };
@@ -193,6 +200,7 @@ export function optimalAnvilPlan(enchants: readonly NbtEntry[]): AnvilPlan {
       mask: target.mask | sacrifice.mask,
       pwp: Math.max(target.pwp, sacrifice.pwp) + 1,
       cost: target.cost + sacrifice.cost + step,
+      xp: target.xp + sacrifice.xp + xpForLevel(step),
       maxStep: Math.max(target.maxStep, sacrifice.maxStep, step),
       isTool: target.isTool,
       steps: [
@@ -217,6 +225,7 @@ export function optimalAnvilPlan(enchants: readonly NbtEntry[]): AnvilPlan {
         mask,
         pwp: 0,
         cost: 0,
+        xp: 0,
         maxStep: 0,
         steps: [],
         isTool: false,
@@ -255,6 +264,7 @@ export function optimalAnvilPlan(enchants: readonly NbtEntry[]): AnvilPlan {
         mask: 0,
         pwp: 0,
         cost: 0,
+        xp: 0,
         maxStep: 0,
         steps: [],
         isTool: true,
@@ -280,7 +290,9 @@ export function optimalAnvilPlan(enchants: readonly NbtEntry[]): AnvilPlan {
     return result;
   };
 
-  const best = planTool(full).reduce((a, b) => (b.cost < a.cost ? b : a));
+  const best = planTool(full).reduce((a, b) =>
+    b.cost < a.cost || (b.cost === a.cost && b.xp < a.xp) ? b : a,
+  );
 
   return {
     levels: best.cost,
