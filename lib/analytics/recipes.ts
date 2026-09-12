@@ -122,7 +122,9 @@ function enchantRecipes(listings: readonly Listing[]): {
     if (!listing.itemName) continue;
     const nbt = listing.nbt ?? [];
     if (listing.itemName === "enchanted_book") {
-      if (nbt.length === 1) books.set(`${nbt[0].name}:${nbt[0].level}`, listing);
+      if (nbt.length === 1 && nbt[0].type === "enchant") {
+        books.set(`${nbt[0].name}:${nbt[0].level}`, listing);
+      }
       continue;
     }
     if (!nbt.length && !plain.has(listing.itemName)) plain.set(listing.itemName, listing);
