@@ -50,7 +50,7 @@ const UPSTREAM_TIMEOUT_MS = 45_000;
  * see SPEC.md §1.2/§1.3.
  *
  * Sized against the read allowance, using the measured page counts: a full
- * aggregate refresh is 39 requests (2 trades + 20 fills + 17 bank ops) and the
+ * aggregate refresh is 19 requests (2 trades + 17 bank ops) and the
  * heavy crawl is 47. Sustained worst case, with someone watching a page in
  * each tier continuously, is roughly 26 + 21 + 12 + 3 ≈ 62 req/min.
  *
@@ -74,7 +74,7 @@ export const TTL = {
   live: 5,
   /** Candles, listings. 1 request each. */
   near: 20,
-  /** Full trade/fill history crawls and the stats derived from them. ~39. */
+  /** Full trade/fill history crawls and the stats derived from them. ~19. */
   aggregate: 90,
   /** The open-order crawl. ~9,400 rows, 47 requests, ~10 s. */
   heavy: 300,

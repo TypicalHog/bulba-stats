@@ -316,12 +316,6 @@ async function allTransactions(
   return { rows, complete };
 }
 
-/** Every trade-type transaction row (~3,965), including maker fills. */
-export const getAllFills = cache(
-  async (): Promise<Fill[]> =>
-    (await allTransactions(TRADE_TYPES, "fills")).rows,
-);
-
 /** Every internal bank movement: deposit, withdraw, transfer, pay. */
 export const getBankOps = cache(
   async (): Promise<{ rows: Fill[]; complete: boolean }> =>
