@@ -39,7 +39,7 @@ function toAlert(data: Record<string, unknown>, watched: number[]): Alert | null
   return {
     id,
     listingId,
-    itemName: listing?.itemName ?? null,
+    itemName: typeof listing?.itemName === "string" ? listing.itemName : null,
     side: data.side === "sell" ? "sell" : "buy",
     amount: typeof data.filledAmount === "number" ? data.filledAmount : 0,
     total: typeof data.total === "number" ? data.total : 0,
