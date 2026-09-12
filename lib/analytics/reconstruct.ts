@@ -230,10 +230,22 @@ export function reconstructOrganicBooks(
   );
 }
 
+/**
+ * `GET /orderbook` rows carry depth aggregates that `OrderbookSummary` doesn't
+ * declare (bidLevels/askLevels/bidUnits/askUnits) — checked as optional here
+ * rather than added to the shared type, so this stays a same-file change.
+ */
+type SummaryWithDepth = OrderbookSummary & {
+  bidLevels?: number | null;
+  askLevels?: number | null;
+  bidUnits?: number | null;
+  askUnits?: number | null;
+};
+
 export type BookCheck = {
   listingId: number;
   name: string | null;
-  /** Reconstructed touch agrees with the summary endpoint. */
+  /** Reconstructed touch and depth agree with the summary endpoint. */
   ok: boolean;
   reconstructedBid: number | null;
   reconstructedAsk: number | null;
@@ -241,6 +253,8 @@ export type BookCheck = {
   summaryAsk: number | null;
   reconstructedMid: number | null;
   summaryMid: number | null;
+  /** True when the touch matched but level counts or side totals didn't. */
+  depthOnly: boolean;
 };
 
 export type CrossCheck = {
@@ -254,13 +268,13 @@ export type CrossCheck = {
  * fetches.
  *
  * A reconstruction is only as good as the crawl behind it: if the page cap is
- * hit, or the book moves between the crawl and the summary, the touch will
- * disagree. Checking is nearly free and turns a silent wrong number into a
- * visible one.
+ * hit, the crawl loses the far side of the ladder while the touch still
+ * agrees — the summary rows carry depth (level counts and side totals) that
+ * catches exactly that truncation, so the touch alone isn't checked here.
  */
 export function crossCheck(
   books: Map<number, ReconstructedBook>,
-  summaries: readonly OrderbookSummary[],
+  summaries: readonly SummaryWithDepth[],
 ): CrossCheck {
   const same = (a: number | null, b: number | null) =>
     (a == null && b == null) || (a != null && b != null && Math.abs(a - b) < 1e-9);
@@ -280,10 +294,21 @@ export function crossCheck(
       reconstructedBid == null || reconstructedAsk == null
         ? true
         : same(reconstructedMid, summary.mid);
-    const ok =
+    const touchOk =
       same(reconstructedBid, summary.bestBid) &&
       same(reconstructedAsk, summary.bestAsk) &&
       midOk;
+
+    // Depth fields are optional on the summary row; only checked when present.
+    const bidUnits = book?.bids.reduce((a, level) => a + level.quantity, 0) ?? 0;
+    const askUnits = book?.asks.reduce((a, level) => a + level.quantity, 0) ?? 0;
+    const depthOk =
+      (summary.bidLevels == null || summary.bidLevels === book?.bids.length) &&
+      (summary.askLevels == null || summary.askLevels === book?.asks.length) &&
+      (summary.bidUnits == null || same(bidUnits, summary.bidUnits)) &&
+      (summary.askUnits == null || same(askUnits, summary.askUnits));
+
+    const ok = touchOk && depthOk;
 
     if (ok) matched++;
     else
@@ -297,6 +322,7 @@ export function crossCheck(
         summaryAsk: summary.bestAsk,
         reconstructedMid,
         summaryMid: summary.mid,
+        depthOnly: touchOk && !depthOk,
       });
   }
 

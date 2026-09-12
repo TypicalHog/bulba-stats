@@ -316,13 +316,20 @@ async function Liquidity() {
         <Caveat>
           Computed from the resting orders on this page rather than from 118
           separate book requests. The reconstruction reproduces the official
-          best bid and ask on {num(check.matched)} of {num(check.checked)}{" "}
+          best bid, ask and depth on {num(check.matched)} of {num(check.checked)}{" "}
           listings
           {check.mismatches.length > 0 && (
             <>
-              ; {num(check.mismatches.length)} disagree, which means the book
-              moved between the crawl and the quote and those rows may be
-              slightly stale
+              ; {num(check.mismatches.length)} disagree
+              {check.mismatches.some((m) => m.depthOnly) && (
+                <>
+                  {" "}
+                  — some only on depth, which means the crawl is missing
+                  levels the book actually has (likely the page cap) rather
+                  than the book having simply moved
+                </>
+              )}
+              , so those rows may be understating size or slightly stale
             </>
           )}
           . Sweeping assumes the whole order goes through at once and that
