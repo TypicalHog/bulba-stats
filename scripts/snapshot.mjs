@@ -612,10 +612,11 @@ async function main() {
    * Seconds included. At minute resolution two captures starting in the same
    * UTC minute wrote the same "immutable" filename — the second silently
    * replacing the first — while still appending two distinct series rows,
-   * because the dedupe key there is the full millisecond timestamp. The
-   * concurrency group and a ~160s runtime make that unreachable in the
-   * scheduled job, but `workflow_dispatch` has neither, and an immutability
-   * guarantee that holds only by scheduling accident is not one.
+   * because the dedupe key there is the full millisecond timestamp. Within
+   * Actions the workflow-level concurrency group (group: snapshot,
+   * cancel-in-progress: false) serializes scheduled and `workflow_dispatch`
+   * runs alike, so this can't happen there — the guard exists for runs
+   * outside Actions, e.g. `npm run snapshot` invoked twice in one minute.
    */
   const stamp = `${capturedAt.slice(0, 13)}${capturedAt.slice(14, 16)}${capturedAt.slice(17, 19)}Z`;
   const relative = `snapshots/${day}/${stamp}.json`;
