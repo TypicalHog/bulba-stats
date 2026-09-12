@@ -8,8 +8,34 @@ import { SITE_ORIGIN, UPSTREAM_TAG } from "./constants";
  * so a cached page view costs the upstream API nothing.
  */
 
-export const API_BASE =
-  process.env.BULBA_API_BASE ?? `${SITE_ORIGIN}/upstream/api/v1`;
+/**
+ * Read a base-URL override from the environment. `??` alone treats an empty
+ * string (the natural way an operator "unsets" a dashboard override) as a
+ * real value, turning every fetch into a relative URL that throws a raw
+ * TypeError instead of an ApiError. Trimmed empty falls back like unset; a
+ * non-absolute or non-http(s) value fails loudly at load time instead of
+ * silently at request time; a trailing slash is stripped since paths always
+ * start with one.
+ */
+export function resolveBase(raw: string | undefined, fallback: string): string {
+  const v = raw?.trim();
+  if (!v) return fallback;
+  let u: URL;
+  try {
+    u = new URL(v);
+  } catch {
+    throw new Error(`BULBA_API_BASE is not an absolute URL: ${JSON.stringify(v)}`);
+  }
+  if (u.protocol !== "https:" && u.protocol !== "http:") {
+    throw new Error(`BULBA_API_BASE must be http(s): ${v}`);
+  }
+  return v.replace(/\/+$/, "");
+}
+
+export const API_BASE = resolveBase(
+  process.env.BULBA_API_BASE,
+  `${SITE_ORIGIN}/upstream/api/v1`,
+);
 
 /**
  * Ceiling on a single upstream request, so a stalled connection throws

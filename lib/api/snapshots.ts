@@ -1,6 +1,6 @@
 import "server-only";
 import { cache } from "react";
-import { TTL } from "./client";
+import { TTL, resolveBase } from "./client";
 import { UPSTREAM_TAG } from "./constants";
 
 /**
@@ -25,7 +25,7 @@ const DEFAULT_BASE =
   "https://raw.githubusercontent.com/TypicalHog/bulba-stats/data";
 
 /** Override to read a fork, a branch, or a local mirror. */
-export const DATA_BASE = process.env.BULBA_DATA_BASE ?? DEFAULT_BASE;
+export const DATA_BASE = resolveBase(process.env.BULBA_DATA_BASE, DEFAULT_BASE);
 
 /** One capture, reduced to market-wide scalars. */
 export type MarketSample = {

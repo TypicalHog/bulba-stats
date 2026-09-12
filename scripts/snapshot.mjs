@@ -24,8 +24,30 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
-const API_BASE =
-  process.env.BULBA_API_BASE ?? "https://webstore.bulbastore.uk/upstream/api/v1";
+/**
+ * `??` alone treats an empty env var (the natural way an operator "unsets" a
+ * dashboard override) as a real value, turning every fetch into a relative
+ * URL that fails with a raw TypeError instead of a clear message.
+ */
+function resolveBase(raw, fallback) {
+  const v = raw?.trim();
+  if (!v) return fallback;
+  let u;
+  try {
+    u = new URL(v);
+  } catch {
+    throw new Error(`BULBA_API_BASE is not an absolute URL: ${JSON.stringify(v)}`);
+  }
+  if (u.protocol !== "https:" && u.protocol !== "http:") {
+    throw new Error(`BULBA_API_BASE must be http(s): ${v}`);
+  }
+  return v.replace(/\/+$/, "");
+}
+
+const API_BASE = resolveBase(
+  process.env.BULBA_API_BASE,
+  "https://webstore.bulbastore.uk/upstream/api/v1",
+);
 
 /**
  * Requests per minute. The upstream read tier allows 120/min per IP; this job
