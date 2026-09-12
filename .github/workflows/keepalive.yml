@@ -54,11 +54,23 @@ jobs:
         env:
           OWNER: ${{ github.repository_owner }}
           BRANCH: ${{ github.ref_name }}
+          DATA_PUSH_TOKEN: ${{ secrets.DATA_PUSH_TOKEN }}
         run: |
           set -euo pipefail
           if [ "$HAS_TOKEN" = "true" ]; then
             git config user.name "$OWNER"
-            git config user.email "$OWNER@users.noreply.github.com"
+            # Accounts created after July 2017 only have the numeric
+            # `ID+username@users.noreply.github.com` form; the bare
+            # `username@...` form (still accepted by git) won't link the
+            # commit to the account's avatar/profile for them. Look the ID
+            # up and fall back to the bare form if the API call fails, so a
+            # GitHub hiccup here never costs the heartbeat.
+            OWNER_ID="$(curl -sf -H "Authorization: bearer $DATA_PUSH_TOKEN" "https://api.github.com/users/$OWNER" 2>/dev/null | jq -r '.id // empty' 2>/dev/null || true)"
+            if [ -n "$OWNER_ID" ]; then
+              git config user.email "${OWNER_ID}+${OWNER}@users.noreply.github.com"
+            else
+              git config user.email "$OWNER@users.noreply.github.com"
+            fi
           else
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
