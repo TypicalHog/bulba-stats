@@ -20,6 +20,11 @@ let refCount = 0;
 export async function acquireLiveSocket(): Promise<Socket> {
   refCount++;
   if (!connecting) {
+    /*
+     * A rejected import must not stay cached: the chunk fetch can fail on a
+     * flaky network, and leaving the settled promise here would mean every
+     * later mount awaits that same failure and the feed can never recover.
+     */
     connecting = import("socket.io-client").then(({ io }) => {
       const s = io(SITE_ORIGIN, {
         path: WS_PATH,
@@ -38,6 +43,9 @@ export async function acquireLiveSocket(): Promise<Socket> {
         connecting = null;
       }
       return s;
+    }).catch((err) => {
+      connecting = null;
+      throw err;
     });
   }
   return connecting;
