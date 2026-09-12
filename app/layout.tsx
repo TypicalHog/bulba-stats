@@ -11,6 +11,7 @@ import { buildIndex } from "@/lib/search-index";
 import { getAllTrades, getListings } from "@/lib/api/endpoints";
 import { BULBA_ICON } from "@/lib/format";
 import { SiteFooter } from "@/components/ui/footer";
+import { SELF_ORIGIN } from "@/lib/api/constants";
 
 /**
  * Fira Sans for UI, Fira Code for every number and identifier — a trading
@@ -36,14 +37,28 @@ const firaCode = Fira_Code({
   display: "swap",
 });
 
+const description =
+  "Deep analytics for the BulbaStore Minecraft item exchange: market volume, order-book liquidity, per-item price history, per-player P&L and treasury flows.";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SELF_ORIGIN),
   title: {
     default: "BulbaStats — BulbaStore market analytics",
     template: "%s · BulbaStats",
   },
-  description:
-    "Deep analytics for the BulbaStore Minecraft item exchange: market volume, order-book liquidity, per-item price history, per-player P&L and treasury flows.",
+  description,
   applicationName: "BulbaStats",
+  openGraph: {
+    type: "website",
+    siteName: "BulbaStats",
+    title: "BulbaStats — BulbaStore market analytics",
+    description,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "BulbaStats — BulbaStore market analytics",
+    description,
+  },
 };
 
 export const viewport: Viewport = {
