@@ -264,7 +264,7 @@ async function PlayersBody() {
     }));
 
   const humans = rows.filter((r) => !r.isMarketMaker && !r.isNonTrading);
-  const totalFees = rows.reduce((a, r) => a + r.feesPaid, 0);
+  const totalFees = humans.reduce((a, r) => a + r.feesPaid, 0);
   const edges = counterpartyEdges(legs);
 
   /*
