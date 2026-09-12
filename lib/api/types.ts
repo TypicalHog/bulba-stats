@@ -27,9 +27,9 @@ export type VariantFields = {
   niche: boolean;
   nbt: NbtEntry[];
   /** Units per Minecraft stack. Undocumented but always present. */
-  stackAmount?: number;
-  defaultAmount?: number;
-  standalone?: boolean;
+  stackAmount: number;
+  defaultAmount: number;
+  standalone: boolean;
 };
 
 export type Listing = VariantFields & {
