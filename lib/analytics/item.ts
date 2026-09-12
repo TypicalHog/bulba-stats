@@ -95,6 +95,13 @@ export function volatility(candles: Candle[]): number | null {
  *
  * Returns null when there isn't a candle old enough to compare against —
  * better than comparing to the oldest available and calling it "24h".
+ *
+ * `candle.time` is the bucket START, but its `close` is the price at the
+ * bucket's END. Requiring only the start to be old enough lets the base
+ * candle's close land almost anywhere inside `[cutoff, cutoff + bucket)` —
+ * at the 1d interval that can make a "24h" change describe barely any time
+ * at all. Requiring the whole bucket (start + span) to be at or before the
+ * cutoff keeps the close itself at least `windowMs` old.
  */
 export function priceChange(
   candles: Candle[],
@@ -104,9 +111,12 @@ export function priceChange(
   if (candles.length < 2) return null;
   const cutoff = now - windowMs;
   const recent = candles[candles.length - 1];
+  const bucketMs =
+    new Date(candles[candles.length - 1].time).getTime() -
+    new Date(candles[candles.length - 2].time).getTime();
   const base = [...candles]
     .reverse()
-    .find((c) => new Date(c.time).getTime() <= cutoff);
+    .find((c) => new Date(c.time).getTime() + bucketMs <= cutoff);
   if (!base || base.close <= 0) return null;
   return {
     from: base.close,
