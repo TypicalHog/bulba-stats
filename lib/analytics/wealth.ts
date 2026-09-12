@@ -109,7 +109,7 @@ export function holders(
  * one account joining or leaving moves it visibly — which the page says.
  */
 export function gini(values: readonly number[]): number | null {
-  const sorted = values.filter((v) => v > 0).sort((a, b) => a - b);
+  const sorted = values.filter((v) => v >= 0 && Number.isFinite(v)).sort((a, b) => a - b);
   const n = sorted.length;
   if (n < 2) return null;
 
@@ -124,7 +124,7 @@ export function gini(values: readonly number[]): number | null {
 
 /** Cumulative share curve — the Lorenz points, poorest first. */
 export function lorenz(values: readonly number[]): { x: number; y: number }[] {
-  const sorted = values.filter((v) => v > 0).sort((a, b) => a - b);
+  const sorted = values.filter((v) => v >= 0 && Number.isFinite(v)).sort((a, b) => a - b);
   const total = sorted.reduce((a, b) => a + b, 0);
   if (!sorted.length || total <= 0) return [];
 
