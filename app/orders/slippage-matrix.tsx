@@ -84,7 +84,10 @@ export function SlippageMatrix({
             <button
               key={s}
               type="button"
-              onClick={() => setSide(s)}
+              onClick={() => {
+                setSide(s);
+                setHover(null);
+              }}
               aria-pressed={side === s}
               className={`rounded-[3px] px-2.5 py-1 text-[12px] capitalize transition-colors ${
                 side === s
