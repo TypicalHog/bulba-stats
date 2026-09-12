@@ -853,6 +853,7 @@ async function writeBranchMeta() {
       "| `snapshots/<date>/<timestamp>Z.json` | One immutable snapshot. Never rewritten. |",
       "| `snapshots/<date>/index.json` | Filenames captured that day. |",
       "| `latest.json` | Pointer to the most recent snapshot. |",
+      "| `series/<date>.json` | That day's captures, reduced to market-wide scalars. Rewritten in place each run. |",
       "| `roster.json` | Every account seen so far, including bank-only ones. |",
       "",
       "Snapshot files are immutable by design: git stores each blob once, whereas",
