@@ -392,9 +392,11 @@ async function discoverPlayers(roster) {
    * reported back to `main`, which then leaves the roster cold for next time
    * rather than freezing the gap in.
    *
-   * The caps match the app's own crawls (getAllTrades 25, getAllBankOps 40) —
-   * they were 10 and 25, which meant the branch could be rebuilt from a
-   * shallower history than the site itself reads.
+   * The caps match the app's own read depth: getAllTrades' history crawl (25)
+   * plus crawlSplit's forward head (10, lib/api/client.ts) is 35; getAllBankOps'
+   * history crawl (150) plus that same head is 160. This is a plain backward
+   * crawl with no head half of its own, so the whole depth has to come from
+   * maxPages alone.
    */
   let truncated = false;
   const sweep = async (label, buildPath, maxPages) => {
@@ -409,7 +411,7 @@ async function discoverPlayers(roster) {
   const tradePath = (before) =>
     `/transactions?view=trades&limit=200${before ? `&before=${before}` : ""}`;
   const trades = cold
-    ? await sweep("trades", tradePath, 25)
+    ? await sweep("trades", tradePath, 35)
     : ((await get(tradePath(null))) ?? []);
   // A warm page this full means more history sits right behind it that the
   // single unpaginated GET above never follows — surface that instead of
@@ -429,7 +431,7 @@ async function discoverPlayers(roster) {
   const bankPath = (before) =>
     `/transactions?view=fills&type=deposit,withdraw,transfer,pay&limit=200${before ? `&before=${before}` : ""}`;
   const ops = cold
-    ? await sweep("bank movements", bankPath, 40)
+    ? await sweep("bank movements", bankPath, 160)
     : ((await get(bankPath(null))) ?? []);
   if (!cold && ops.length >= 200) {
     errors.push("bank movements: warm page was full (200 rows) — newer activity may be missing");
