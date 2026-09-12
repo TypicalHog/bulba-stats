@@ -344,6 +344,8 @@ Four properties are deliberate:
   genuinely absent file means "first run ever", and anything else — a truncated
   write, a bad hand edit — would otherwise be overwritten with one hour's
   discovery, taking the bank-only accounts with it.
+  A capture that crashed part way through is the third case: what that run
+  reached is not the roster.
 - **Missing means `null`, never `0`.** In a series row the depth totals are
   null unless *every* listing's book was fetched, and `treasury` is null when
   `/treasury` did not answer. A market-wide total computed from a subset is not

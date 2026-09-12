@@ -167,8 +167,8 @@ database. Two settings are non-default and worth understanding:
   rather than losing what it already has.
 
 - **A red snapshot run may still have committed.** If any endpoint fails every
-  retry, the capture writes what it got, the job pushes it, and *then* the run
-  is failed on purpose. A partial hour is worth keeping — it is the only record
+  retry — or the capture itself crashes part way through — it writes what it
+  got, the job pushes it, and *then* the run is failed on purpose. A partial hour is worth keeping — it is the only record
   of that moment there will ever be — but a green check over a capture that lost
   every book is worse than a red one, because nobody inspects a passing job. The
   snapshot's `meta.errors` lists what failed, and the series columns it affected

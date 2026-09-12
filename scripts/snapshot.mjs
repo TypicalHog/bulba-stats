@@ -360,90 +360,114 @@ async function main() {
     return;
   }
 
-  // Depth needs one request per listing — there is no bulk depth endpoint.
+  /*
+   * The capture gathers into state declared out here so that a crash can still
+   * be written out. Nothing reaches disk until the snapshot is assembled at the
+   * end of this function, so an unguarded throw while gathering — an upstream
+   * shape that drifted again, say — used to take the whole hour with it, and an
+   * hour of book structure is the only record of that moment there will ever be.
+   */
   const books = new Map();
-  if (WITH_DEPTH) {
-    let depthStopped = false;
-    for (const summary of summaries) {
-      // The one loop long enough to run away — stop it explicitly rather than
-      // letting 118 already-doomed calls each log their own failure.
-      if (budgetLeft() <= 0) {
-        errors.push(
-          `depth: time budget exhausted after ${books.size}/${summaries.length} listings`,
-        );
-        depthStopped = true;
-        break;
-      }
-      const detail = await get(`/orderbook/${summary.listingId}`);
-      if (detail?.orderBook) books.set(summary.listingId, detail.orderBook);
-    }
-    // A single missing book nulls all four market-wide depth totals for the
-    // hour (see `marketRow`), so the shortfall is recorded here rather than
-    // left to be read off a null column. `get` is silent about the ways a
-    // listing can go missing without failing — a 404 because it was delisted
-    // mid-walk, or an answer carrying no `orderBook` — and those are exactly
-    // the ones that would otherwise null the series under a green run.
-    if (!depthStopped && books.size < summaries.length) {
-      errors.push(`depth: ${summaries.length - books.size}/${summaries.length} books missing`);
-    }
-  }
-
-  // Likewise: "answered, but with nothing" is the same outcome here as a
-  // failure — series `treasury` is null either way.
-  const treasury = await get("/treasury");
-  if (!treasury) errors.push("/treasury: no data");
-
-  const { roster, unreadable: rosterUnreadable } = await loadRoster();
-  const { usernames, truncated } = await discoverPlayers(roster);
-
   // Shared banks appear identically on every member's profile, so they are
   // keyed by bank id and stored once. Summing per-player would multiply
   // BulbaTeam's holdings by its five members.
   const banks = new Map();
   const players = [];
   const fetched = new Set();
+  let treasury = null;
+  let truncated = false;
+  let rosterUnreadable = false;
+  let aborted = false;
+  let queue = [];
 
-  // Shared-bank membership is its own discovery channel: an account can belong
-  // to a bank while never trading and never moving funds itself, so it appears
-  // in no other feed. Each pass may reveal members the previous one missed.
-  let queue = usernames;
-  for (let pass = 0; pass < 3 && queue.length; pass++) {
-    const discovered = new Set();
-    for (const username of queue) {
-      if (fetched.has(username)) continue;
-      fetched.add(username);
-      const player = await get(`/players/${encodeURIComponent(username)}`);
-      if (!player) continue;
-      const bankIds = [];
-      for (const bank of player.bankAccounts ?? []) {
-        bankIds.push(bank.id);
-        for (const member of bank.members ?? []) {
-          if (!fetched.has(member.username)) discovered.add(member.username);
+  try {
+    // Depth needs one request per listing — there is no bulk depth endpoint.
+    if (WITH_DEPTH) {
+      let depthStopped = false;
+      for (const summary of summaries) {
+        // The one loop long enough to run away — stop it explicitly rather than
+        // letting 118 already-doomed calls each log their own failure.
+        if (budgetLeft() <= 0) {
+          errors.push(
+            `depth: time budget exhausted after ${books.size}/${summaries.length} listings`,
+          );
+          depthStopped = true;
+          break;
         }
-        if (banks.has(bank.id)) continue;
-        banks.set(bank.id, {
-          id: bank.id,
-          name: bank.name,
-          isPersonal: Boolean(bank.isPersonal),
-          owner: bank.owner?.username ?? null,
-          members: (bank.members ?? []).map((m) => m.username),
-          balances: (bank.balances ?? [])
-            .filter((b) => b.total > 0)
-            .map((b) => [b.variantId, r(b.total), r(b.reserved)]),
+        const detail = await get(`/orderbook/${summary.listingId}`);
+        if (detail?.orderBook) books.set(summary.listingId, detail.orderBook);
+      }
+      // A single missing book nulls all four market-wide depth totals for the
+      // hour (see `marketRow`), so the shortfall is recorded here rather than
+      // left to be read off a null column. `get` is silent about the ways a
+      // listing can go missing without failing — a 404 because it was delisted
+      // mid-walk, or an answer carrying no `orderBook` — and those are exactly
+      // the ones that would otherwise null the series under a green run.
+      if (!depthStopped && books.size < summaries.length) {
+        errors.push(`depth: ${summaries.length - books.size}/${summaries.length} books missing`);
+      }
+    }
+
+    // Likewise: "answered, but with nothing" is the same outcome here as a
+    // failure — series `treasury` is null either way.
+    treasury = await get("/treasury");
+    if (!treasury) errors.push("/treasury: no data");
+
+    const { roster, unreadable } = await loadRoster();
+    rosterUnreadable = unreadable;
+
+    const { usernames, truncated: rosterTruncated } = await discoverPlayers(roster);
+    truncated = rosterTruncated;
+
+    // Shared-bank membership is its own discovery channel: an account can belong
+    // to a bank while never trading and never moving funds itself, so it appears
+    // in no other feed. Each pass may reveal members the previous one missed.
+    queue = usernames;
+    for (let pass = 0; pass < 3 && queue.length; pass++) {
+      const discovered = new Set();
+      for (const username of queue) {
+        if (fetched.has(username)) continue;
+        fetched.add(username);
+        const player = await get(`/players/${encodeURIComponent(username)}`);
+        if (!player) continue;
+        const bankIds = [];
+        for (const bank of player.bankAccounts ?? []) {
+          bankIds.push(bank.id);
+          for (const member of bank.members ?? []) {
+            if (!fetched.has(member.username)) discovered.add(member.username);
+          }
+          if (banks.has(bank.id)) continue;
+          banks.set(bank.id, {
+            id: bank.id,
+            name: bank.name,
+            isPersonal: Boolean(bank.isPersonal),
+            owner: bank.owner?.username ?? null,
+            members: (bank.members ?? []).map((m) => m.username),
+            balances: (bank.balances ?? [])
+              .filter((b) => b.total > 0)
+              .map((b) => [b.variantId, r(b.total), r(b.reserved)]),
+          });
+        }
+        players.push({
+          username: player.username,
+          uuid: player.uuid,
+          createdAt: player.createdAt,
+          lastSeenAt: player.lastSeenAt,
+          bankIds,
         });
       }
-      players.push({
-        username: player.username,
-        uuid: player.uuid,
-        createdAt: player.createdAt,
-        lastSeenAt: player.lastSeenAt,
-        bankIds,
-      });
+      queue = [...discovered];
     }
-    queue = [...discovered];
-  }
 
-  players.sort((a, b) => a.username.localeCompare(b.username));
+    players.sort((a, b) => a.username.localeCompare(b.username));
+  } catch (err) {
+    // Degrade the way the exhausted time budget already does: write what was
+    // gathered, list the failure, exit 2. Printed as well as recorded, because
+    // `errors` keeps only the message and the stack is the useful half.
+    aborted = true;
+    console.error(err);
+    errors.push(`capture aborted: ${err?.message ?? err} — wrote what was gathered`);
+  }
 
   const snapshot = {
     version: 1,
@@ -536,11 +560,13 @@ async function main() {
   // this hour's discovery and buys the next run another go at the full sweep.
   //
   // A roster.json that exists but could not be read is the same exception for
-  // the same reason, and `loadRoster` has already reported it.
+  // the same reason, and `loadRoster` has already reported it. So is a capture
+  // that aborted part way: `known` is then only as far as it got, and writing it
+  // would drop every account the run had not reached yet.
   const known = new Set([...fetched, ...queue]);
   if (truncated) {
     errors.push("roster.json left unwritten so the next run sweeps again");
-  } else if (!rosterUnreadable) {
+  } else if (!rosterUnreadable && !aborted) {
     await writeFile(
       join(OUT, "roster.json"),
       `${JSON.stringify({ usernames: [...known].sort() }, null, 2)}\n`,
