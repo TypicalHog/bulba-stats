@@ -186,9 +186,9 @@ No Cache Components (`cacheComponents` is off), so the previous model applies:
 
 | Tier | Revalidate | Applies to |
 |---|---|---|
-| Live | 5 s | Order book summary, recent trades, per-listing book |
+| Live | 5 s | Order book summary, recent trades, per-listing book, the paged orders query, the price-quote simulator |
 | Near-live | 20 s | Candles, listings |
-| Aggregate | 90 s | History crawls, player profiles, the two change probes, the order book summary where a page only uses it to value other figures |
+| Aggregate | 90 s | History crawls, player profiles, the two change probes, the order book summary where a page only uses it to value other figures, the attributed level book, treasury and lending reads, and the snapshot day series |
 | Heavy | 300 s | Order crawls, when they cannot be pinned |
 | Frozen | 3600 s | Anchored history, pinned crawl pages — a backstop, not the mechanism |
 | Static | 900 s | Commands, API docs |
