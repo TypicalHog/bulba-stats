@@ -226,7 +226,12 @@ token rides along on every crawl page URL as `&v=`,
 which the API ignores and the fetch cache does not. While the book holds still
 the crawl is served from cache for the price of that one request; the moment it
 moves, every URL changes and the crawl runs for real. `TTL.frozen` caps how long
-a wrong digest could go unnoticed.
+a wrong digest could go unnoticed. The cost of that precision: on self-hosted
+`next start` the filesystem fetch cache never reclaims a superseded digest's
+pages, so an actively-churning book can leave tens of megabytes of dead keys
+behind an hour after they stop being read. Vercel's managed Data Cache evicts
+on its own; a self-hosted deployment needs a periodic `rm -rf
+.next/cache/fetch-cache` (or a custom cache handler) to reclaim it.
 
 Measured by prerendering every route twice, the second time with every tier
 expired: **424 upstream requests and 34.4 MB before, 80 requests and 1.74 MB
