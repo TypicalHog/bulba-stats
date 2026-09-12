@@ -246,7 +246,7 @@ const withVersion = (path: string, version?: string) =>
  * hundreds of upstream requests.
  */
 export async function crawl<T>(
-  buildPath: (before: number | null) => string,
+  buildPath: (before: number | null, limit: number) => string,
   { maxPages = 30, limit = 200, version, ...opts }: CrawlOptions = {},
 ): Promise<{ rows: T[]; complete: boolean; pages: number }> {
   const rows: T[] = [];
@@ -256,7 +256,10 @@ export async function crawl<T>(
   while (pages < maxPages) {
     let page: { data: T[]; meta?: Record<string, unknown> };
     try {
-      page = await apiGet<T[]>(withVersion(buildPath(before), version), opts);
+      page = await apiGet<T[]>(
+        withVersion(buildPath(before, limit), version),
+        opts,
+      );
     } catch {
       // A page failed after some already succeeded — return what was fetched
       // rather than discarding it along with the exception.
@@ -277,7 +280,7 @@ export async function crawl<T>(
           200,
           "bad_cursor",
           "full page without a numeric nextBefore",
-          buildPath(before),
+          buildPath(before, limit),
         );
       }
       return { rows, complete: true, pages };
@@ -298,7 +301,7 @@ export async function crawl<T>(
  * a forward split buys nothing — so this is deliberately not general.
  */
 async function crawlForward<T>(
-  buildPath: (after: number | null) => string,
+  buildPath: (after: number | null, limit: number) => string,
   { maxPages = 8, limit = 200, version, ...opts }: CrawlOptions = {},
 ): Promise<{ rows: T[]; complete: boolean; pages: number }> {
   const rows: T[] = [];
@@ -308,7 +311,10 @@ async function crawlForward<T>(
   while (pages < maxPages) {
     let page: { data: T[]; meta?: Record<string, unknown> };
     try {
-      page = await apiGet<T[]>(withVersion(buildPath(after), version), opts);
+      page = await apiGet<T[]>(
+        withVersion(buildPath(after, limit), version),
+        opts,
+      );
     } catch {
       // A page failed after some already succeeded — return what was fetched
       // rather than discarding it along with the exception.
@@ -329,7 +335,7 @@ async function crawlForward<T>(
           200,
           "bad_cursor",
           "full page without a numeric nextAfter",
-          buildPath(after),
+          buildPath(after, limit),
         );
       }
       return { rows, complete: true, pages };
@@ -375,7 +381,7 @@ async function crawlForward<T>(
  * Returns newest-first, matching `crawl`.
  */
 export async function crawlSplit<T>(
-  buildPath: (cursor: string) => string,
+  buildPath: (cursor: string, limit: number) => string,
   anchor: number,
   {
     maxPages = 40,
@@ -390,12 +396,12 @@ export async function crawlSplit<T>(
   }: CrawlOptions & { headPages?: number } = {},
 ): Promise<{ rows: T[]; complete: boolean; pages: number }> {
   const history = await crawl<T>(
-    (before) => buildPath(`&before=${before ?? anchor}`),
+    (before, limit) => buildPath(`&before=${before ?? anchor}`, limit),
     { ...opts, maxPages, revalidate: TTL.frozen },
   );
 
   const head = await crawlForward<T>(
-    (after) => buildPath(`&after=${after ?? anchor - 1}`),
+    (after, limit) => buildPath(`&after=${after ?? anchor - 1}`, limit),
     { ...opts, maxPages: headPages },
   );
 
