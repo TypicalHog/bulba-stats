@@ -405,7 +405,9 @@ Four properties are deliberate:
   discovered accounts alone would cost less and quietly break "balances for
   every bank account" above. The price is that this leg grows linearly with
   the roster: ~26 of ~148 requests today, and at hundreds of accounts it would
-  start to crowd the 15-minute budget. The remedy then is a stated staleness
+  start to crowd the 15-minute budget. The run summary breaks that leg out as
+  its own line, so the crowding shows up in a job log long before it shows up
+  as a run that hits the budget. The remedy then is a stated staleness
   window for balances, not a silent one; it has not been adopted
   pre-emptively, for the same reason `--depth=1` has not.
 - **Missing means `null`, never `0`.** In a series row `bidValue`/`askValue`

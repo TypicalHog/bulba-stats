@@ -519,6 +519,9 @@ async function main() {
   let rosterUnreadable = false;
   let aborted = false;
   let queue = [];
+  // Where the profile walk started counting, so its share of the run's
+  // requests can be reported even if the capture aborts part way through it.
+  let requestsBeforeProfiles = null;
 
   try {
     // Depth needs one request per listing — there is no bulk depth endpoint.
@@ -562,6 +565,7 @@ async function main() {
     // Shared-bank membership is its own discovery channel: an account can belong
     // to a bank while never trading and never moving funds itself, so it appears
     // in no other feed. Each pass may reveal members the previous one missed.
+    requestsBeforeProfiles = requestCount;
     queue = usernames;
     let newMembersThisRun = 0;
     let playersStopped = false;
@@ -670,6 +674,9 @@ async function main() {
     players,
   };
 
+  const profileRequests =
+    requestsBeforeProfiles == null ? 0 : requestCount - requestsBeforeProfiles;
+
   const json = JSON.stringify(snapshot);
   const day = capturedAt.slice(0, 10);
   /*
@@ -692,6 +699,11 @@ async function main() {
       `banks      ${snapshot.banks.length}`,
       `players    ${snapshot.players.length}`,
       `requests   ${requestCount} in ${((Date.now() - startedAt) / 1000).toFixed(1)}s`,
+      // Broken out because this is the leg that grows with the roster: it
+      // re-reads every known account every run (SPEC §1.5), so watching its
+      // share of the total is how the scaling problem is seen coming rather
+      // than discovered as a run that hit BUDGET_MS.
+      `profiles   ${profileRequests} of those, for ${fetched.size} accounts`,
       `size       ${(json.length / 1024).toFixed(1)} KiB`,
       `errors     ${errors.length}${errors.length ? `\n           ${errors.join("\n           ")}` : ""}`,
       `path       ${relative}`,
