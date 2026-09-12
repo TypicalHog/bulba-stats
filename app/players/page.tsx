@@ -131,6 +131,22 @@ async function PlayersBody() {
     ]);
   const legs = toLegs(trades);
   const stats = playerStats(legs);
+
+  /*
+   * Capital resting on the bid side, per trader — the leaderboard-level
+   * analog of the "bid capital" figure on a player's own profile. Only the
+   * open crawl carries per-player attribution; the aggregated summary groups
+   * by bank account instead (see the note on `maxDuration` above).
+   */
+  const bidCapitalByUsername = new Map<string, number>();
+  for (const o of openOrders) {
+    if (o.side !== "buy" || !o.player) continue;
+    const cap = o.limitPrice * o.remainingAmount;
+    bidCapitalByUsername.set(
+      o.player.username,
+      (bidCapitalByUsername.get(o.player.username) ?? 0) + cap,
+    );
+  }
   const { accounts, funnel } = population(
     registrations,
     bankOps,
@@ -160,6 +176,7 @@ async function PlayersBody() {
       netFlow: r(s.netFlow) ?? 0,
       realizedPnl: r(s.realizedPnl) ?? 0,
       unbackedUnits: r(s.unbackedUnits) ?? 0,
+      openOrderCapital: r(bidCapitalByUsername.get(s.username) ?? 0) ?? 0,
       uniqueItems: s.uniqueItems,
       uniqueCounterparties: s.uniqueCounterparties,
       firstTradeAt: s.firstTradeAt,
@@ -193,6 +210,7 @@ async function PlayersBody() {
       netFlow: 0,
       realizedPnl: 0,
       unbackedUnits: 0,
+      openOrderCapital: r(bidCapitalByUsername.get(account.username) ?? 0) ?? 0,
       uniqueItems: 0,
       uniqueCounterparties: 0,
       firstTradeAt: 0,

@@ -54,6 +54,8 @@ export type PlayerRow = {
   netFlow: number;
   realizedPnl: number;
   unbackedUnits: number;
+  /** Diamonds tied up in this trader's resting buy orders, at limit price. */
+  openOrderCapital: number;
   uniqueItems: number;
   uniqueCounterparties: number;
   firstTradeAt: number;
@@ -191,6 +193,17 @@ export function PlayersTable({ rows }: { rows: PlayerRow[] }) {
       mono: true,
       cell: (r) => <span className="text-ink-3">{diamonds(r.feesPaid)}</span>,
       sort: (r) => r.feesPaid,
+    },
+    {
+      key: "openCapital",
+      header: "Open capital",
+      title: "Diamonds committed to resting buy orders, at each order's own limit price",
+      align: "right",
+      mono: true,
+      cell: (r) => (
+        <span className="text-ink-3">{diamondsCompact(r.openOrderCapital)}</span>
+      ),
+      sort: (r) => r.openOrderCapital,
     },
     {
       key: "items",
