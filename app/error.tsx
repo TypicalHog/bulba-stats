@@ -40,7 +40,7 @@ export default function Error({
       </p>
       <p className="font-mono text-[12px] text-ink-3">
         {error.message}
-        {error.digest && ` · ${error.digest}`}
+        {error.digest && ` · Reference: ${error.digest}`}
       </p>
       <div className="mt-2 flex flex-wrap gap-2">
         <button
