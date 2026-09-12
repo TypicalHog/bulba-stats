@@ -187,6 +187,16 @@ async function TreasuryBody() {
   const days = dailyActivity(trades);
   const observedFees = days.reduce((a, d) => a + d.fees, 0);
 
+  // When the two disagree, name the days rather than reporting one opaque
+  // residual — in practice most days match to the cent, so the gap traces to
+  // a handful of them.
+  const feesByDay = new Map(days.map((d) => [d.day, d.fees]));
+  const mismatchedRevenueDays = revenueDays.filter((day) => {
+    const r = revenueByDay.get(day);
+    const upstream = (r?.physical_fees ?? 0) + (r?.storage_fees ?? 0);
+    return Math.abs(upstream - (feesByDay.get(day) ?? 0)) >= 0.01;
+  });
+
   /*
    * The monetary picture. Diamonds are minted outside the exchange entirely:
    * they arrive by deposit and leave by withdrawal. The taker fee moves them
@@ -317,9 +327,17 @@ async function TreasuryBody() {
                   ? "The two differ because the treasury window is 60 days while the trade record is longer."
                   : Math.abs(revenueTotal - observedFees) < 0.01
                     ? "The two agree, since the window already covers the market's entire life."
-                    : `The two differ by ${diamonds(
-                        Math.abs(revenueTotal - observedFees),
-                      )} over the same period — a residual the trade record does not explain.`}
+                    : mismatchedRevenueDays.length
+                      ? `The two differ by ${diamonds(
+                          Math.abs(revenueTotal - observedFees),
+                        )} over the same period, entirely on ${mismatchedRevenueDays
+                          .map((d) => d.slice(5))
+                          .join(
+                            ", ",
+                          )}; every other day matches to the cent.`
+                      : `The two differ by ${diamonds(
+                          Math.abs(revenueTotal - observedFees),
+                        )} over the same period — a residual the trade record does not explain.`}
               </>
             )}
           </Caveat>
