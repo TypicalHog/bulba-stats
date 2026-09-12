@@ -470,7 +470,10 @@ async function RestingBook() {
        * the browser so it can filter them. Four small numbers per book replace
        * the entire crawl.
        */
-      const byBand: Record<string, { orders: number; value: number }> = {};
+      const byBand: Record<
+        string,
+        { orders: number; value: number; writers: number }
+      > = {};
       for (const band of BANDS) {
         const inBand =
           band == null || mid == null || mid <= 0
@@ -481,6 +484,7 @@ async function RestingBook() {
         byBand[bandKey(band)] = {
           orders: inBand.length,
           value: r(sum(inBand, (o) => o.limitPrice * o.remainingAmount)) ?? 0,
+          writers: new Set(inBand.map((o) => o.player?.username)).size,
         };
       }
 
@@ -489,7 +493,6 @@ async function RestingBook() {
         itemName: rows[0].listing?.itemName ?? null,
         variantName: rows[0].listing?.variantName ?? null,
         mid: r(mid, 6),
-        writers: new Set(rows.map((o) => o.player?.username)).size,
         byBand,
       };
     })

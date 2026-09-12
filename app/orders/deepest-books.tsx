@@ -14,13 +14,13 @@ export type BookRow = {
   itemName: string | null;
   variantName: string | null;
   mid: number | null;
-  writers: number;
   /**
-   * Orders and resting value per band, keyed by band percent — `all` for the
-   * whole book. Precomputed server-side because the per-order data needed to
-   * derive them is a 20,000-row crawl that shouldn't be shipped to the browser.
+   * Orders, resting value, and distinct writers per band, keyed by band
+   * percent — `all` for the whole book. Precomputed server-side because the
+   * per-order data needed to derive them is a 20,000-row crawl that
+   * shouldn't be shipped to the browser.
    */
-  byBand: Record<string, { orders: number; value: number }>;
+  byBand: Record<string, { orders: number; value: number; writers: number }>;
 };
 
 /**
@@ -82,11 +82,13 @@ export function DeepestBooks({ rows }: { rows: BookRow[] }) {
     {
       key: "writers",
       header: "Writers",
-      title: "Distinct accounts quoting this book",
+      title: "Distinct accounts quoting within the selected band",
       align: "right",
       mono: true,
-      cell: (r) => <span className="text-ink-3">{num(r.writers)}</span>,
-      sort: (r) => r.writers,
+      cell: (r) => (
+        <span className="text-ink-3">{num(r.byBand[key]?.writers ?? 0)}</span>
+      ),
+      sort: (r) => r.byBand[key]?.writers ?? 0,
     },
     {
       key: "value",
