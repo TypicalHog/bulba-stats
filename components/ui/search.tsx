@@ -193,7 +193,7 @@ export function CommandPalette({ entries }: { entries: SearchEntry[] }) {
           aria-activedescendant={
             results.length ? `command-palette-option-${active}` : undefined
           }
-          className="w-full border-b border-line bg-panel px-4 py-3 text-[13px] text-ink placeholder:text-ink-3 focus:outline-none"
+          className="w-full border-b border-line bg-panel px-4 py-3 text-[13px] text-ink placeholder:text-ink-3 focus:border-accent/50 focus:outline-none"
         />
 
         {results.length ? (
