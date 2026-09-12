@@ -1060,8 +1060,7 @@ Two boundary rules fall out of that split:
   - *Images.* Width and height **attributes** are not enough: Tailwind's
     preflight sets `img { height: auto }`, which drops the reservation. Every
     `<img>` also pins its size in CSS, as `ItemIcon` and `Avatar` do. The nav
-    logo is cross-origin, so it landed late and grew the sticky header after
-    paint, shifting every page down.
+    logo was cross-origin, which is why it now ships from `public/` (§5.6).
 
 ---
 
