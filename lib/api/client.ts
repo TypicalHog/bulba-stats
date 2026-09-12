@@ -154,14 +154,27 @@ export function taggedFetch(
 
 /** Upstream returned a non-2xx. Carries the machine-readable `error.code`. */
 export class ApiError extends Error {
+  /*
+   * Fields and assignments rather than constructor parameter properties: the
+   * repo's test runner is Node's strip-only type stripping, which rejects
+   * those outright, and nothing in this module can be tested if it cannot be
+   * imported.
+   */
+  readonly status: number;
+  readonly code: string | undefined;
+  readonly path: string;
+
   constructor(
-    readonly status: number,
-    readonly code: string | undefined,
+    status: number,
+    code: string | undefined,
     message: string,
-    readonly path: string,
+    path: string,
   ) {
     super(message);
     this.name = "ApiError";
+    this.status = status;
+    this.code = code;
+    this.path = path;
   }
 }
 

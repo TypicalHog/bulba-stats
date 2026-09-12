@@ -28,7 +28,21 @@ function probe(base) {
   return null;
 }
 
+/**
+ * `server-only` throws on import unless the resolver picks its `react-server`
+ * condition, which `node --test` has no reason to. Next resolves it to an empty
+ * module on the server; do the same, so the modules under `lib/api` can be
+ * tested at all.
+ */
+const SERVER_ONLY = pathToFileURL(
+  path.join(ROOT, "node_modules/server-only/empty.js"),
+).href;
+
 export function resolve(specifier, context, next) {
+  if (specifier === "server-only") {
+    return { url: SERVER_ONLY, shortCircuit: true };
+  }
+
   let base = null;
   if (specifier.startsWith("@/")) {
     base = path.join(ROOT, specifier.slice(2));
