@@ -66,7 +66,11 @@ export function useWatchlist() {
     const next = current.includes(id)
       ? current.filter((n) => n !== id)
       : [...current, id];
-    window.localStorage.setItem(KEY, JSON.stringify(next));
+    try {
+      window.localStorage.setItem(KEY, JSON.stringify(next));
+    } catch {
+      return;
+    }
     window.dispatchEvent(new Event(EVENT));
   }, []);
 
