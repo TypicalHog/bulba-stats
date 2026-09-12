@@ -105,7 +105,7 @@ export default function OrdersPage() {
  * carries the owner of every order, so the same rows rebuild both books.
  */
 async function Organic() {
-  const [{ rows: orders }, summary] = await Promise.all([
+  const [{ rows: orders, complete }, summary] = await Promise.all([
     getAllOpenOrders(),
     getOrderbookSummary(),
   ]);
@@ -180,6 +180,12 @@ async function Organic() {
         opinion rather than a market&apos;s. The API cannot show any of this: it
         aggregates price levels before anyone sees who wrote them.
       </Caveat>
+      {!complete && (
+        <Caveat>
+          The crawl hit its page cap, so both books above are built from the
+          most recently placed orders rather than the entire book.
+        </Caveat>
+      )}
     </div>
   );
 }
@@ -204,7 +210,7 @@ const LADDER_MAX_SLIP_PCT = 50;
  * `/orderbook/:id` per listing, would be 118 against a 120/min budget.
  */
 async function Liquidity() {
-  const [{ rows: orders }, summary, trades] = await Promise.all([
+  const [{ rows: orders, complete }, summary, trades] = await Promise.all([
     getAllOpenOrders(),
     getOrderbookSummary(),
     getAllTrades(),
@@ -334,6 +340,8 @@ async function Liquidity() {
           )}
           . Sweeping assumes the whole order goes through at once and that
           nothing is cancelled in front of it.
+          {!complete &&
+            " The crawl also hit its page cap, so the book behind this matrix covers the most recently placed orders rather than the entire book."}
         </Caveat>
       </Panel>
 

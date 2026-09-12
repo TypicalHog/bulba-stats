@@ -1,6 +1,10 @@
 import { Suspense } from "react";
-import { getListings, getOpenBookLevels } from "@/lib/api/endpoints";
-import { booksFromLevels } from "@/lib/analytics/reconstruct";
+import {
+  getListings,
+  getOpenBookLevels,
+  getOrderbookSummary,
+} from "@/lib/api/endpoints";
+import { booksFromLevels, crossCheck } from "@/lib/analytics/reconstruct";
 import { priceRecipes } from "@/lib/analytics/recipes";
 import {
   assemblyPremiums,
@@ -50,12 +54,14 @@ export default function RecipesPage() {
 }
 
 async function RecipesBody() {
-  const [listings, levels] = await Promise.all([
+  const [listings, levels, summary] = await Promise.all([
     getListings(),
     getOpenBookLevels(),
+    getOrderbookSummary(),
   ]);
 
   const books = booksFromLevels(levels);
+  const check = crossCheck(books, summary);
   const priced = priceRecipes(listings, books);
 
   const rows: RecipeRow[] = priced.map((r) => ({
@@ -176,7 +182,12 @@ async function RecipesBody() {
             experience needed to afford it from a standing start. A player
             already at a high level pays differently — this is a stated
             convention, not a precise figure. Smelting fuel is not modelled, so
-            smelting recipes understate the true cost slightly.
+            smelting recipes understate the true cost slightly. The books these
+            prices are swept from reproduce the official best bid and ask on{" "}
+            {num(check.matched)} of {num(check.checked)} listings
+            {check.mismatches.length > 0 &&
+              `; ${check.mismatches.length} disagree, so those legs may be understating cost`}
+            .
           </Caveat>
         </Panel>
       </div>
