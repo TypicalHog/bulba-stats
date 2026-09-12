@@ -419,7 +419,11 @@ async function Positions({ username }: { username: string }) {
   return (
     <Panel
       title="Per-item performance"
-      subtitle="Cost basis, proceeds and realized P&L for every item they've traded"
+      subtitle={
+        stats.positions.length > positions.length
+          ? `Cost basis, proceeds and realized P&L — top ${num(positions.length)} of ${num(stats.positions.length)} items by volume`
+          : "Cost basis, proceeds and realized P&L for every item they've traded"
+      }
       bodyClassName="p-0"
     >
       <DataTable>
@@ -555,12 +559,17 @@ async function Holdings({ username }: { username: string }) {
     balances,
     midByVariant,
   );
-  const shown = holdings.filter((h) => h.total > 0).slice(0, 15);
+  const heldPositive = holdings.filter((h) => h.total > 0);
+  const shown = heldPositive.slice(0, 15);
 
   return (
     <Panel
       title="Holdings"
-      subtitle={`${num(personal.length)} personal ${personal.length === 1 ? "bank" : "banks"} · valued at current mid`}
+      subtitle={
+        heldPositive.length > shown.length
+          ? `Top ${num(shown.length)} of ${num(heldPositive.length)} items · valued at current mid`
+          : `${num(personal.length)} personal ${personal.length === 1 ? "bank" : "banks"} · valued at current mid`
+      }
       bodyClassName="p-0"
       action={
         <span className="font-mono text-[12px] text-ink">
@@ -699,8 +708,8 @@ async function OpenOrders({ username }: { username: string }) {
     <Panel
       title="Open orders"
       subtitle={
-        rows.length >= 100
-          ? "Showing the 100 most recent resting orders"
+        rows.length > 25
+          ? `Showing 25 of the ${num(rows.length)}${rows.length >= 100 ? "+" : ""} most recent resting orders — totals cover all ${num(rows.length)}`
           : `${num(rows.length)} resting`
       }
       bodyClassName="p-0"
