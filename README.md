@@ -19,7 +19,7 @@ endpoints.
 
 | Section | What you get |
 |---|---|
-| **Overview** | Market-wide volume, fees, breadth and concentration; movers; live trade ticker |
+| **Overview** | Market-wide volume, fees, breadth and concentration; live trade ticker |
 | **Market** | All 184 listings — mid, spread, depth, turnover, sparklines; sortable and filterable |
 | **Item** | Candlesticks, order-book depth curve and ladder, VWAP, volatility, slippage curve, participants, fills |
 | **Recipes** | Buy it or build it — crafting, smelting and enchanting costs priced against the real book, with an optimal anvil order; what each enchantment is worth alone |

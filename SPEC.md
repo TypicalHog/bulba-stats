@@ -428,7 +428,6 @@ meaning. Everything below is computed in `lib/analytics/`.
   zero-spread item still needs an 8.3% move, and a 20% spread needs 32.4% —
   which reframes every spread figure beside it: most of this catalog is far
   more expensive to trade than its spread alone suggests
-- **Movers**: 24h / 7d price change from candles, ranked
 - **Turnover**: volume ÷ book value — which items actually trade vs just sit
 - **Affordability**: given a budget and a ceiling on how far the average fill
   may sit above mid, what each book could actually supply. Fixes the money and
@@ -715,7 +714,7 @@ never crossed the boundary.
 
 | Route | Contents |
 |---|---|
-| `/` | Overview: hero volume figure, KPI tiles, volume history, movers, most-traded, live ticker, market health |
+| `/` | Overview: hero volume figure, KPI tiles, volume history, most-traded, live ticker, market health |
 | `/market` | All listings — sortable, filterable, sparklines, spread, VWAP, volume; depth ownership streams separately |
 | `/market/[id]` | Item deep dive: candles, depth, ladder, stats, participants, fills |
 | `/players` | Leaderboards across every ranking dimension, plus the account funnel |
