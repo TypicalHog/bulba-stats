@@ -25,7 +25,15 @@ export function CommandPalette({ entries }: { entries: SearchEntry[] }) {
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
   const router = useRouter();
+
+  // Return focus to whatever had it before the palette opened, on every
+  // close path (Escape, backdrop click, selecting a result).
+  useEffect(() => {
+    if (!open) previousFocusRef.current?.focus();
+  }, [open]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -40,6 +48,7 @@ export function CommandPalette({ entries }: { entries: SearchEntry[] }) {
         e.preventDefault();
         setOpen((wasOpen) => {
           if (!wasOpen) {
+            previousFocusRef.current = document.activeElement as HTMLElement | null;
             setQuery("");
             setActive(0);
           }
@@ -50,6 +59,7 @@ export function CommandPalette({ entries }: { entries: SearchEntry[] }) {
       // "/" is the other convention, but only when not already in a field.
       if (e.key === "/" && !typing && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
+        previousFocusRef.current = document.activeElement as HTMLElement | null;
         setQuery("");
         setActive(0);
         setOpen(true);
@@ -67,6 +77,7 @@ export function CommandPalette({ entries }: { entries: SearchEntry[] }) {
    * needed to chase it.
    */
   const openPalette = () => {
+    previousFocusRef.current = document.activeElement as HTMLElement | null;
     setQuery("");
     setActive(0);
     setOpen(true);
@@ -125,8 +136,30 @@ export function CommandPalette({ entries }: { entries: SearchEntry[] }) {
       role="presentation"
     >
       <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Search"
         className="panel w-full max-w-lg overflow-hidden"
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => {
+          // Trap Tab inside the dialog — nothing behind the overlay should
+          // be reachable while it's open.
+          if (e.key !== "Tab") return;
+          const panel = panelRef.current;
+          if (!panel) return;
+          const focusables = panel.querySelectorAll<HTMLElement>("input, button");
+          if (focusables.length === 0) return;
+          const first = focusables[0];
+          const last = focusables[focusables.length - 1];
+          if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }}
       >
         <input
           ref={inputRef}
@@ -150,13 +183,29 @@ export function CommandPalette({ entries }: { entries: SearchEntry[] }) {
           }}
           placeholder="Search items, traders and pages…"
           aria-label="Search items, traders and pages"
+          role="combobox"
+          aria-expanded="true"
+          aria-controls="command-palette-results"
+          aria-autocomplete="list"
+          aria-activedescendant={
+            results.length ? `command-palette-option-${active}` : undefined
+          }
           className="w-full border-b border-line bg-panel px-4 py-3 text-[13px] text-ink placeholder:text-ink-3 focus:outline-none"
         />
 
         {results.length ? (
-          <ul className="max-h-[50vh] overflow-y-auto py-1">
+          <ul
+            id="command-palette-results"
+            role="listbox"
+            className="max-h-[50vh] overflow-y-auto py-1"
+          >
             {results.map((entry, i) => (
-              <li key={`${entry.kind}-${entry.href}`}>
+              <li
+                key={`${entry.kind}-${entry.href}`}
+                id={`command-palette-option-${i}`}
+                role="option"
+                aria-selected={i === active}
+              >
                 <button
                   type="button"
                   onMouseEnter={() => setActive(i)}
