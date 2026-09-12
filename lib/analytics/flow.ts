@@ -69,6 +69,9 @@ export function itemFlows(
     if (!item?.variantId) continue;
 
     const at = new Date(op.createdAt).getTime();
+    // Typed non-nullable but cast, not validated — a malformed or null value
+    // would otherwise poison `firstAt`/`lastAt` with NaN or 1970.
+    if (!Number.isFinite(at)) continue;
     let row = rows.get(item.variantId);
     if (!row) {
       const ref = refs.get(item.variantId);
@@ -203,6 +206,7 @@ export function dailyFlow(
     if (!item?.variantId || item.itemName === CURRENCY) continue;
 
     const at = new Date(op.createdAt).getTime();
+    if (!Number.isFinite(at)) continue;
     if (at < first) first = at;
     if (at > last) last = at;
 

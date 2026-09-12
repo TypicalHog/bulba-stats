@@ -32,7 +32,14 @@ export type DayBucket = {
  * that silently omits quiet days compresses time and misrepresents the trend.
  */
 export function dailyActivity(trades: Trade[]): DayBucket[] {
-  const ok = trades.filter((t) => t.status === "success");
+  // `completedAt`/`createdAt` are typed non-nullable but responses are cast,
+  // not validated — a malformed or null pair would otherwise make `dayKey`
+  // throw (NaN) or silently back-fill from 1970 (null).
+  const ok = trades.filter(
+    (t) =>
+      t.status === "success" &&
+      Number.isFinite(new Date(t.completedAt ?? t.createdAt).getTime()),
+  );
   if (!ok.length) return [];
 
   const byDay = groupBy(ok, (t) =>
@@ -88,7 +95,13 @@ export type MarketTotals = {
 };
 
 export function marketTotals(trades: Trade[]): MarketTotals {
-  const ok = trades.filter((t) => t.status === "success");
+  // Same guard as `dailyActivity` — a malformed timestamp would otherwise
+  // skew `firstTradeAt`/`lastTradeAt` to 1970 instead of being excluded.
+  const ok = trades.filter(
+    (t) =>
+      t.status === "success" &&
+      Number.isFinite(new Date(t.completedAt ?? t.createdAt).getTime()),
+  );
   const volume = sum(ok, (t) => t.total);
   const traders = new Set<string>();
   const items = new Set<number>();

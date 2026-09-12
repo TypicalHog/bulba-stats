@@ -51,6 +51,9 @@ export function toLegs(trades: Trade[]): TradeLeg[] {
   for (const t of trades) {
     if (t.status !== "success") continue;
     const at = new Date(t.completedAt ?? t.createdAt).getTime();
+    // Typed non-nullable but cast, not validated — a malformed or null pair
+    // would otherwise poison the P&L walk with a NaN or 1970 timestamp.
+    if (!Number.isFinite(at)) continue;
     const listingId = t.listing?.id ?? 0;
     const common = {
       tradeId: t.id,
