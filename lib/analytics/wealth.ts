@@ -83,11 +83,11 @@ export function holders(
 
       for (const balance of bank.balances ?? []) {
         if (balance.total <= 0) continue;
-        row.items++;
         if (balance.itemName === CURRENCY) {
           row.currency += balance.total;
           continue;
         }
+        row.items++;
         const mid =
           balance.variantId != null ? midByVariant.get(balance.variantId) : null;
         if (mid == null) row.unpriced++;
