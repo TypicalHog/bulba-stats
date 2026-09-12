@@ -358,7 +358,7 @@ async function Liquidity() {
             </>
           )}
           . Sweeping assumes the whole order goes through at once and that
-          nothing is cancelled in front of it.
+          nothing is cancelled in front of it. Cost is before the 4% taker fee.
           {!complete &&
             " The crawl also hit its page cap, so the book behind this matrix covers the most recently placed orders rather than the entire book."}
         </Caveat>
