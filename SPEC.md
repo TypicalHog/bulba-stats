@@ -1072,5 +1072,6 @@ Two boundary rules fall out of that split:
 - No database. Everything the site renders is derived on demand from the public
   API and cached. The single persisted dataset is the hourly snapshot (§1.5),
   which lives on a git branch rather than in a datastore, is written by CI
-  rather than by the app, and is read by nothing at runtime today. It exists
-  because book history cannot be recovered any other way.
+  rather than by the app, and is read at runtime by `lib/api/snapshots.ts`
+  (§1.5) for the book-history panel and sparklines. It exists because book
+  history cannot be recovered any other way.
