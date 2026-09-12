@@ -1,8 +1,8 @@
 import { Suspense } from "react";
 import {
-  getAllBankOps,
   getAllOpenOrders,
   getAllTrades,
+  getBankOps,
   getClosedOrders,
   getListings,
   getOrderbookSummary,
@@ -74,7 +74,7 @@ async function PlayersBody() {
   const [
     trades,
     directory,
-    bankOps,
+    { rows: bankOps, complete: bankOpsComplete },
     { rows: openOrders },
     listings,
     summary,
@@ -83,7 +83,7 @@ async function PlayersBody() {
     await Promise.all([
       getAllTrades(),
       getPlayerDirectory(),
-      getAllBankOps(),
+      getBankOps(),
       getAllOpenOrders(),
       getListings(),
       getOrderbookSummary(),
@@ -291,6 +291,8 @@ async function PlayersBody() {
             &ldquo;Active lately&rdquo; is measured against the dataset&apos;s
             last event rather than the clock, so a cached figure doesn&apos;t
             drift.
+            {!bankOpsComplete &&
+              " The bank-movement crawl hit its page cap, so accounts whose only activity predates the crawled window are missing from the count."}
           </Caveat>
         </Panel>
       </div>

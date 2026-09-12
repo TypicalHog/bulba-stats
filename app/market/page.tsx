@@ -1,8 +1,8 @@
 import { Suspense } from "react";
 import {
-  getAllBankOps,
   getAllOpenOrders,
   getAllTrades,
+  getBankOps,
   getListings,
   getOrderbookSummary,
 } from "@/lib/api/endpoints";
@@ -299,11 +299,16 @@ async function DepthPanel() {
  * one way at a time, and the difference between these orderings is the finding.
  */
 async function MarketMap() {
-  const [listings, summary, trades, bankOps] = await Promise.all([
+  const [
+    listings,
+    summary,
+    trades,
+    { rows: bankOps, complete: bankOpsComplete },
+  ] = await Promise.all([
     getListings(),
     getOrderbookSummary(),
     getAllTrades(),
-    getAllBankOps(),
+    getBankOps(),
   ]);
 
   const midByListing = new Map(summary.map((s) => [s.listingId, s.mid]));
@@ -376,6 +381,8 @@ async function MarketMap() {
           volume are almost unrelated orderings — bulk blocks dominate what is
           held, a handful of items dominate what actually trades — which is
           easier to see here than in any sorted column.
+          {!bankOpsComplete &&
+            " Units on exchange come from a bank-movement crawl that hit its page cap, so that measure counts only the most recent deposits and withdrawals."}
         </Caveat>
       </Panel>
     </div>

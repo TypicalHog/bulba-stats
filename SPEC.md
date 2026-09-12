@@ -110,7 +110,7 @@ Measured against the live API. These drive the caching strategy.
 |---|---|---|---|
 | Taker trades (`view=trades`) | ~225 | 2 | ~1.3 s |
 | Trade fills (`view=fills`) | ~3,965 | 20 | ~4.8 s |
-| Bank operations (deposit/withdraw/transfer/pay) | ~3,548 | 18 | ~4.9 s |
+| Bank operations (deposit/withdraw/transfer/pay) | ~15,000 | ~75 | ~20 s |
 | Open limit orders | ~9,384 | 47 | ~9.9 s |
 | Open book as price levels (`groupBy`) | ~9,319 | **1** | ~0.6 s |
 | Closed limit orders | ~265,000 | ~1,327 | not crawlable |

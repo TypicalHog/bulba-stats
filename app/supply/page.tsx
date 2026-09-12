@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import {
-  getAllBankOps,
   getAllTrades,
+  getBankOps,
   getListings,
   getOrderbookSummary,
 } from "@/lib/api/endpoints";
@@ -46,8 +46,13 @@ export default function FlowPage() {
 }
 
 async function FlowBody() {
-  const [bankOps, listings, summary, trades] = await Promise.all([
-    getAllBankOps(),
+  const [
+    { rows: bankOps, complete: bankOpsComplete },
+    listings,
+    summary,
+    trades,
+  ] = await Promise.all([
+    getBankOps(),
     getListings(),
     getOrderbookSummary(),
     getAllTrades(),
@@ -129,6 +134,14 @@ async function FlowBody() {
           hint="not one unit has ever left"
         />
       </div>
+
+      {!bankOpsComplete && (
+        <Caveat>
+          The bank-movement crawl hit its page cap, so every figure here covers
+          the most recent {num(bankOps.length)} movements rather than the
+          market&apos;s whole history.
+        </Caveat>
+      )}
 
       <FlowExplorer points={points} rows={rows} />
 

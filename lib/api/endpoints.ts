@@ -259,30 +259,51 @@ export const getRecentTrades = cache(
   },
 );
 
-/** Every transaction row of the given types, newest first, split at the anchor. */
+/**
+ * Every transaction row of the given types, newest first, split at the anchor.
+ *
+ * `complete: false` means the page cap was hit and the *oldest* rows are
+ * missing — the crawl walks backwards — so anything presented as a lifetime
+ * total has to say so.
+ */
 async function allTransactions(
   types: readonly string[],
   tag: string,
-): Promise<Fill[]> {
+): Promise<{ rows: Fill[]; complete: boolean }> {
   const anchor = await getTransactionAnchor();
   const path = (cursor: string) =>
     `/transactions?view=fills&type=${types.join(",")}&limit=200${cursor}`;
-  const opts = { maxPages: 40, revalidate: TTL.aggregate, tags: [tag] };
+  /*
+   * 150 pages, not the 40 this was written with. The bank-op record outgrew
+   * 8,000 rows during August 2026 and the crawl had been silently stopping
+   * mid-history ever since — roughly half the record, presented as all of it.
+   * At ~90 pages today and ~1.5 pages a day of growth that is months of
+   * headroom, and the history half sits under the anchor at `TTL.frozen`, so
+   * the full walk is paid once per anchor move rather than per revalidation.
+   */
+  const opts = { maxPages: 150, revalidate: TTL.aggregate, tags: [tag] };
 
-  const { rows } = anchor
+  const { rows, complete } = anchor
     ? await crawlSplit<Fill>(path, anchor, opts)
     : await crawl<Fill>((before) => path(before ? `&before=${before}` : ""), opts);
-  return rows;
+  return { rows, complete };
 }
 
 /** Every trade-type transaction row (~3,965), including maker fills. */
 export const getAllFills = cache(
-  async (): Promise<Fill[]> => allTransactions(TRADE_TYPES, "fills"),
+  async (): Promise<Fill[]> =>
+    (await allTransactions(TRADE_TYPES, "fills")).rows,
 );
 
-/** Every internal bank movement (~3,550): deposit, withdraw, transfer, pay. */
+/** Every internal bank movement: deposit, withdraw, transfer, pay. */
+export const getBankOps = cache(
+  async (): Promise<{ rows: Fill[]; complete: boolean }> =>
+    allTransactions(BANK_TYPES, "bankops"),
+);
+
+/** The same rows, for callers with nowhere to put the completeness caveat. */
 export const getAllBankOps = cache(
-  async (): Promise<Fill[]> => allTransactions(BANK_TYPES, "bankops"),
+  async (): Promise<Fill[]> => (await getBankOps()).rows,
 );
 
 /**

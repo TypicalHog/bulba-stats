@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import {
-  getAllBankOps,
   getAllTrades,
+  getBankOps,
   getOrderbookSummary,
   getTreasury,
   getTreasuryDistributions,
@@ -55,15 +55,21 @@ export default function TreasuryPage() {
 }
 
 async function TreasuryBody() {
-  const [treasury, revenue, distributions, summary, trades, bankOps] =
-    await Promise.all([
-      getTreasury(),
-      getTreasuryRevenue(60),
-      getTreasuryDistributions(20),
-      getOrderbookSummary(),
-      getAllTrades(),
-      getAllBankOps(),
-    ]);
+  const [
+    treasury,
+    revenue,
+    distributions,
+    summary,
+    trades,
+    { rows: bankOps, complete: bankOpsComplete },
+  ] = await Promise.all([
+    getTreasury(),
+    getTreasuryRevenue(60),
+    getTreasuryDistributions(20),
+    getOrderbookSummary(),
+    getAllTrades(),
+    getBankOps(),
+  ]);
 
   if (!treasury) {
     return (
@@ -574,6 +580,8 @@ async function TreasuryBody() {
               withdrawn — nothing on the exchange creates them. The fee is the
               one process that removes them permanently, so the currency held
               here shrinks with every trade unless more is brought in.
+              {!bankOpsComplete &&
+                " The bank-movement crawl hit its page cap, so the deposited and withdrawn figures cover the most recent movements rather than every one."}
             </Caveat>
           </Panel>
         </div>
