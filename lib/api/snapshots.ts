@@ -51,6 +51,9 @@ async function fetchDay(day: string): Promise<MarketSample[]> {
       // Never wait past 10s for a single file — these are small JSON series.
       signal: AbortSignal.timeout(10_000),
       // Today's file is still being appended to; older ones never change.
+      // The raw.githubusercontent CDN itself adds Cache-Control: max-age=300,
+      // so today's series can lag up to ~6.5 minutes behind a capture push
+      // even though we revalidate every 90s.
       next: { revalidate: TTL.aggregate, tags: [UPSTREAM_TAG, "snapshots"] },
     });
     if (!res.ok) return [];
