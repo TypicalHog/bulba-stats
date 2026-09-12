@@ -44,10 +44,15 @@ export function Stat({
           ? "text-accent"
           : "text-ink";
 
+  // Both delta branches below render at 1 decimal place — classify tone at
+  // that same precision, so a float-noise or negligible negative (e.g.
+  // -5.5e-17) that displays as "0.0" never reads as a red down-arrow.
+  const shownDelta = delta == null ? null : Number(delta.toFixed(1));
+
   const deltaTone =
-    delta == null || delta === 0
+    shownDelta == null || shownDelta === 0
       ? "text-ink-3"
-      : delta > 0
+      : shownDelta > 0
         ? "text-up"
         : "text-down";
 
@@ -77,7 +82,7 @@ export function Stat({
             <span className={`font-mono ${deltaTone}`}>
               <span aria-hidden>{arrow(delta)}</span>{" "}
               {deltaUnit === "pp"
-                ? `${delta > 0 ? "+" : ""}${delta.toFixed(1)}pp`
+                ? `${shownDelta! > 0 ? "+" : ""}${shownDelta!.toFixed(1)}pp`
                 : signedPercent(delta)}
             </span>
           )}

@@ -28,10 +28,20 @@ function trimZeros(s: string): string {
   return s.includes(".") ? s.replace(/\.?0+$/, "") : s;
 }
 
+/**
+ * Round to the precision that will actually be displayed, and fold a
+ * negative that rounds to zero magnitude (float noise, or literal -0) back
+ * to plain 0 — a bare minus sign in front of a string that reads as zero is
+ * never correct.
+ */
+function snapZero(n: number, decimals: number): number {
+  return Number(n.toFixed(decimals)) === 0 ? 0 : n;
+}
+
 /** Thousands-separated with a fixed number of decimals. */
 export function num(n: number | null | undefined, decimals = 0): string {
   if (n == null || !Number.isFinite(n)) return "—";
-  return n.toLocaleString("en-US", {
+  return snapZero(n, decimals).toLocaleString("en-US", {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   });
@@ -78,17 +88,19 @@ export function signedPercent(
   decimals = 1,
 ): string {
   if (n == null || !Number.isFinite(n)) return "—";
-  return `${n > 0 ? "+" : ""}${n.toFixed(decimals)}%`;
+  const v = snapZero(n, decimals);
+  return `${v > 0 ? "+" : ""}${v.toFixed(decimals)}%`;
 }
 
 export function signed(n: number | null | undefined, decimals = 2): string {
   if (n == null || !Number.isFinite(n)) return "—";
-  return `${n > 0 ? "+" : ""}${num(n, decimals)}`;
+  const v = snapZero(n, decimals);
+  return `${v > 0 ? "+" : ""}${num(v, decimals)}`;
 }
 
 /** Direction as a glyph, so direction never rides on color alone. */
-export function arrow(n: number | null | undefined): string {
-  if (n == null || !Number.isFinite(n) || n === 0) return "→";
+export function arrow(n: number | null | undefined, decimals = 1): string {
+  if (n == null || !Number.isFinite(n) || snapZero(n, decimals) === 0) return "→";
   return n > 0 ? "▲" : "▼";
 }
 
