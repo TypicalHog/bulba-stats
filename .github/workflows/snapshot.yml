@@ -112,6 +112,13 @@ jobs:
             # which, under `set -e`, aborts the commit and loses the hour
             # entirely, snapshot and series row alike. The directory usually does
             # not exist on the branch yet; naming it anyway is free.
+            #
+            # This materialises the whole `series` directory, not just today's
+            # file, because cone mode patterns are directories — there is no
+            # narrower way to say "just today" without losing cone mode. That
+            # is deliberate, not an oversight: SPEC.md puts the directory at a
+            # few KB/day, so the growth this adds to the clone is negligible
+            # next to the commit-graph cost already accepted above.
             git sparse-checkout set "snapshots/$DAY" "snapshots/$NEXT_DAY" series
             git checkout data
           else
