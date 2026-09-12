@@ -181,6 +181,12 @@ export function optimalAnvilPlan(enchants: readonly NbtEntry[]): AnvilPlan {
       if (!existing || node.cost < existing.cost) best.set(node.pwp, node);
       else if (node.cost === existing.cost && node.xp < existing.xp)
         best.set(node.pwp, node);
+      else if (
+        node.cost === existing.cost &&
+        node.xp === existing.xp &&
+        node.maxStep < existing.maxStep
+      )
+        best.set(node.pwp, node);
     }
     return [...best.values()].sort((a, b) => a.cost - b.cost);
   };
@@ -291,7 +297,11 @@ export function optimalAnvilPlan(enchants: readonly NbtEntry[]): AnvilPlan {
   };
 
   const best = planTool(full).reduce((a, b) =>
-    b.cost < a.cost || (b.cost === a.cost && b.xp < a.xp) ? b : a,
+    b.cost < a.cost ||
+    (b.cost === a.cost && b.xp < a.xp) ||
+    (b.cost === a.cost && b.xp === a.xp && b.maxStep < a.maxStep)
+      ? b
+      : a,
   );
 
   return {
