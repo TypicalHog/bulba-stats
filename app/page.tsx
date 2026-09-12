@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+import { Suspense, type ReactNode } from "react";
 import Link from "next/link";
 import {
   getAllTrades,
@@ -234,7 +234,7 @@ async function MarketHeader() {
                   ? new Date(totals.firstTradeAt).toISOString().slice(0, 10)
                   : "—"}
               </span>{" "}
-              ({marketAgeDays}d)
+              (<span className="font-mono text-ink">{marketAgeDays}</span>d)
             </>
           }
         />
@@ -248,7 +248,12 @@ async function MarketHeader() {
           <MiniFact
             label="Traders"
             value={num(totals.uniqueTraders)}
-            hint={`${activeTraders7} active in 7d`}
+            hint={
+              <>
+                <span className="font-mono">{activeTraders7}</span> active in
+                7d
+              </>
+            }
           />
           <MiniFact
             label="Items traded"
@@ -346,7 +351,7 @@ function MiniFact({
 }: {
   label: string;
   value: string;
-  hint: string;
+  hint: ReactNode;
 }) {
   return (
     <div>

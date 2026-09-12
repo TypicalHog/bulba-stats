@@ -261,9 +261,15 @@ async function TreasuryBody() {
               : "—"
           }
           hint={
-            treasury.schedule
-              ? `every ${treasury.schedule.intervalHours}h`
-              : undefined
+            treasury.schedule ? (
+              <>
+                every{" "}
+                <span className="font-mono">
+                  {treasury.schedule.intervalHours}
+                </span>
+                h
+              </>
+            ) : undefined
           }
           tone={scheduleOverdue ? "down" : "neutral"}
         />
@@ -535,15 +541,23 @@ async function TreasuryBody() {
             {yields.mid && (
               <Panel
                 title="Dividend"
-                subtitle={`${
-                  stockPool
-                    ? `${percent(stockPool.sharePctBps / 100, 0)} of every distribution`
-                    : "A share of every distribution"
-                } goes to the stock pool${
-                  yields.mid.intervalHours
-                    ? `, on a ${Math.round(yields.mid.intervalHours / 24)}-day schedule`
-                    : ""
-                }`}
+                subtitle={
+                  <>
+                    {stockPool
+                      ? `${percent(stockPool.sharePctBps / 100, 0)} of every distribution`
+                      : "A share of every distribution"}{" "}
+                    goes to the stock pool
+                    {yields.mid.intervalHours && (
+                      <>
+                        , on a{" "}
+                        <span className="font-mono">
+                          {Math.round(yields.mid.intervalHours / 24)}
+                        </span>
+                        -day schedule
+                      </>
+                    )}
+                  </>
+                }
               >
                 <div className="grid grid-cols-2 gap-4 text-[12px] sm:grid-cols-4">
                   <div>
