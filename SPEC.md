@@ -35,7 +35,6 @@ auth. BulbaStats never writes.
 | `GET /transactions?view=fills` | One row per transaction record, incl. bank operations |
 | `GET /orders` | Limit orders, all statuses, cursor-paginated |
 | `GET /orders/summary` | Resting orders folded per (side, listing, bank); `groupBy=listing,side[,player],price` returns the whole price-level book in one call |
-| `GET /orders?updatedAfter=` | Change polling — rows carry `updatedAt`; overlap 10–30 s and dedupe on `(id, updatedAt)` |
 | `GET /players/:username` | Profile, banks, per-variant balances |
 | `GET /treasury` | Pools, distribution schedule, stock (shares outstanding / holders) |
 | `GET /treasury/revenue?days=N` | Daily fee revenue split by `physical_fees` / `storage_fees` |
