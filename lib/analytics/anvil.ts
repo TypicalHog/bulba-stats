@@ -63,8 +63,11 @@ const BOOK_MULTIPLIER: Record<string, number> = {
   quick_charge: 1,
   piercing: 1,
   mending: 2,
-  curse_of_binding: 4,
-  curse_of_vanishing: 4,
+  binding_curse: 4,
+  vanishing_curse: 4,
+  density: 1,
+  breach: 2,
+  wind_burst: 4,
 };
 
 /** Survival refuses any single combine costing this much or more. */
