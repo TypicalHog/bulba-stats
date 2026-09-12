@@ -111,7 +111,7 @@ export function DeepestBooks({ rows }: { rows: BookRow[] }) {
         if (band == null || all <= 0) return <span className="text-ink-3">—</span>;
         const pct = (shown / all) * 100;
         return (
-          <span className={pct >= 50 ? "text-up" : "text-ink-2"}>
+          <span className={pct >= 50 ? "text-up font-semibold" : "text-ink-2"}>
             {percent(pct, 0)}
           </span>
         );

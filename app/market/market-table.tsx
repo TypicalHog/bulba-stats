@@ -221,7 +221,7 @@ export function MarketTable({
       cell: (r) => {
         const move = breakEvenMove(r.spreadPct);
         return (
-          <span className={move != null && move > 25 ? "text-down" : "text-ink-2"}>
+          <span className={move != null && move > 25 ? "text-down font-semibold" : "text-ink-2"}>
             {move != null ? percent(move) : "—"}
           </span>
         );
@@ -464,7 +464,7 @@ function Toggle({
 
 function spreadTone(pct: number | null): string {
   if (pct == null) return "text-ink-3";
-  if (pct < 2) return "text-up";
-  if (pct > 25) return "text-down";
+  if (pct < 2) return "text-up font-semibold";
+  if (pct > 25) return "text-down font-semibold";
   return "text-ink-2";
 }

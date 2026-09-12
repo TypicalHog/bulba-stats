@@ -1206,7 +1206,13 @@ function SpreadVolumeTable({
               />
             </Td>
             <Td align="right" mono>
-              <span className={r.spreadPct < 5 ? "text-up" : "text-down"}>
+              <span
+                className={
+                  r.spreadPct < 5
+                    ? "text-up font-semibold"
+                    : "text-down font-semibold"
+                }
+              >
                 {percent(r.spreadPct)}
               </span>
             </Td>

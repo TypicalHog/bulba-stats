@@ -481,7 +481,7 @@ async function Ladder({ listingId }: { listingId: number }) {
           >
             tick {price(tick)}
             {ticksWide != null && ticksWide > 0 && (
-              <span className={ticksWide === 1 ? " text-up" : ""}>
+              <span className={ticksWide === 1 ? " text-up font-semibold" : ""}>
                 {" "}
                 · spread {ticksWide} tick{ticksWide === 1 ? "" : "s"}
               </span>
