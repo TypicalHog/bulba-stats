@@ -66,6 +66,28 @@ const opt = (name, fallback) => {
   return i >= 0 && args[i + 1] ? args[i + 1] : fallback;
 };
 
+/**
+ * A typo'd flag (`--dryrun` for `--dry-run`) used to fail silently: `flag()`
+ * just returns false for a name it doesn't recognise, so the run falls
+ * straight through to a real write. This script's whole job is safely
+ * mutating a git branch, so an unrecognised flag is a hard failure rather
+ * than a silent no-op.
+ */
+const KNOWN_BOOLEAN_FLAGS = new Set(["dry-run", "no-depth"]);
+const KNOWN_VALUE_FLAGS = new Set(["out", "budget-ms"]);
+for (let i = 0; i < args.length; i++) {
+  const arg = args[i];
+  if (!arg.startsWith("--")) continue;
+  const name = arg.slice(2);
+  if (KNOWN_BOOLEAN_FLAGS.has(name)) continue;
+  if (KNOWN_VALUE_FLAGS.has(name)) {
+    i++; // skip its value
+    continue;
+  }
+  console.error(`Unknown flag: ${arg}`);
+  process.exit(1);
+}
+
 const OUT = opt("out", ".snapshot-out");
 const DRY_RUN = flag("dry-run");
 const WITH_DEPTH = !flag("no-depth");
@@ -85,7 +107,16 @@ const WITH_DEPTH = !flag("no-depth");
  * 20-minute ceiling. Past it the capture stops fetching and writes what it has,
  * which is a degraded run (exit 2) rather than nothing at all.
  */
-const BUDGET_MS = Math.max(60_000, Number(opt("budget-ms", 15 * 60_000)) || 0);
+const budgetMsRaw = opt("budget-ms", null);
+let BUDGET_MS = 15 * 60_000;
+if (budgetMsRaw != null) {
+  const parsed = Number(budgetMsRaw);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    console.error(`Invalid --budget-ms: ${budgetMsRaw}`);
+    process.exit(1);
+  }
+  BUDGET_MS = Math.max(60_000, parsed);
+}
 const STARTED_AT = Date.now();
 const budgetLeft = () => BUDGET_MS - (Date.now() - STARTED_AT);
 
