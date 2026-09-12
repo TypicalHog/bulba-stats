@@ -74,10 +74,10 @@ async function CompareBody({ ids }: { ids: number[] }) {
       <Panel title="Nothing selected">
         <EmptyState>
           Add listing ids to the URL, like{" "}
-          <code className="font-mono text-ink-2">/compare?ids=2,6,101</code>, or
-          use the compare buttons on the{" "}
+          <code className="font-mono text-ink-2">/compare?ids=2,6,101</code> —
+          each item&apos;s id is shown under its name on its{" "}
           <Link href="/market" className="text-accent hover:underline">
-            market table
+            market page
           </Link>
           .
         </EmptyState>
