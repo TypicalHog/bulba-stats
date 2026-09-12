@@ -24,7 +24,10 @@ export type Account = {
   /** Has written a limit order, whether or not it ever filled. */
   quoted: boolean;
   traded: boolean;
-  /** Seen recently, measured against the dataset's last event. */
+  /**
+   * Has traded and was seen recently, measured against the dataset's last
+   * event.
+   */
   active: boolean;
   /** Furthest stage reached. */
   stage: Stage;
@@ -92,7 +95,13 @@ export function population(
       funded: hasFunded,
       quoted: hasQuoted,
       traded: hasTraded,
-      active: lastSeenAt != null && anchor - lastSeenAt <= activeWindowMs,
+      // The terminal rung of a cumulative funnel, so recency alone is not
+      // enough: an account discovered through shared-bank membership that
+      // logged in yesterday has not got further than "registered".
+      active:
+        hasTraded &&
+        lastSeenAt != null &&
+        anchor - lastSeenAt <= activeWindowMs,
       stage: hasTraded
         ? "traded"
         : hasQuoted
@@ -131,7 +140,7 @@ export function population(
     {
       key: "active",
       label: "Active lately",
-      hint: "Seen in the last 7 days",
+      hint: "Traded and seen in the last 7 days",
       count: accounts.filter((a) => a.active).length,
     },
   ];

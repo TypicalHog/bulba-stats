@@ -502,8 +502,10 @@ are listed, badged and hidden behind a toggle rather than omitted.
 
 **The funnel** — registered → moved funds → wrote an order → traded → active
 lately — measures where accounts stop. Stages are cumulative, so the drop
-between them is the quantity of interest. "Active lately" is measured against
-the dataset's last event, per §4.
+between them is the quantity of interest: "active lately" counts accounts
+that traded *and* were seen in the last 7 days, so the last drop is churn
+among traders rather than a separate recency count. Recency is measured
+against the dataset's last event, per §4.
 
 ### 2.5 Treasury
 
