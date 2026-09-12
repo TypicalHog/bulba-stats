@@ -51,6 +51,14 @@ export function DepthOwnership({
 function PlayerDepth({ players }: { players: DepthPlayer[] }) {
   const max = Math.max(...players.map((p) => p.bidValue + p.askValue), 1);
 
+  if (!players.length) {
+    return (
+      <p className="px-3 py-4 text-[12px] text-ink-3">
+        No resting orders.
+      </p>
+    );
+  }
+
   return (
     <DataTable maxHeight={MAX_HEIGHT}>
       <thead>
@@ -108,6 +116,14 @@ function PlayerDepth({ players }: { players: DepthPlayer[] }) {
 }
 
 function BookDepth({ books }: { books: DepthBook[] }) {
+  if (!books.length) {
+    return (
+      <p className="px-3 py-4 text-[12px] text-ink-3">
+        No resting orders.
+      </p>
+    );
+  }
+
   return (
     <DataTable maxHeight={MAX_HEIGHT}>
       <thead>
