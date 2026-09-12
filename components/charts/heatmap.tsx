@@ -124,9 +124,12 @@ function Row({
           <div
             key={hour}
             role="img"
+            tabIndex={0}
             aria-label={`${DAYS[day]} ${String(hour).padStart(2, "0")}:00 UTC, ${diamondsCompact(value)} traded`}
             onMouseEnter={() => onHover({ day, hour, value })}
-            className={`relative aspect-square rounded-[2px] transition-[outline-color] duration-150 ${
+            onFocus={() => onHover({ day, hour, value })}
+            onBlur={() => onHover(null)}
+            className={`relative aspect-square rounded-[2px] outline-none transition-[outline-color] duration-150 ${
               isHovered ? "z-10 outline outline-1 outline-offset-1 outline-accent" : ""
             }`}
             style={{

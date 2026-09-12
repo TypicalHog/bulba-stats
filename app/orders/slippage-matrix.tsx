@@ -140,6 +140,7 @@ export function SlippageMatrix({
                     cell={cell}
                     active={hover?.row === r && hover.col === c}
                     onHover={() => setHover({ row: r, col: c })}
+                    onBlur={() => setHover(null)}
                     label={`${row.itemName ?? "item"}, ${num(cell.size)} units`}
                   />
                 ))}
@@ -203,11 +204,13 @@ function Cell({
   cell,
   active,
   onHover,
+  onBlur,
   label,
 }: {
   cell: SlippageCell;
   active: boolean;
   onHover: () => void;
+  onBlur: () => void;
   label: string;
 }) {
   const unfillable = cell.pct == null;
@@ -215,13 +218,16 @@ function Cell({
 
   return (
     <td
+      tabIndex={0}
       onMouseEnter={onHover}
+      onFocus={onHover}
+      onBlur={onBlur}
       aria-label={
         unfillable
           ? `${label}: not fillable`
           : `${label}: ${percent(cell.pct as number)} slippage`
       }
-      className={`px-2 py-1 text-right font-mono tabular-nums transition-[outline-color] ${
+      className={`px-2 py-1 text-right font-mono tabular-nums outline-none transition-[outline-color] ${
         active ? "outline outline-1 -outline-offset-1 outline-accent" : ""
       } ${unfillable ? "text-ink-3 border border-dashed border-line" : ""}`}
       style={{
