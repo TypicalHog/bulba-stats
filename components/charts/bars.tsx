@@ -91,7 +91,7 @@ export function RankedBars({
                         key={p.key}
                         title={`${p.label}`}
                         style={{
-                          width: `${(p.value / (row.value || 1)) * 100}%`,
+                          flex: `${p.value} 0 0%`,
                           background: p.color,
                         }}
                       >
