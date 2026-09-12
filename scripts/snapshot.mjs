@@ -138,6 +138,15 @@ const EXIT_DEGRADED = 2;
 let requestCount = 0;
 const errors = [];
 
+/**
+ * A JSON-parse failure embeds the raw upstream body in `err.message`. That
+ * body reaches this process's stdout (via `errors`), which the Actions
+ * runner scans for `::command::` workflow commands — a body starting with a
+ * newline could forge annotations or mask log output. Strip newlines and cap
+ * length before anything upstream-derived is recorded.
+ */
+const cleanMessage = (s) => String(s).replace(/[\r\n]+/g, " ").slice(0, 200);
+
 /** Spaces request *starts* evenly rather than firing a burst then idling. */
 function rateLimiter(perMinute) {
   const interval = 60_000 / perMinute;
@@ -180,7 +189,7 @@ async function get(path, { attempts = 3 } = {}) {
       return body && typeof body === "object" && "data" in body ? body.data : body;
     } catch (err) {
       if (attempt >= attempts) {
-        errors.push(`${path}: ${err.message}`);
+        errors.push(`${path}: ${cleanMessage(err.message)}`);
         return null;
       }
       await new Promise((r) => setTimeout(r, 1000 * attempt));
@@ -219,8 +228,8 @@ async function crawl(buildPath, { maxPages = 20, limit = 200, attempts = 3 } = {
         break;
       } catch (err) {
         if (attempt >= attempts) {
-          errors.push(`${path}: ${err.message}`);
-          return { rows, complete: false, reason: `stopped early: ${err.message}` };
+          errors.push(`${path}: ${cleanMessage(err.message)}`);
+          return { rows, complete: false, reason: `stopped early: ${cleanMessage(err.message)}` };
         }
         await new Promise((r) => setTimeout(r, 1000 * attempt));
       }
