@@ -244,9 +244,9 @@ export async function crawl<T>(
 /**
  * Walk a cursor-paginated endpoint forwards (oldest first) via `after`.
  *
- * `/transactions` is the only endpoint that implements it — `/orders` accepts
- * `after` and silently ignores it, returning the same first page — so this is
- * deliberately not general.
+ * `/orders` does accept and apply `after` too, but only `/transactions` is
+ * used here: `/orders` rows mutate in place, so no window of it is frozen and
+ * a forward split buys nothing — so this is deliberately not general.
  */
 async function crawlForward<T>(
   buildPath: (after: number | null) => string,

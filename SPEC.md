@@ -96,8 +96,10 @@ against the host rather than taken from the docs:
   always was.
 - **`before` and `after` are plain exclusive id bounds** (`id < n` and `id > n`),
   and accept any integer rather than only a cursor the API itself issued.
-  `after` is implemented on `/transactions` only; `/orders` accepts it and
-  silently ignores it.
+  `after` is implemented on both `/transactions` and `/orders` as a real
+  ascending cursor. Only `/transactions` crawls use it, though: `/orders`
+  rows mutate in place (see below), so no window of it is ever frozen and a
+  forward split buys nothing there.
 - **Only `/transactions` is append-only.** `/orders` cursor pages are *not*
   immutable — rows mutate in place, so a page can change content without any row
   being added. §1.3 says what that costs.
