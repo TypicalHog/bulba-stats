@@ -32,10 +32,17 @@ export type Column<T> = {
   csvHeader?: string;
 };
 
-/** RFC 4180 quoting: wrap anything containing a comma, quote or newline. */
+/**
+ * RFC 4180 quoting: wrap anything containing a comma, quote or newline.
+ * Also guards against spreadsheet formula injection by prefixing a leading
+ * apostrophe on cells starting with =, +, -, @, tab or CR — no currently
+ * exported value can start with one, but the guard is cheap insurance
+ * against a future free-text column.
+ */
 function csvCell(value: string | number | null | undefined): string {
   if (value == null) return "";
-  const text = String(value);
+  let text = String(value);
+  if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
   return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
