@@ -84,7 +84,9 @@ export function RankedBars({
                           width: `${(p.value / (row.value || 1)) * 100}%`,
                           background: p.color,
                         }}
-                      />
+                      >
+                        <span className="sr-only">{p.label}</span>
+                      </div>
                     ))}
                   </div>
                 ) : (
@@ -147,7 +149,11 @@ export function SplitBar({
                 background: s.color,
               }}
               title={`${s.label}: ${((s.value / total) * 100).toFixed(1)}%`}
-            />
+            >
+              <span className="sr-only">
+                {s.label}: {((s.value / total) * 100).toFixed(1)}%
+              </span>
+            </div>
           ))}
       </div>
       {showLegend && (

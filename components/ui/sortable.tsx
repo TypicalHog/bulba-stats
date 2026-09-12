@@ -180,7 +180,7 @@ export function SortableTable<T>({
                 <th
                   key={col.key}
                   scope="col"
-                  title={col.title}
+                  title={col.sort ? undefined : col.title}
                   aria-sort={
                     active ? (desc ? "descending" : "ascending") : undefined
                   }
@@ -192,15 +192,24 @@ export function SortableTable<T>({
                     <button
                       type="button"
                       onClick={() => onSort(col)}
+                      title={col.title}
                       className="inline-flex cursor-pointer items-center gap-1 uppercase transition-colors duration-150 hover:text-accent"
                     >
                       {col.header}
                       <span aria-hidden className="text-[8px]">
                         {active ? (desc ? "▼" : "▲") : "↕"}
                       </span>
+                      {col.title && (
+                        <span className="sr-only"> — {col.title}</span>
+                      )}
                     </button>
                   ) : (
-                    col.header
+                    <>
+                      {col.header}
+                      {col.title && (
+                        <span className="sr-only"> — {col.title}</span>
+                      )}
+                    </>
                   )}
                 </th>
               );

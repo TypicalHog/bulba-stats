@@ -57,6 +57,7 @@ export function Th({
       className={`sticky top-0 z-10 whitespace-nowrap border-b border-line bg-panel px-2.5 py-2 text-[10px] font-medium uppercase tracking-wider text-ink-3 ${ALIGN[align]} ${className}`}
     >
       {children}
+      {title && <span className="sr-only"> — {title}</span>}
     </th>
   );
 }

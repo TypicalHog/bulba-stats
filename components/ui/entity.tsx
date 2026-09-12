@@ -177,9 +177,11 @@ export function Badge({
   return (
     <span
       title={title}
+      tabIndex={title ? 0 : undefined}
       className={`shrink-0 rounded-[3px] border px-1 py-px font-mono text-[9px] leading-[1.4] uppercase tracking-wider ${tones[tone]}`}
     >
       {children}
+      {title && <span className="sr-only"> — {title}</span>}
     </span>
   );
 }
