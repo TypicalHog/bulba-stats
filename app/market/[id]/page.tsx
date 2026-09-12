@@ -259,6 +259,20 @@ async function QuoteTiles({
         value={turn != null ? `${turn.toFixed(2)}×` : "—"}
         hint="volume ÷ book"
       />
+      <Stat
+        label="Taker buy share"
+        value={stats.buyShare != null ? percent(stats.buyShare * 100) : "—"}
+      />
+      <Stat
+        label="In-person volume"
+        value={
+          stats.physicalShare != null ? percent(stats.physicalShare * 100) : "—"
+        }
+      />
+      <Stat
+        label="Avg trade size"
+        value={stats.avgTradeSize != null ? diamonds(stats.avgTradeSize) : "—"}
+      />
     </div>
   );
 }

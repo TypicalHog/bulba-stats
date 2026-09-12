@@ -635,8 +635,9 @@ them in bundles, so the pieces can be priced against the whole:
   over its books.
 - **Coverage gaps**, both directions: 4 enchantments sold as books that no
   listed tool carries, and 6 on tools that no book supplies. A tool in the
-  second group cannot be built from parts at any price, which is why it never
-  appears in the buy-or-build table.
+  second group cannot be built from parts at any price, so it still appears in
+  the buy-or-build table — with the missing part named, since "you cannot buy
+  the parts at any price" is itself the answer.
 
 Value comes from the book listing plus a residual rather than from regressing
 tool prices on their enchantment sets: ~23 enchanted listings against 24
