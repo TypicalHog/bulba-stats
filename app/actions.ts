@@ -25,8 +25,8 @@ const MIN_REFRESH_GAP_MS = 30_000;
 let lastRefreshAt = 0;
 
 /**
- * Drop every cached upstream read and re-render the current route with fresh
- * data.
+ * Drop every time-tiered cached upstream read and re-render the current route
+ * with fresh data.
  *
  * Every figure on this site is served from a cache measured against upstream
  * cost — a tier for the cheap reads, and for the expensive ones a key derived
@@ -38,6 +38,14 @@ let lastRefreshAt = 0;
  * Content-addressing does not remove the need for this. It makes a *stale*
  * crawl impossible to serve once the probe has noticed, but the probe is itself
  * on a 90-second tier, so the pre-trade world can still survive a page load.
+ *
+ * It does decide how far the purge has to reach. The probe is time-tiered and
+ * so is expired here; the pages it pins are not, because their URLs carry the
+ * digest. Re-reading the probe is therefore the whole job: a book that moved
+ * yields a new digest, new URLs and a real crawl, and one that did not would
+ * have re-fetched ninety-odd pages of identical bytes for nothing. What that
+ * gives up is a mutation the digest cannot see, which waits out `TTL.frozen`
+ * exactly as it does without a click.
  *
  * `updateTag`, not `revalidateTag`. `revalidateTag(tag, "max")` marks the entry
  * stale and serves the stale copy while refetching behind it, so the click

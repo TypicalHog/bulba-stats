@@ -134,7 +134,19 @@ export function taggedFetch(
   return fetch(url, {
     headers,
     signal: AbortSignal.timeout(timeoutMs),
-    next: { revalidate, tags: [UPSTREAM_TAG, ...(tags ?? [])] },
+    next: {
+      revalidate,
+      /*
+       * `TTL.frozen` is only ever given to a URL that already identifies its
+       * own content: a crawl page pinned to a version digest, a window below a
+       * `crawlSplit` anchor, a past day's captured series. Those entries cannot
+       * be stale in a way expiring them would fix — if the data moved, the key
+       * moved with it and the old URL is never requested again; if it did not,
+       * re-fetching rediscovers identical bytes. So they stay out of the tag
+       * Refresh expires and rely on their key, with the hour as the backstop.
+       */
+      tags: revalidate === TTL.frozen ? tags : [UPSTREAM_TAG, ...(tags ?? [])],
+    },
   });
 }
 

@@ -257,17 +257,26 @@ lands is what Refresh is for, so the tiers are not priced for it.
 Pages stream: the shell and cheap tiles render immediately, expensive aggregates
 arrive behind `<Suspense>`.
 
-**Every read also carries an `upstream` cache tag**, applied centrally in
-`apiGet`/`crawl` so a new endpoint cannot forget it. The Refresh control in the
-header calls a Server Action that `updateTag`s it, which expires every tier at
-once and re-renders the current route with fresh data in the same response.
+**Every time-tiered read also carries an `upstream` cache tag**, applied
+centrally in `apiGet`/`crawl` so a new endpoint cannot forget it. The Refresh
+control in the header calls a Server Action that `updateTag`s it, which expires
+every tier at once and re-renders the current route with fresh data in the same
+response.
+
+The content-addressed entries are deliberately left out of it. A pinned crawl
+page, a window below the anchor and a past day's captured series each name their
+own content in the URL, so expiring one either discards bytes nothing will ask
+for again or buys a re-crawl that returns what it just threw away. Refresh
+expires the probes instead, which is the whole job: a book that moved yields a
+new digest, new URLs and a real crawl behind them. A mutation the digest cannot
+see waits out `TTL.frozen`, with the click or without it.
 
 `updateTag`, not `revalidateTag`: the latter's `"max"` profile serves the stale
 copy while refetching behind it, so the click would appear to do nothing. This
 is the read-your-own-writes case — you have just traded and want to see it —
 which is what `updateTag` is for. The trade-off is that it expires the cache for
 everyone, since there is no per-user cache to scope it to, and that the next
-visit to a heavy page pays a cold crawl.
+visit to a heavy page pays a cold crawl whenever the book has in fact moved.
 
 The action is also a public POST endpoint — a Server Action's id ships in the
 client bundle, and the framework checks only `Origin` against `Host`, which a
