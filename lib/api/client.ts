@@ -176,37 +176,57 @@ export async function apiGet<T>(
   { revalidate = TTL.near, tags }: GetOptions = {},
 ): Promise<{ data: T; meta?: Record<string, unknown> }> {
   const url = `${API_BASE}${path}`;
-  const res = await taggedFetch(url, {
-    revalidate,
-    tags,
-    headers: { accept: "application/json" },
-  });
 
-  const text = await res.text();
-  let body: unknown;
-  try {
-    body = JSON.parse(text);
-  } catch {
-    throw new ApiError(res.status, undefined, `Non-JSON response`, path);
+  for (let attempt = 0; ; attempt++) {
+    const res = await taggedFetch(url, {
+      revalidate,
+      tags,
+      headers: { accept: "application/json" },
+    });
+
+    const text = await res.text();
+    let body: unknown;
+    try {
+      body = JSON.parse(text);
+    } catch {
+      throw new ApiError(res.status, undefined, `Non-JSON response`, path);
+    }
+
+    if (!res.ok) {
+      const err = (body as { error?: unknown }).error;
+      const code =
+        typeof err === "object" && err !== null
+          ? (err as { code?: string }).code
+          : undefined;
+      const message =
+        typeof err === "string"
+          ? err
+          : typeof err === "object" && err !== null
+            ? ((err as { message?: string }).message ?? "Request failed")
+            : "Request failed";
+
+      // The one documented transient failure: wait out the upstream's
+      // requested delay and retry once, instead of surfacing a rate limit as
+      // a hard error the user has to retry by hand.
+      if (res.status === 429 && code === "rate_limited" && attempt === 0) {
+        const bodyRetryAfter = (body as { retryAfter?: unknown }).retryAfter;
+        const retryAfter =
+          typeof bodyRetryAfter === "number"
+            ? bodyRetryAfter
+            : Number(res.headers.get("retry-after"));
+        const waitSeconds = Number.isFinite(retryAfter) ? retryAfter : 5;
+        await new Promise((resolve) =>
+          setTimeout(resolve, Math.min(waitSeconds, 5) * 1000),
+        );
+        continue;
+      }
+
+      throw new ApiError(res.status, code, message, path);
+    }
+
+    if (!isEnvelope<T>(body)) return { data: body as T };
+    return { data: body.data, meta: body.meta };
   }
-
-  if (!res.ok) {
-    const err = (body as { error?: unknown }).error;
-    const code =
-      typeof err === "object" && err !== null
-        ? (err as { code?: string }).code
-        : undefined;
-    const message =
-      typeof err === "string"
-        ? err
-        : typeof err === "object" && err !== null
-          ? ((err as { message?: string }).message ?? "Request failed")
-          : "Request failed";
-    throw new ApiError(res.status, code, message, path);
-  }
-
-  if (!isEnvelope<T>(body)) return { data: body as T };
-  return { data: body.data, meta: body.meta };
 }
 
 /** Same as `apiGet` but resolves to `null` on 404 instead of throwing. */
