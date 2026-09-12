@@ -110,19 +110,24 @@ export function CommandPalette({ entries }: { entries: SearchEntry[] }) {
 
   if (!open) {
     /*
-     * No `aria-label`: it read "Search" while the button shows "Search ⌘K",
-     * and an accessible name that omits part of the visible label breaks
-     * WCAG 2.5.3 (speech users cannot say what they see). The content itself
-     * names the button, and the shortcut hint is a <kbd> inside it.
+     * Below `sm` there's no keyboard for ⌘K or "/", so the button is the only
+     * way in — shown as a bare icon there instead of hidden entirely. At
+     * `sm` and up it reverts to the labeled form. `aria-label="Search"`
+     * covers the icon-only state; it's a subset of the visible "Search ⌘K"
+     * text at ≥sm, so it still satisfies WCAG 2.5.3 there.
      */
     return (
       <button
         type="button"
         onClick={openPalette}
-        className="hidden shrink-0 items-center gap-1.5 rounded border border-line px-2 py-1.5 text-[12px] text-ink-3 transition-colors hover:border-accent/40 hover:text-accent sm:flex"
+        aria-label="Search"
+        className="flex shrink-0 items-center gap-1.5 rounded border border-line px-2 py-1.5 text-[12px] text-ink-3 transition-colors hover:border-accent/40 hover:text-accent"
       >
-        Search
-        <kbd className="rounded border border-line px-1 font-mono text-[9px]">
+        <span className="sm:hidden" aria-hidden>
+          ⌕
+        </span>
+        <span className="hidden sm:inline">Search</span>
+        <kbd className="hidden rounded border border-line px-1 font-mono text-[9px] sm:inline">
           ⌘K
         </kbd>
       </button>
