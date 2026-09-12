@@ -246,7 +246,7 @@ balances and full bank membership appear nowhere but a profile and a profile has
 no cheap change signal. Finding the accounts no longer costs any of them: the
 `/players` index (§1.1) hands over the whole population in four requests. History crawling is down to a shared anchor probe plus five head pages.
 
-Sustained worst case falls from ~102 req/min to ~47 against the 120 allowance
+Sustained worst case falls from ~102 req/min to ~47 against the 300 allowance
 (§1.4) while the book is still, and rises toward the old figure when it is
 continuously active — but then the crawl is running because the book moved,
 which is the only reason it should.
@@ -815,7 +815,7 @@ Concretely, the market table is built from four upstream requests and renders
 immediately; the depth-ownership panel below it needs the ~9,384-row order
 crawl and arrives separately. Item sparklines come from actual fill prices
 rather than a candle request per listing, which would have cost ~118 extra
-requests against a 120/min budget.
+requests against a 300/min budget.
 
 ---
 

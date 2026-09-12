@@ -51,8 +51,8 @@ const API_BASE = resolveBase(
 );
 
 /**
- * Requests per minute. The upstream read tier allows 120/min per IP; this job
- * runs unattended once an hour, so it takes the polite half of that budget and
+ * Requests per minute. The upstream read tier allows 300/min per IP; this job
+ * runs unattended once an hour, so it takes a fifth of that budget and
  * spends ~90s rather than racing.
  */
 const RATE_PER_MIN = 60;

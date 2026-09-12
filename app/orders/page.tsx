@@ -207,7 +207,7 @@ const LADDER_MAX_SLIP_PCT = 50;
  *
  * Every book is rebuilt from the crawl this page already ran, so a
  * catalog-wide matrix costs no upstream requests at all — the alternative,
- * `/orderbook/:id` per listing, would be 118 against a 120/min budget.
+ * `/orderbook/:id` per listing, would be 118 against a 300/min budget.
  */
 async function Liquidity() {
   const [{ rows: orders, complete }, summary, trades] = await Promise.all([
