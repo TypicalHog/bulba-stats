@@ -89,11 +89,16 @@ async function TreasuryBody() {
   const pools = treasury.pools.filter((p) => p.isActive);
   const totalHeld = pools.reduce((a, p) => a + p.balance, 0);
 
+  // A failed fetch is distinct from a genuinely empty window — the former
+  // must not read as "zero fees collected".
+  const revenueUnavailable = revenue == null;
+  const distributionsUnavailable = allDistributions == null;
+
   /*
    * Revenue days arrive sparse: a key is absent, not zero, on days with no fees
    * of that kind. Gap-filling keeps the time axis honest.
    */
-  const revenueByDay = new Map(revenue.map((d) => [d.day, d]));
+  const revenueByDay = new Map((revenue ?? []).map((d) => [d.day, d]));
   const revenueDays = [...revenueByDay.keys()].sort();
   const revenuePoints = [];
   if (revenueDays.length) {
@@ -112,11 +117,11 @@ async function TreasuryBody() {
     }
   }
 
-  const totalPhysicalFees = revenue.reduce(
+  const totalPhysicalFees = (revenue ?? []).reduce(
     (a, d) => a + (d.physical_fees ?? 0),
     0,
   );
-  const totalStorageFees = revenue.reduce(
+  const totalStorageFees = (revenue ?? []).reduce(
     (a, d) => a + (d.storage_fees ?? 0),
     0,
   );
@@ -125,8 +130,8 @@ async function TreasuryBody() {
   // The table only ever shows the most recent 20, but totals and the
   // dividend yield need the full history or they silently under-report
   // once more than 20 distributions have ever run.
-  const distributions = allDistributions.slice(0, 20);
-  const distributedTotal = allDistributions.reduce(
+  const distributions = (allDistributions ?? []).slice(0, 20);
+  const distributedTotal = (allDistributions ?? []).reduce(
     (a, d) => a + d.totalAmount,
     0,
   );
@@ -162,9 +167,17 @@ async function TreasuryBody() {
    * all three prices rather than implying that one of them is "the" price.
    */
   const yields = {
-    bid: stockYield(treasury, allDistributions, stockQuote?.bestBid ?? null),
-    mid: stockYield(treasury, allDistributions, stockQuote?.mid ?? null),
-    ask: stockYield(treasury, allDistributions, stockQuote?.bestAsk ?? null),
+    bid: stockYield(
+      treasury,
+      allDistributions ?? [],
+      stockQuote?.bestBid ?? null,
+    ),
+    mid: stockYield(treasury, allDistributions ?? [], stockQuote?.mid ?? null),
+    ask: stockYield(
+      treasury,
+      allDistributions ?? [],
+      stockQuote?.bestAsk ?? null,
+    ),
   };
 
   // Cross-check the treasury's own revenue figure against fees observed in
@@ -212,13 +225,19 @@ async function TreasuryBody() {
         />
         <Stat
           label="Revenue, last 60d"
-          value={diamondsCompact(revenueTotal)}
-          hint="fees booked upstream"
+          value={revenueUnavailable ? "—" : diamondsCompact(revenueTotal)}
+          hint={revenueUnavailable ? "revenue feed unavailable" : "fees booked upstream"}
         />
         <Stat
           label="Distributed to date"
-          value={diamondsCompact(distributedTotal)}
-          hint={`${num(allDistributions.length)} distributions`}
+          value={
+            distributionsUnavailable ? "—" : diamondsCompact(distributedTotal)
+          }
+          hint={
+            allDistributions == null
+              ? "distributions feed unavailable"
+              : `${num(allDistributions.length)} distributions`
+          }
         />
         <Stat
           label="Next distribution"
@@ -285,16 +304,22 @@ async function TreasuryBody() {
             />
           </div>
           <Caveat>
-            The treasury reports {diamonds(revenueTotal)} over this window;
-            summing the 4% fee across every trade in history gives{" "}
-            {diamonds(observedFees)}.{" "}
-            {revenue.length > 60
-              ? "The two differ because the treasury window is 60 days while the trade record is longer."
-              : Math.abs(revenueTotal - observedFees) < 0.01
-                ? "The two agree, since the window already covers the market's entire life."
-                : `The two differ by ${diamonds(
-                    Math.abs(revenueTotal - observedFees),
-                  )} over the same period — a residual the trade record does not explain.`}
+            {revenue == null ? (
+              "The revenue feed didn't respond, so no cross-check against trade history is possible right now."
+            ) : (
+              <>
+                The treasury reports {diamonds(revenueTotal)} over this
+                window; summing the 4% fee across every trade in history gives{" "}
+                {diamonds(observedFees)}.{" "}
+                {revenue.length > 60
+                  ? "The two differ because the treasury window is 60 days while the trade record is longer."
+                  : Math.abs(revenueTotal - observedFees) < 0.01
+                    ? "The two agree, since the window already covers the market's entire life."
+                    : `The two differ by ${diamonds(
+                        Math.abs(revenueTotal - observedFees),
+                      )} over the same period — a residual the trade record does not explain.`}
+              </>
+            )}
           </Caveat>
         </Panel>
 
@@ -737,7 +762,9 @@ async function TreasuryBody() {
             </DataTable>
           ) : (
             <p className="px-4 py-8 text-center text-[12px] text-ink-3">
-              No distributions recorded yet.
+              {distributionsUnavailable
+                ? "Distribution feed unavailable right now."
+                : "No distributions recorded yet."}
             </p>
           )}
         </Panel>

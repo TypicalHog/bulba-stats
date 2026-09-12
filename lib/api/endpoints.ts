@@ -650,18 +650,18 @@ export const getTreasury = cache(
 );
 
 export const getTreasuryRevenue = cache(
-  async (days = 30): Promise<TreasuryRevenueDay[]> =>
-    (await apiGetSoft<TreasuryRevenueDay[]>(`/treasury/revenue?days=${days}`, {
+  async (days = 30): Promise<TreasuryRevenueDay[] | null> =>
+    apiGetSoft<TreasuryRevenueDay[]>(`/treasury/revenue?days=${days}`, {
       revalidate: TTL.aggregate,
-    })) ?? [],
+    }),
 );
 
 export const getTreasuryDistributions = cache(
-  async (limit = 20): Promise<TreasuryDistribution[]> =>
-    (await apiGetSoft<TreasuryDistribution[]>(
+  async (limit = 20): Promise<TreasuryDistribution[] | null> =>
+    apiGetSoft<TreasuryDistribution[]>(
       `/treasury/distributions?limit=${limit}`,
       { revalidate: TTL.aggregate },
-    )) ?? [],
+    ),
 );
 
 /** Lending market. Live but empty upstream at the time of writing. */

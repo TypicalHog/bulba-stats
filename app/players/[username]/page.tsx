@@ -297,8 +297,8 @@ async function PlayerTiles({ username }: { username: string }) {
       />
       <Stat
         label="Inventory value"
-        value={diamondsCompact(totalValue)}
-        hint={inventoryHint}
+        value={profile ? diamondsCompact(totalValue) : "—"}
+        hint={profile ? inventoryHint : "profile unavailable"}
       />
       <Stat
         label="Maker share"
