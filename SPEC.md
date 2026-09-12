@@ -336,7 +336,9 @@ account. ~25 KiB per snapshot.
 **The branch grows without bound, by design.** Roughly 0.6 MB and 24 commits a
 day, forever; pruning it would destroy the only copy of exactly what this
 exists to preserve. Readers pay nothing for that — the app fetches individual
-files over `raw.githubusercontent.com` — and the capture pays only for the
+files over `raw.githubusercontent.com`, revalidating only today's series
+file on the short aggregate tier and every earlier one at the frozen TTL
+since it can no longer change — and the capture pays only for the
 commit graph, since its clone is blobless and sparse. That cost does grow with
 the branch's age, so it is worth watching against the job's `timeout-minutes`
 over a horizon of years. `--depth=1` is the remedy if it ever bites; see the
