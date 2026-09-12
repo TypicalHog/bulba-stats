@@ -48,6 +48,25 @@ export function LiveTicker({ seed }: { seed: TickerRow[] }) {
   const [status, setStatus] = useState<"connecting" | "live" | "offline">(
     "connecting",
   );
+
+  // Refresh re-renders this panel with a newer `seed` without remounting it,
+  // so a stale tape (most visible while the socket is offline) needs its own
+  // sync: merge in any rows the seed has that the tape doesn't.
+  //
+  // Adjusted during render rather than in an effect. An effect would paint the
+  // stale tape first and the merged one a frame later, and React flags the
+  // cascading render it causes; comparing the prop against the seed we last
+  // merged does it in one pass.
+  const [mergedSeed, setMergedSeed] = useState(seed);
+  if (mergedSeed !== seed) {
+    setMergedSeed(seed);
+    setRows((prev) => {
+      const seen = new Set(prev.map((r) => r.id));
+      const fresh = seed.filter((r) => !seen.has(r.id));
+      if (!fresh.length) return prev;
+      return [...fresh, ...prev].sort((a, b) => b.id - a.id).slice(0, MAX_ROWS);
+    });
+  }
   const [flash, setFlash] = useState<number | null>(null);
   const socketRef = useRef<Socket | null>(null);
 
