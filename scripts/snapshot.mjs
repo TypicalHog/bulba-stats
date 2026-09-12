@@ -526,9 +526,18 @@ async function main() {
     // in no other feed. Each pass may reveal members the previous one missed.
     queue = usernames;
     let newMembersThisRun = 0;
+    let playersStopped = false;
     for (let pass = 0; pass < 3 && queue.length; pass++) {
       const discovered = new Set();
       for (const username of queue) {
+        // The other loop long enough to run away: the roster only ever grows,
+        // so stop it explicitly rather than letting every remaining username
+        // log its own "time budget exhausted".
+        if (budgetLeft() <= 0) {
+          errors.push(`players: time budget exhausted after ${fetched.size} accounts`);
+          playersStopped = true;
+          break;
+        }
         if (fetched.has(username)) continue;
         fetched.add(username);
         const player = await get(`/players/${encodeURIComponent(username)}`);
@@ -566,6 +575,10 @@ async function main() {
           bankIds,
         });
       }
+      // Break before `queue` is reassigned: the accounts this pass never
+      // reached are still in it, and the roster write below keeps whatever
+      // `queue` holds.
+      if (playersStopped) break;
       queue = [...discovered];
     }
     if (newMembersThisRun >= MAX_NEW_MEMBERS_PER_RUN) {
