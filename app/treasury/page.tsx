@@ -17,7 +17,7 @@ import { DataTable, Td, Th, Tr } from "@/components/ui/table";
 import { ItemLink } from "@/components/ui/entity";
 import { StackedBars } from "@/components/charts/timeseries";
 import { SplitBar } from "@/components/charts/bars";
-import { SERIES } from "@/lib/design";
+import { SERIES, seriesColor } from "@/lib/design";
 import { anchorNow } from "@/lib/time";
 import {
   MARKET_MAKER,
@@ -776,7 +776,7 @@ async function TreasuryBody() {
                           key: String(e.poolId),
                           label: e.poolName,
                           value: e.credited,
-                          color: SERIES[i % SERIES.length],
+                          color: seriesColor(i),
                         }))}
                         height={6}
                         showLegend={false}

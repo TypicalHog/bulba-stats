@@ -32,7 +32,7 @@ import { ActivityHeatmap } from "@/components/charts/heatmap";
 import { NetworkGraph } from "./network-graph";
 import { MovingLately } from "./moving-lately";
 import { SplitBar } from "@/components/charts/bars";
-import { SERIES } from "@/lib/design";
+import { SERIES, seriesColor } from "@/lib/design";
 import { anchorNow } from "@/lib/time";
 import {
   dateOnly,
@@ -970,7 +970,7 @@ async function Behaviour() {
                           key: r.type,
                           label: r.type,
                           value: r.count,
-                          color: SERIES[i % SERIES.length],
+                          color: seriesColor(i),
                         },
                         {
                           key: "rest",
