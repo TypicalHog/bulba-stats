@@ -193,9 +193,17 @@ async function MarketHeader() {
     });
   };
 
+  /*
+   * Anchored to the same UTC calendar-day cutoff as the volume/share tiles
+   * above (last7), not a rolling 7×24h window — otherwise this tile and
+   * "7-day volume" would silently disagree on what "7d" means.
+   */
+  const last7Start = last7.length
+    ? Date.parse(`${last7[0].day}T00:00:00Z`)
+    : now - 7 * DAY_MS;
   const activeTraders7 = new Set(
     toLegs(trades)
-      .filter((l) => l.at >= now - 7 * DAY_MS)
+      .filter((l) => l.at >= last7Start)
       .map((l) => l.username),
   ).size;
 
