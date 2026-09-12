@@ -305,20 +305,33 @@ const withVersion = (path: string, version?: string) =>
  */
 export async function crawl<T>(
   buildPath: (before: number | null, limit: number) => string,
-  { maxPages = 30, limit = 200, version, ...opts }: CrawlOptions = {},
+  { maxPages = 30, limit = 200, version, ...rest }: CrawlOptions = {},
 ): Promise<{ rows: T[]; complete: boolean; pages: number }> {
+  let opts: GetOptions = rest;
   const rows: T[] = [];
   let before: number | null = null;
   let pages = 0;
+  let pin = version;
 
   while (pages < maxPages) {
     let page: { data: T[]; meta?: Record<string, unknown> };
     try {
-      page = await apiGet<T[]>(
-        withVersion(buildPath(before, limit), version),
-        opts,
-      );
-    } catch {
+      page = await apiGet<T[]>(withVersion(buildPath(before, limit), pin), opts);
+    } catch (e) {
+      /*
+       * The pin rests on the upstream ignoring unknown query parameters (see
+       * `version`), and that is a property of the API, not a guarantee —
+       * `updatedAfter` went from ignored to implemented. If `v` ever joins it
+       * and the first page comes back a 400 the way `/listings/not-an-id`
+       * already does, every pinned crawl returns nothing and the book pages
+       * render empty. Walk it unpinned instead, on the tier a crawl uses when
+       * it has no digest to pin to — which is the only reason it was frozen.
+       */
+      if (pin && pages === 0 && e instanceof ApiError && e.status === 400) {
+        pin = undefined;
+        opts = { ...opts, revalidate: TTL.heavy };
+        continue;
+      }
       // A page failed after some already succeeded — return what was fetched
       // rather than discarding it along with the exception.
       return { rows, complete: false, pages };
