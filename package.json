@@ -1,6 +1,6 @@
 {
   "name": "bulba-stats",
-  "version": "0.1.168",
+  "version": "0.1.169",
   "private": true,
   "license": "MIT",
   "scripts": {
@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "node --experimental-strip-types --import ./test/loader.mjs --test \"**/*.test.ts\"",
     "snapshot": "node scripts/snapshot.mjs --out .snapshot-out"
   },
   "dependencies": {
