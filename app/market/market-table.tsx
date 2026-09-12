@@ -344,7 +344,7 @@ export function MarketTable({
           label={`Show niche (${nicheCount})`}
           hint="Low-demand variants, hidden by default upstream"
         />
-        {watched.length > 0 && (
+        {(watched.length > 0 || onlyWatched) && (
           <Toggle
             checked={onlyWatched}
             onChange={setOnlyWatched}
