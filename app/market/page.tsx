@@ -8,7 +8,7 @@ import {
 } from "@/lib/api/endpoints";
 import { groupBy, sum, toLegs } from "@/lib/analytics/legs";
 import { isHouseOrder } from "@/lib/analytics/house";
-import { volumeByItem } from "@/lib/analytics/market";
+import { median, volumeByItem } from "@/lib/analytics/market";
 import { Panel, Caveat } from "@/components/ui/panel";
 import { Stat } from "@/components/ui/stat";
 import { PanelSkeleton } from "@/components/ui/skeleton";
@@ -156,9 +156,7 @@ async function MarketBody() {
         <Stat
           label="Median spread"
           value={
-            spreads.length
-              ? percent(spreads[Math.floor(spreads.length / 2)])
-              : "—"
+            spreads.length ? percent(median(spreads)) : "—"
           }
           hint="across quoted books"
         />
