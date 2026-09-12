@@ -331,7 +331,14 @@ export function priceClustering(
   }));
 }
 
-/** Convenience: trades → legs, filtered to a time window. */
+/**
+ * Convenience: trades → legs, filtered to a time window.
+ *
+ * Nothing calls this today — every window in the app is cut from `toLegs`
+ * output the caller already holds. Kept because it is the obvious shape for
+ * the next windowed statistic, and noted so the next reader does not spend
+ * the search working out whether they missed a call site.
+ */
 export function legsSince(trades: Trade[], sinceMs: number): TradeLeg[] {
   return toLegs(trades).filter((l) => l.at >= sinceMs);
 }
