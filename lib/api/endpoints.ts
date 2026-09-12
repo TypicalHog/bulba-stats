@@ -370,7 +370,9 @@ export const getPlayerDirectory = cache(async (): Promise<Player[]> => {
   let queue = [...seed];
 
   for (let pass = 0; pass < 3 && queue.length; pass++) {
-    const found = await mapLimit(queue, 6, (username) => getPlayer(username));
+    const found = await mapLimit(queue, 6, (username) =>
+      getPlayer(username).catch(() => null),
+    );
     const discovered = new Set<string>();
     for (const player of found) {
       if (!player || resolved.has(player.username)) continue;
