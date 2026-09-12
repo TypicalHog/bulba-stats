@@ -114,7 +114,6 @@ export function LiveTicker({ seed }: { seed: TickerRow[] }) {
       };
 
       socket.on("connect", subscribe);
-      socket.io.on("reconnect", subscribe);
       socket.on("disconnect", onDisconnect);
       socket.on("connect_error", onConnectError);
       socket.on("broadcast", onBroadcast);
@@ -125,7 +124,6 @@ export function LiveTicker({ seed }: { seed: TickerRow[] }) {
 
       detach = () => {
         socket?.off("connect", subscribe);
-        socket?.io.off("reconnect", subscribe);
         socket?.off("disconnect", onDisconnect);
         socket?.off("connect_error", onConnectError);
         socket?.off("broadcast", onBroadcast);

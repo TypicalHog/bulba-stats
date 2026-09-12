@@ -139,7 +139,6 @@ export function WatchAlerts() {
       };
 
       socket.on("connect", subscribe);
-      socket.io.on("reconnect", subscribe);
       socket.on("broadcast", onBroadcast);
       // The shared socket may already be connected — via LiveTicker, or a
       // prior mount — in which case "connect" has already fired and won't
@@ -148,7 +147,6 @@ export function WatchAlerts() {
 
       detach = () => {
         socket?.off("connect", subscribe);
-        socket?.io.off("reconnect", subscribe);
         socket?.off("broadcast", onBroadcast);
       };
     }, 0);
