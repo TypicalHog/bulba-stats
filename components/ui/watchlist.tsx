@@ -97,6 +97,7 @@ export function WatchStar({
           ? `Remove ${label ?? "item"} from watchlist`
           : `Add ${label ?? "item"} to watchlist`
       }
+      title="Watchlist is kept in this browser only — it won't follow you to another device."
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
