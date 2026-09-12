@@ -148,8 +148,11 @@ database. Two settings are non-default and worth understanding:
   it does not count.
 
   To make it durable, add a repository secret **`DATA_PUSH_TOKEN`** holding a
-  personal access token with write access to contents — classic `repo` scope,
-  or a fine-grained token with *Contents: Read and write* on this repository.
+  personal access token with write access to contents — a fine-grained
+  token with *Contents: Read and write* on this repository. Avoid the
+  classic `repo` scope: it grants write access to every repository the
+  account can push to, and `actions/checkout` persists it into the
+  runner's `.git/config` by default.
   Both workflows use it when present and fall back to `GITHUB_TOKEN` when not.
   With it set:
 
