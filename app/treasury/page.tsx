@@ -254,8 +254,14 @@ async function TreasuryBody() {
           <Caveat>
             The treasury reports {diamonds(revenueTotal)} over this window;
             summing the 4% fee across every trade in history gives{" "}
-            {diamonds(observedFees)}. The two differ because the window is 60
-            days, not all time.
+            {diamonds(observedFees)}.{" "}
+            {revenue.length > 60
+              ? "The two differ because the treasury window is 60 days while the trade record is longer."
+              : Math.abs(revenueTotal - observedFees) < 0.01
+                ? "The two agree, since the window already covers the market's entire life."
+                : `The two differ by ${diamonds(
+                    Math.abs(revenueTotal - observedFees),
+                  )} over the same period — a residual the trade record does not explain.`}
           </Caveat>
         </Panel>
 
