@@ -3,7 +3,8 @@
  */
 import test from "node:test";
 import assert from "node:assert/strict";
-// @ts-expect-error - a dependency-free .mjs script with no type declarations.
+// The capture script is a dependency-free .mjs with no type declarations; the
+// resolver hook loads it fine at runtime.
 import { LISTING_COLUMNS, marketRow } from "@/scripts/snapshot.mjs";
 
 /**

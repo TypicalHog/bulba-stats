@@ -16,7 +16,10 @@ function serve(ids: readonly number[]) {
   const sorted = [...ids].sort((a, b) => b - a);
   let requests = 0;
 
-  const fetchStub = async (url: string | URL): Promise<Response> => {
+  // Typed off `fetch` itself: the stub is installed as `globalThis.fetch`, and
+  // narrowing the parameter to what this test happens to pass makes it an
+  // unassignable subtype of the real signature.
+  const fetchStub: typeof fetch = async (url): Promise<Response> => {
     requests++;
     const q = new URL(String(url)).searchParams;
     const limit = Number(q.get("limit"));
