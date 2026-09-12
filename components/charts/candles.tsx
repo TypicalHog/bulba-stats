@@ -19,8 +19,9 @@ import {
  * One price axis only — volume gets its own band with its own baseline rather
  * than a second y-scale on the same plot.
  *
- * Up/down candles are the trading convention. Direction is also carried by the
- * OHLC readout in the tooltip and header, so color is never the only cue.
+ * Up/down candles are the trading convention. Bodies use the standard
+ * hollow (close >= open) / filled (close < open) treatment so direction
+ * survives without color, and volume bars stay a single neutral tone.
  */
 export function CandleChart({
   candles,
@@ -159,7 +160,7 @@ export function CandleChart({
                 y={geom.vy(c.volume)}
                 width={geom.body}
                 height={Math.max(h, 0.5)}
-                fill={c.close >= c.open ? DIRECTION.up : DIRECTION.down}
+                fill={INK.muted}
                 /*
                  * The volume histogram sits behind the candles, so 0.4 is its
                  * resting weight. Hovering raises that one bar rather than
@@ -196,7 +197,9 @@ export function CandleChart({
                   y={top}
                   width={geom.body}
                   height={bodyH}
-                  fill={color}
+                  fill={up ? "none" : color}
+                  stroke={color}
+                  strokeWidth={1.5}
                   rx={1}
                 />
               </g>
