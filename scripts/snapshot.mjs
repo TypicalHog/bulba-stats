@@ -268,6 +268,14 @@ const LISTING_COLUMNS = [
   "askLevels",
 ];
 
+/** Bump whenever LISTING_COLUMNS changes — consumers cache column indices per
+ * `version` (SPEC §1.5), so a layout change must not ship silently under the
+ * same number. */
+const VERSION = 2;
+if (LISTING_COLUMNS.length !== 22) {
+  throw new Error("LISTING_COLUMNS changed length — bump VERSION above");
+}
+
 /**
  * Minecraft usernames are 1-16 chars of [A-Za-z0-9_]. Upstream player/bank/trade
  * payloads are otherwise treated as trusted, but a username is the one field
@@ -565,7 +573,7 @@ async function main() {
   }
 
   const snapshot = {
-    version: 2,
+    version: VERSION,
     capturedAt,
     meta: {
       durationMs: Date.now() - startedAt,
