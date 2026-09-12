@@ -72,7 +72,7 @@ export function ItemLink({
     <>
       <ItemIcon itemName={itemName} size={size} />
       <span className="min-w-0">
-        <span className="block truncate group-hover:text-accent">
+        <span className="block truncate group-hover:text-accent group-focus-visible:text-accent group-focus-visible:underline">
           {itemLabel({ itemName, variantName })}
         </span>
         {enchants && (
@@ -152,7 +152,7 @@ export function PlayerLink({
       className={`group flex min-w-0 items-center gap-2 ${className}`}
     >
       <Avatar uuid={uuid} size={size} />
-      <span className="truncate text-ink group-hover:text-accent">
+      <span className="truncate text-ink group-hover:text-accent group-focus-visible:text-accent group-focus-visible:underline">
         {username}
       </span>
       {mm && showBadge && <Badge tone="warn">MM</Badge>}
