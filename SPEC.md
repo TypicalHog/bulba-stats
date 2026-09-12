@@ -516,11 +516,13 @@ per-pool allocation, stock ownership (shares outstanding, treasury shares, float
 holder count), and implied stock valuation from the `bulba_stock` listing.
 
 **The money supply.** Diamonds are minted outside the exchange entirely: they
-arrive by deposit, leave by withdrawal, and the 4% taker fee is the only
-process that destroys them. Shown as daily fees burned — daily rather than
-cumulative, so each bar is what was actually destroyed that day — beside
-currency in, out and net on the exchange, and what the treasury holds. This
-turns the deflation note in §4 from an assertion into a chart.
+arrive by deposit and leave by withdrawal; nothing on the exchange creates or
+destroys them. The 4% taker fee moves them rather than burning them — it is
+credited to the treasury's revenue bank and paid back out on the distribution
+schedule. Shown as daily fees collected — daily rather than cumulative, so each
+bar is what the treasury took that day — beside currency in, out and net on the
+exchange, and what the treasury holds. Net on exchange does not subtract fees,
+for the same reason (§4).
 
 **Dividend yield.** Half of every distribution goes to the stock pool, so
 divided by the shares that can receive it that is a dividend — the one
@@ -748,9 +750,11 @@ each appears:
   counted separately.
 - **Volatility** is the standard deviation of log returns over available candles,
   which for a month-old market with sparse trading is indicative, not rigorous.
-- **The 4% taker fee** is deflationary — it is debited from the buyer and credited
-  to nobody, so market-wide currency totals shrink with volume. This is upstream
-  behavior, not a bug in the aggregation.
+- **The 4% taker fee** is redistributive, not deflationary — it is debited from
+  the buyer and credited to the treasury's `bulba_revenue` bank, then paid back
+  out to stock holders and the reserve on the distribution schedule. Market-wide
+  currency totals are unchanged by it, which is why net on exchange does not
+  subtract fees.
 - **`BulbaStore` is the house market maker**, holding ~92% of resting orders.
   Leaderboards and concentration stats flag it explicitly and offer a toggle to
   exclude it, because leaving it in drowns out every human trader. Two

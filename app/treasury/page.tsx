@@ -138,10 +138,11 @@ async function TreasuryBody() {
 
   /*
    * The monetary picture. Diamonds are minted outside the exchange entirely:
-   * they arrive by deposit, leave by withdrawal, and the taker fee is the only
-   * process that destroys them.
+   * they arrive by deposit and leave by withdrawal. The taker fee moves them
+   * within the exchange rather than out of it: it lands in the treasury's
+   * revenue bank and is paid back out on the distribution schedule.
    */
-  const feeBurnPoints = days.map((d) => ({
+  const feeCollectedPoints = days.map((d) => ({
     label: d.day.slice(5),
     values: { fees: d.fees },
   }));
@@ -525,23 +526,28 @@ async function TreasuryBody() {
         </SectionTitle>
         <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
           <Panel
-            title="Fees burned"
-            subtitle="The 4% taker fee is debited from the trader and credited to nobody"
+            title="Fees collected"
+            subtitle="The 4% taker fee is debited from the trader and credited to the treasury's revenue bank"
           >
             <StackedBars
-              points={feeBurnPoints}
+              points={feeCollectedPoints}
               series={[
-                { key: "fees", label: "Fees burned that day", color: SERIES[1] },
+                {
+                  key: "fees",
+                  label: "Fees collected that day",
+                  color: SERIES[1],
+                },
               ]}
               height={180}
               format="diamonds"
             />
             <Caveat>
-              Daily rather than cumulative, so each bar is what was actually
-              destroyed that day. {diamonds(observedFees)} has been burned in
+              Daily rather than cumulative, so each bar is what the treasury
+              took that day. {diamonds(observedFees)} has been collected in
               total across the market&apos;s life — against{" "}
-              {num(currencyIn)} diamonds ever deposited, the deflation is real
-              but small so far.
+              {num(currencyIn)} diamonds ever deposited. None of it is
+              destroyed: it accumulates in the pools above and is paid back out
+              to stock holders and the reserve.
             </Caveat>
           </Panel>
 
@@ -577,9 +583,10 @@ async function TreasuryBody() {
             </div>
             <Caveat>
               Diamonds enter only by being deposited and leave only by being
-              withdrawn — nothing on the exchange creates them. The fee is the
-              one process that removes them permanently, so the currency held
-              here shrinks with every trade unless more is brought in.
+              withdrawn — nothing on the exchange creates or destroys them,
+              which is why net on exchange does not subtract fees. The taker fee
+              moves diamonds from traders to the house banks, where the treasury
+              holds them until the next distribution.
               {!bankOpsComplete &&
                 " The bank-movement crawl hit its page cap, so the deposited and withdrawn figures cover the most recent movements rather than every one."}
             </Caveat>

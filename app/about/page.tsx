@@ -120,11 +120,12 @@ export default function AboutPage() {
             &ldquo;24h&rdquo;.
           </Method>
 
-          <Method title="The fee is deflationary">
-            The 4% taker fee is debited from the buyer and credited to no bank
-            account. Market-wide currency totals therefore shrink as volume
-            grows. This is upstream behaviour and not an artefact of the
-            aggregation.
+          <Method title="Where the taker fee goes">
+            The 4% taker fee is debited from the buyer and credited to the
+            treasury&apos;s revenue bank, not destroyed. It accumulates in the
+            house pools and is paid back out to stock holders and the reserve on
+            the distribution schedule, so market-wide currency totals are
+            unchanged by it — the diamonds change hands rather than leaving.
           </Method>
 
           <Method title="Slippage curves">
