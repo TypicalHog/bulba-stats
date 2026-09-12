@@ -268,7 +268,20 @@ export async function crawl<T>(
     rows.push(...data);
 
     const next: unknown = meta?.nextBefore;
-    if (typeof next !== "number") return { rows, complete: true, pages };
+    if (typeof next !== "number") {
+      // A short final page has nothing left behind it, so a missing cursor is
+      // expected. A full page with no cursor means the upstream contract
+      // changed — surface it rather than silently truncating the history.
+      if (data.length >= limit) {
+        throw new ApiError(
+          200,
+          "bad_cursor",
+          "full page without a numeric nextBefore",
+          buildPath(before),
+        );
+      }
+      return { rows, complete: true, pages };
+    }
     before = next;
     // A short final page means the cursor has nothing left behind it.
     if (data.length < limit) return { rows, complete: true, pages };
@@ -307,7 +320,20 @@ async function crawlForward<T>(
     rows.push(...data);
 
     const next: unknown = meta?.nextAfter;
-    if (typeof next !== "number") return { rows, complete: true, pages };
+    if (typeof next !== "number") {
+      // A short final page has nothing left ahead of it, so a missing cursor
+      // is expected. A full page with no cursor means the upstream contract
+      // changed — surface it rather than silently truncating the history.
+      if (data.length >= limit) {
+        throw new ApiError(
+          200,
+          "bad_cursor",
+          "full page without a numeric nextAfter",
+          buildPath(after),
+        );
+      }
+      return { rows, complete: true, pages };
+    }
     after = next;
     if (data.length < limit) return { rows, complete: true, pages };
   }
