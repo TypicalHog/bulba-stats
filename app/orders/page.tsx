@@ -495,11 +495,15 @@ async function RestingBook() {
       > = {};
       for (const band of BANDS) {
         const inBand =
-          band == null || mid == null || mid <= 0
+          band == null
             ? rows
-            : rows.filter(
-                (o) => Math.abs(o.limitPrice - mid) / mid <= band / 100,
-              );
+            : mid == null || mid <= 0
+              ? // No mid to measure distance from — fail safe by excluding the
+                // book from this band rather than counting it as 100% in-band.
+                []
+              : rows.filter(
+                  (o) => Math.abs(o.limitPrice - mid) / mid <= band / 100,
+                );
         byBand[bandKey(band)] = {
           orders: inBand.length,
           value: r(sum(inBand, (o) => o.limitPrice * o.remainingAmount)) ?? 0,
