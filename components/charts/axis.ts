@@ -40,6 +40,9 @@ export function niceTicks(min: number, max: number, count = 5): number[] {
   for (let t = start; t <= max + step * 1e-9; t += step) {
     // Floating-point accumulation drifts; snap each tick back to the step grid.
     ticks.push(Math.round(t / step) * step);
+    // Guard against a degenerate span where step is below t's ULP and t+=step
+    // never advances, which would otherwise loop forever.
+    if (t + step === t) break;
   }
   return ticks;
 }
