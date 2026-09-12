@@ -30,7 +30,12 @@ export function ActivityHeatmap({ grid }: { grid: number[][] }) {
   const total = flat.reduce((a, b) => a + b, 0);
 
   return (
-    <div className="scroll-x">
+    <div
+      className="scroll-x"
+      tabIndex={0}
+      role="region"
+      aria-label="Activity heatmap, scrolls horizontally"
+    >
       {/*
         The hover ring is drawn 2px outside the cell (1px offset + 1px width).
         Outlines take no part in layout, but they DO overflow a scroll

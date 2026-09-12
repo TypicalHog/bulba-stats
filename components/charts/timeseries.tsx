@@ -106,7 +106,12 @@ export function StackedBars({
 
   return (
     <div>
-      <div className="scroll-x">
+      <div
+        className="scroll-x"
+        tabIndex={0}
+        role="region"
+        aria-label={`${seriesLabel} chart, scrolls horizontally`}
+      >
         <div
           ref={wrapRef}
           className="relative"

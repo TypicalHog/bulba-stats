@@ -91,7 +91,12 @@ export function CandleChart({
 
   return (
     <div>
-      <div className="scroll-x">
+      <div
+        className="scroll-x"
+        tabIndex={0}
+        role="region"
+        aria-label={`${interval} candlestick chart, scrolls horizontally`}
+      >
         <div className="relative" style={{ minWidth: CHART_MIN_WIDTH }}>
           <div className="mb-2 flex flex-wrap items-baseline gap-x-4 gap-y-1 font-mono text-[12px]">
             <span className="text-ink-3">

@@ -174,7 +174,12 @@ export function DepthChart({
 
   return (
     <div>
-      <div className="scroll-x">
+      <div
+        className="scroll-x"
+        tabIndex={0}
+        role="region"
+        aria-label="Order book depth chart, scrolls horizontally"
+      >
         <div
           ref={wrapRef}
           className="relative"
