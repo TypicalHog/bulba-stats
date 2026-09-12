@@ -317,6 +317,7 @@ export function NetworkGraph({
                   aria-pressed={selected === node.username}
                   aria-label={`${node.username}${node.isMarketMaker ? ", market maker" : ""}, ${diamondsCompact(node.volume)} traded`}
                   onMouseEnter={() => setHover(node.username)}
+                  onMouseLeave={() => setHover(null)}
                   onFocus={() => setHover(node.username)}
                   onBlur={() => setHover(null)}
                   onClick={() =>
