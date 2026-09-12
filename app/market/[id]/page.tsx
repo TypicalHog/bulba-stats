@@ -192,11 +192,14 @@ async function QuoteTiles({
 
   const stats = itemStats(trades, listingId);
   const book = view ? bookMetrics(view.orderBook) : null;
-  const vol = volatility(candles);
+  /* A missing candle series and an empty one produce the same "—" here, so
+     the tiles can treat them alike; the chart panel below cannot. */
+  const series = candles ?? [];
+  const vol = volatility(series);
 
   const anchor = stats.lastTradeAt ?? 0;
-  const change24 = priceChange(candles, DAY_MS, anchor);
-  const change7 = priceChange(candles, 7 * DAY_MS, anchor);
+  const change24 = priceChange(series, DAY_MS, anchor);
+  const change7 = priceChange(series, 7 * DAY_MS, anchor);
   const turn = book
     ? turnover(stats.volume, book.bidValue + book.askValue)
     : null;
@@ -274,15 +277,26 @@ async function PriceHistory({
   return (
     <Panel
       title="Price history"
-      subtitle={`${num(candles.length)} ${interval} candles from executed maker fills`}
+      subtitle={
+        candles
+          ? `${num(candles.length)} ${interval} candles from executed maker fills`
+          : "Unavailable"
+      }
       action={<IntervalPicker current={interval} intervals={INTERVALS} />}
     >
-      <CandleChart candles={candles} interval={interval} height={320} />
-      {!candles.length && (
+      <CandleChart candles={candles ?? []} interval={interval} height={320} />
+      {!candles ? (
         <Caveat>
-          Candles are built from executed fills. A quiet book produces no
-          candles at fine intervals — try a wider one.
+          The candles endpoint did not answer, so this chart is empty for a
+          reason that has nothing to do with the market. It is not a quiet book.
         </Caveat>
+      ) : (
+        !candles.length && (
+          <Caveat>
+            Candles are built from executed fills. A quiet book produces no
+            candles at fine intervals — try a wider one.
+          </Caveat>
+        )
       )}
     </Panel>
   );

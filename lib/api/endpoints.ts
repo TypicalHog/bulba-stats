@@ -221,12 +221,16 @@ export const getCandles = cache(
     listingId: number,
     interval: CandleInterval = "1h",
     limit = 200,
-  ): Promise<Candle[]> => {
-    const data = await apiGetSoft<Candle[]>(
+  ): Promise<Candle[] | null> => {
+    /*
+     * `null` when the endpoint did not answer, `[]` when it answered with
+     * nothing. Collapsing the two would let a failed fetch render as "no
+     * candles", which reads as a quiet market rather than a missing one.
+     */
+    return apiGetSoft<Candle[]>(
       `/orderbook/${listingId}/candles?interval=${interval}&limit=${limit}`,
       { revalidate: TTL.near },
     );
-    return data ?? [];
   },
 );
 
