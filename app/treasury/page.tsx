@@ -138,6 +138,7 @@ async function TreasuryBody() {
   );
 
   const stock = treasury.stock;
+  const stockPool = pools.find((p) => p.kind === "stock");
   const stockQuote = stock
     ? summary.find((s) => s.listingId === stock.listingId)
     : undefined;
@@ -516,7 +517,11 @@ async function TreasuryBody() {
             {yields.mid && (
               <Panel
                 title="Dividend"
-                subtitle={`Half of every distribution goes to the stock pool${
+                subtitle={`${
+                  stockPool
+                    ? `${percent(stockPool.sharePctBps / 100, 0)} of every distribution`
+                    : "A share of every distribution"
+                } goes to the stock pool${
                   yields.mid.intervalHours
                     ? `, on a ${Math.round(yields.mid.intervalHours / 24)}-day schedule`
                     : ""

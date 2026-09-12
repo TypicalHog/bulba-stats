@@ -587,7 +587,7 @@ bar is what the treasury took that day — beside currency in, out and net on th
 exchange, and what the treasury holds. Net on exchange does not subtract fees,
 for the same reason (§4).
 
-**Dividend yield.** Half of every distribution goes to the stock pool, so
+**Dividend yield.** The stock pool's share of every distribution goes to it, so
 divided by the shares that can receive it that is a dividend — the one
 genuinely financial metric the data supports, and one the API leaves
 uncomputed. Quoted **per float share**, excluding treasury-held shares: paying
