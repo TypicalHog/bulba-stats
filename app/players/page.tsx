@@ -24,7 +24,7 @@ import {
   type CounterpartyEdge,
 } from "@/lib/analytics/players";
 import { r } from "@/lib/round";
-import { Panel, Caveat, SectionTitle } from "@/components/ui/panel";
+import { Panel, Caveat, SectionTitle, EmptyState } from "@/components/ui/panel";
 import { Stat } from "@/components/ui/stat";
 import { PanelSkeleton, TileRowSkeleton } from "@/components/ui/skeleton";
 import { RankedBars } from "@/components/charts/bars";
@@ -480,38 +480,42 @@ async function PlayersBody() {
           title="Order timing"
           subtitle="A person places orders in bursts; a program places them on a clock"
         >
-          <ul className="flex flex-col gap-2">
-            {automation
-              .filter((v) => v.confidence !== "too few")
-              .map((v) => (
-                <li
-                  key={v.username}
-                  className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px]"
-                >
-                  <PlayerLink username={v.username} uuid={v.uuid ?? ""} size={18} />
-                  <span
-                    className={
-                      v.confidence === "likely"
-                        ? "text-warn"
-                        : v.confidence === "possible"
-                          ? "text-ink-2"
-                          : "text-ink-3"
-                    }
+          {automation.filter((v) => v.confidence !== "too few").length ? (
+            <ul className="flex flex-col gap-2">
+              {automation
+                .filter((v) => v.confidence !== "too few")
+                .map((v) => (
+                  <li
+                    key={v.username}
+                    className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px]"
                   >
-                    {v.confidence}
-                  </span>
-                  <span className="ml-auto font-mono text-[12px] text-ink-3">
-                    {num(v.orders)} orders · median gap{" "}
-                    {v.medianGapMs != null
-                      ? `${(v.medianGapMs / 1000).toFixed(2)}s`
-                      : "—"}{" "}
-                    · variability{" "}
-                    {v.variability != null ? v.variability.toFixed(2) : "—"} ·{" "}
-                    {Math.round(v.subSecondShare * 100)}% sub-second
-                  </span>
-                </li>
-              ))}
-          </ul>
+                    <PlayerLink username={v.username} uuid={v.uuid ?? ""} size={18} />
+                    <span
+                      className={
+                        v.confidence === "likely"
+                          ? "text-warn"
+                          : v.confidence === "possible"
+                            ? "text-ink-2"
+                            : "text-ink-3"
+                      }
+                    >
+                      {v.confidence}
+                    </span>
+                    <span className="ml-auto font-mono text-[12px] text-ink-3">
+                      {num(v.orders)} orders · median gap{" "}
+                      {v.medianGapMs != null
+                        ? `${(v.medianGapMs / 1000).toFixed(2)}s`
+                        : "—"}{" "}
+                      · variability{" "}
+                      {v.variability != null ? v.variability.toFixed(2) : "—"} ·{" "}
+                      {Math.round(v.subSecondShare * 100)}% sub-second
+                    </span>
+                  </li>
+                ))}
+            </ul>
+          ) : (
+            <EmptyState>No accounts have enough evidence to classify.</EmptyState>
+          )}
           <Caveat>
             The criteria, in full: {AUTOMATION_CRITERIA.join("; ")}. Every
             account&apos;s measured numbers are shown beside its verdict so the

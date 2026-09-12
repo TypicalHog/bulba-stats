@@ -12,7 +12,7 @@ import { playerStats } from "@/lib/analytics/players";
 import { holders } from "@/lib/analytics/wealth";
 import { houseCadence } from "@/lib/analytics/cadence";
 import { affiliations, isHouseOrder, HOUSE_BANKS } from "@/lib/analytics/house";
-import { Panel, Caveat, SectionTitle } from "@/components/ui/panel";
+import { Panel, Caveat, SectionTitle, EmptyState } from "@/components/ui/panel";
 import { Stat } from "@/components/ui/stat";
 import { PanelSkeleton } from "@/components/ui/skeleton";
 import { ItemLink, PlayerLink } from "@/components/ui/entity";
@@ -249,27 +249,31 @@ async function HouseBody() {
           title="Inventory offered back to the market"
           subtitle="The clearest picture of what has been sold to the house and not sold on"
         >
-          <ul className="flex flex-col gap-1.5">
-            {absorbed.map((a) => (
-              <li
-                key={a.listingId}
-                className="flex flex-wrap items-center gap-2 text-[12px]"
-              >
-                <ItemLink
-                  listingId={a.listingId}
-                  itemName={a.itemName}
-                  variantName={a.variantName}
-                  size={18}
-                />
-                <span className="ml-auto font-mono text-ink">
-                  {diamonds(a.value)}
-                </span>
-                <span className="w-24 text-right font-mono text-[12px] text-ink-3">
-                  {num(a.units)} units
-                </span>
-              </li>
-            ))}
-          </ul>
+          {absorbed.length ? (
+            <ul className="flex flex-col gap-1.5">
+              {absorbed.map((a) => (
+                <li
+                  key={a.listingId}
+                  className="flex flex-wrap items-center gap-2 text-[12px]"
+                >
+                  <ItemLink
+                    listingId={a.listingId}
+                    itemName={a.itemName}
+                    variantName={a.variantName}
+                    size={18}
+                  />
+                  <span className="ml-auto font-mono text-ink">
+                    {diamonds(a.value)}
+                  </span>
+                  <span className="w-24 text-right font-mono text-[12px] text-ink-3">
+                    {num(a.units)} units
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <EmptyState>Nothing has been sold to the house.</EmptyState>
+          )}
           <Caveat>
             A market maker that quotes both sides of a one-sided market ends up
             holding whatever the market wants to be rid of. Read alongside{" "}
