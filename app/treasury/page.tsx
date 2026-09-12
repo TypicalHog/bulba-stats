@@ -60,14 +60,14 @@ async function TreasuryBody() {
   const [
     treasury,
     revenue,
-    distributions,
+    allDistributions,
     summary,
     trades,
     { rows: bankOps, complete: bankOpsComplete },
   ] = await Promise.all([
     getTreasury(),
     getTreasuryRevenue(60),
-    getTreasuryDistributions(20),
+    getTreasuryDistributions(500),
     getOrderbookSummary(),
     getAllTrades(),
     getBankOps(),
@@ -121,7 +121,14 @@ async function TreasuryBody() {
   );
   const revenueTotal = totalPhysicalFees + totalStorageFees;
 
-  const distributedTotal = distributions.reduce((a, d) => a + d.totalAmount, 0);
+  // The table only ever shows the most recent 20, but totals and the
+  // dividend yield need the full history or they silently under-report
+  // once more than 20 distributions have ever run.
+  const distributions = allDistributions.slice(0, 20);
+  const distributedTotal = allDistributions.reduce(
+    (a, d) => a + d.totalAmount,
+    0,
+  );
 
   const stock = treasury.stock;
   const stockQuote = stock
@@ -154,9 +161,9 @@ async function TreasuryBody() {
    * all three prices rather than implying that one of them is "the" price.
    */
   const yields = {
-    bid: stockYield(treasury, distributions, stockQuote?.bestBid ?? null),
-    mid: stockYield(treasury, distributions, stockQuote?.mid ?? null),
-    ask: stockYield(treasury, distributions, stockQuote?.bestAsk ?? null),
+    bid: stockYield(treasury, allDistributions, stockQuote?.bestBid ?? null),
+    mid: stockYield(treasury, allDistributions, stockQuote?.mid ?? null),
+    ask: stockYield(treasury, allDistributions, stockQuote?.bestAsk ?? null),
   };
 
   // Cross-check the treasury's own revenue figure against fees observed in
@@ -199,7 +206,7 @@ async function TreasuryBody() {
         <Stat
           label="Distributed to date"
           value={diamondsCompact(distributedTotal)}
-          hint={`${num(distributions.length)} distributions`}
+          hint={`${num(allDistributions.length)} distributions`}
         />
         <Stat
           label="Next distribution"
