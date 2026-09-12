@@ -966,11 +966,12 @@ two third parties:
   206 images, 0 broken, 64 swapped to the mark.
 
 **The site mark is a brilliant-cut diamond**, drawn in `app/icon.svg` from the
-palette tokens. ◇ is the unit every figure here is denominated in, so the mark
-is the currency rather than a chart glyph — and deliberately *not* BulbaStore's
-own icon, which this site has no business wearing in a browser tab while calling
-itself independent. Crown, girdle and pavilion are filled shapes rather than
-strokes, because hairlines vanish at 16px and filled facets do not.
+panel and accent tokens, plus two purpose-built shades for depth. ◇ is the unit
+every figure here is denominated in, so the mark is the currency rather than a
+chart glyph — and deliberately *not* BulbaStore's own icon, which this site has
+no business wearing in a browser tab while calling itself independent.
+Pavilion, crown and table facet are filled shapes rather than strokes, because
+hairlines vanish at 16px and filled facets do not.
 
 Three files, generated from that one SVG: `favicon.ico` (PNG-embedded 16/32/48/
 256) for legacy consumers, `icon.svg` for everything modern, and a 180px

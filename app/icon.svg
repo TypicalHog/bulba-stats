@@ -5,9 +5,10 @@
     Deliberately not BulbaStore's own icon — BulbaStats is an independent view
     of their exchange and should not wear their logo in the browser tab.
 
-    Drawn on a 32px grid with the crown, girdle and pavilion as separate solid
-    shapes rather than strokes: hairlines disappear at 16px, filled facets do
-    not. Colours are the design tokens from globals.css.
+    Drawn on a 32px grid with the pavilion, crown and table facet as separate
+    solid shapes rather than strokes: hairlines disappear at 16px, filled
+    facets do not. Colours: the panel and accent tokens from globals.css,
+    plus two purpose-built shades for depth.
   -->
   <rect width="32" height="32" rx="7" fill="#131A22" />
 
