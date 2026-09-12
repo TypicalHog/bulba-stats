@@ -90,7 +90,19 @@ export function RecipeTable({ rows }: { rows: RecipeRow[] }) {
 
         const saving = buy != null && build != null ? buy - build : null;
         const savingPct = saving != null && buy ? (saving / buy) * 100 : null;
-        const flipProfit = sell != null && build != null ? sell - build : null;
+
+        // Build & sell destroys the base item into the thing being sold, so
+        // its cost basis always includes it — unlike Build/Buy, "I already
+        // own it" isn't a real answer when you're about to sell the result.
+        const flipParts: (number | null)[] = [r.inputCost];
+        if (r.kind === "enchant") flipParts.push(r.baseCost);
+        if (toggles.xp && r.xpBottles) flipParts.push(r.xpCost);
+        const flipBuildable = flipParts.every((p) => p != null);
+        const flipBuild = flipBuildable
+          ? flipParts.reduce((a: number, p) => a + (p ?? 0), 0) * buyMult
+          : null;
+        const flipProfit =
+          sell != null && flipBuild != null ? sell - flipBuild : null;
 
         return { row: r, build, buy, sell, saving, savingPct, flipProfit };
       });

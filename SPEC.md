@@ -578,8 +578,10 @@ total at all rather than a partial one.
 
 The reverse trade is priced the same way: **Sell** sweeps the real *bid* side
 for what the finished item would fetch, and **Build & sell** is that minus the
-build cost. Both carry the buy/sell fee toggles, so the pair can be read as a
-round trip rather than two unrelated numbers.
+build cost — always counting the base item for an enchanting row, since
+selling the result means the tool is consumed into it regardless of the
+"buy the base item" toggle below. Both carry the buy/sell fee toggles, so the
+pair can be read as a round trip rather than two unrelated numbers.
 
 Two recipe families:
 
@@ -609,7 +611,9 @@ books onto a bow costs **26 levels optimally against 42 sequentially**.
 Four independent toggles, because "what does this cost me" has four honest
 answers depending on what you already hold: fee on buying, fee on selling, XP
 priced as bottles, and whether the base item is bought at all (off by default —
-most players already own the tool).
+most players already own the tool). That last toggle only governs the
+Build/Buy comparison; Build & sell always pays for the base item, since the
+tool is gone once the result is sold.
 
 Measured live: 45 recipes, 20 with both sides priceable, **building is cheaper
 on 15 of those 20**, the widest being `elytra:max` at 7.05 to build against
