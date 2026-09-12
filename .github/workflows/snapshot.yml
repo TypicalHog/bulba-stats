@@ -35,6 +35,13 @@ jobs:
       HAS_TOKEN: ${{ secrets.DATA_PUSH_TOKEN != '' }}
 
     steps:
+      # Stamped first so the Capture step can tell how much of the 20-minute
+      # ceiling checkout/clone/setup already spent, instead of assuming a
+      # fixed ≤5 minutes of overhead forever — that clone cost grows with the
+      # data branch's age (SPEC.md §1.5).
+      - name: Record job start
+        run: echo "JOB_START=$(date +%s)" >> "$GITHUB_ENV"
+
       - name: Check out main
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -138,7 +145,19 @@ jobs:
         id: capture
         run: |
           set +e
-          node scripts/snapshot.mjs --out data-branch
+          # Self-correcting budget: derive it from the time actually left
+          # before timeout-minutes (20, kept in sync with the value above)
+          # rather than a fixed guess, so growth in the checkout/clone step
+          # erodes this instead of silently eating into the commit/push
+          # instead. 180s reserved for the commit and push that follow;
+          # floored at 60s so a slow checkout degrades the capture instead
+          # of handing snapshot.mjs a non-positive budget.
+          ELAPSED=$(( $(date +%s) - JOB_START ))
+          REMAINING=$(( 20 * 60 - ELAPSED - 180 ))
+          if [ "$REMAINING" -lt 60 ]; then
+            REMAINING=60
+          fi
+          node scripts/snapshot.mjs --out data-branch --budget-ms "$(( REMAINING * 1000 ))"
           code=$?
           set -e
           if [ "$code" -ne 0 ] && [ "$code" -ne 2 ]; then
