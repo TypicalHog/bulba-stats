@@ -1075,7 +1075,7 @@ app/
 components/
   charts/               SVG primitives
   ui/                   panels, stat tiles, tables, badges, icons
-  live/                 Socket.IO ticker (client)
+  live/                 Socket.IO ticker + watchlist alerts (client)
 lib/
   api/                  typed client, envelope handling, pagination, caching
   analytics/            all derived statistics
