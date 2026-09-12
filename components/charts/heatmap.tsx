@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { sequentialColor } from "@/lib/design";
 import { diamondsCompact, percent } from "@/lib/format";
+import { CHART_MIN_WIDTH_COMPACT } from "./axis";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -43,7 +44,8 @@ export function ActivityHeatmap({ grid }: { grid: number[][] }) {
         made a horizontal scrollbar appear. The padding gives the ring room.
       */}
       <div
-        className="relative min-w-[560px] p-[2px]"
+        className="relative p-[2px]"
+        style={{ minWidth: CHART_MIN_WIDTH_COMPACT }}
         onMouseLeave={() => setHovered(null)}
       >
         <div className="grid grid-cols-[34px_repeat(24,1fr)] gap-[2px]">

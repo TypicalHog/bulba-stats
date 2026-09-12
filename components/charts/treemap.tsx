@@ -8,6 +8,7 @@ import {
 } from "@/lib/design";
 import { diamondsCompact, num } from "@/lib/format";
 import { ItemIcon } from "@/components/ui/entity";
+import { CHART_MIN_WIDTH_COMPACT } from "./axis";
 import { ChartTable } from "./chart-table";
 
 export type TreemapNode = {
@@ -161,8 +162,12 @@ export function Treemap({
 
       <div className="scroll-x">
         <div
-          className="relative min-w-[560px]"
-          style={{ height, aspectRatio: `${WIDTH} / ${height}` }}
+          className="relative"
+          style={{
+            minWidth: CHART_MIN_WIDTH_COMPACT,
+            height,
+            aspectRatio: `${WIDTH} / ${height}`,
+          }}
         >
           {rects.map((rect) => {
             const value = rect.node.values[metric] ?? 0;

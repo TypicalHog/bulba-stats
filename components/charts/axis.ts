@@ -71,6 +71,13 @@ export const CHART_PAD = { top: 12, right: 12, bottom: 22, left: 46 } as const;
 export const CHART_MIN_WIDTH = 720;
 
 /**
+ * Minimum on-screen width for the grid-based charts (activity heatmap,
+ * treemap) that don't share the 800-unit SVG viewBox above and so don't need
+ * as wide a floor to keep their labels legible.
+ */
+export const CHART_MIN_WIDTH_COMPACT = 560;
+
+/**
  * Convert a client X coordinate into the SVG's own viewBox units.
  *
  * The naive `(clientX - rect.left) / rect.width * viewBoxWidth` is WRONG. With
