@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
  * so the whole page reads as a single system.
  */
 export function Panel({
+  id,
   title,
   subtitle,
   action,
@@ -13,6 +14,7 @@ export function Panel({
   bodyClassName = "p-4",
   level = 2,
 }: {
+  id?: string;
   title?: ReactNode;
   subtitle?: ReactNode;
   action?: ReactNode;
@@ -24,7 +26,7 @@ export function Panel({
 }) {
   const Heading = level === 3 ? "h3" : "h2";
   return (
-    <section className={`panel flex flex-col ${className}`}>
+    <section id={id} className={`panel flex flex-col ${className}`}>
       {(title || action) && (
         <header className="flex items-start justify-between gap-3 border-b border-line px-4 py-3">
           <div className="min-w-0">

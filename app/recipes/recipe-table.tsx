@@ -249,6 +249,7 @@ export function RecipeTable({ rows }: { rows: RecipeRow[] }) {
           type="button"
           onClick={() => setExpanded((id) => (id === row.id ? null : row.id))}
           aria-expanded={expanded === row.id}
+          aria-controls="recipe-parts-panel"
           className="cursor-pointer rounded border border-line px-1.5 py-0.5 text-[10px] text-ink-3 transition-colors hover:border-ink-3 hover:text-ink-2"
         >
           {row.inputs.length} {expanded === row.id ? "▲" : "▼"}
@@ -330,6 +331,7 @@ export function RecipeTable({ rows }: { rows: RecipeRow[] }) {
 
       {detail && (
         <Panel
+          id="recipe-parts-panel"
           title={`Parts for ${detail.row.outputItemName ?? detail.row.id}`}
           subtitle={detail.row.note}
         >
