@@ -1029,9 +1029,10 @@ Two boundary rules fall out of that split:
   resolved on the client, not closures passed as props.
 - **A helper called on the server may not live in a `"use client"` module.**
   Next permits a client export to be *rendered* or *passed as a prop*, never
-  called, and the failure is a silent fall back to client rendering with a 200
-  response — so it survives a status check. Pure helpers both sides need live in
-  `lib/`.
+  called. Calling it throws a synchronous `Error` at render time ("Attempted to
+  call X() from the server but X is on the client..."), caught by the nearest
+  `error.tsx` if one wraps the route — loud, not silent. Pure helpers both
+  sides need live in `lib/`.
 - **Panels set `min-width: 0`.** They are always grid or flex children, and the
   `min-width: auto` default made any panel wrapping a wide table push its track
   past the viewport and scroll the whole page sideways.
