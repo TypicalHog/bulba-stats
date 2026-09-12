@@ -121,7 +121,7 @@ export default function AboutPage() {
           </Method>
 
           <Method title="Where the taker fee goes">
-            The 4% taker fee is debited from the buyer and credited to the
+            The 4% taker fee is debited from the taker and credited to the
             treasury&apos;s revenue bank, not destroyed. It accumulates in the
             house pools and is paid back out to stock holders and the reserve on
             the distribution schedule, so market-wide currency totals are

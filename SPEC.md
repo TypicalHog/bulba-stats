@@ -796,7 +796,7 @@ each appears:
 - **Volatility** is the standard deviation of log returns over available candles,
   which for a month-old market with sparse trading is indicative, not rigorous.
 - **The 4% taker fee** is redistributive, not deflationary — it is debited from
-  the buyer and credited to the treasury's `bulba_revenue` bank, then paid back
+  the taker and credited to the treasury's `bulba_revenue` bank, then paid back
   out to stock holders and the reserve on the distribution schedule. Market-wide
   currency totals are unchanged by it, which is why net on exchange does not
   subtract fees.
