@@ -344,7 +344,7 @@ export function MarketTable({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search items…"
-            className="w-52 rounded border border-line bg-panel-2 px-2.5 py-1.5 text-[12px] text-ink placeholder:text-ink-3 focus:border-accent/50 focus:outline-none"
+            className="w-52 rounded border border-ink-3/50 bg-panel-2 px-2.5 py-1.5 text-[12px] text-ink placeholder:text-ink-3 focus:border-accent/50 focus:outline-none"
           />
         </label>
 
