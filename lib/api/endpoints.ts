@@ -264,6 +264,11 @@ export const getAllTrades = cache(async (): Promise<Trade[]> => {
     `/transactions?view=trades&limit=200${cursor}`;
   const opts = { maxPages: 25, revalidate: TTL.aggregate, tags: ["trades"] };
 
+  // `complete` is deliberately dropped rather than surfaced: at two pages
+  // against the 25-page cap there is over a decade of headroom at observed
+  // rates, and none of the thirty-odd callers has anywhere to put a caveat.
+  // Raise the cap long before that stops being true — the bank-op crawl spent
+  // months silently serving half its record after quietly outgrowing its own.
   const { rows } = anchor
     ? await crawlSplit<Trade>(path, anchor, opts)
     : await crawl<Trade>((before) => path(before ? `&before=${before}` : ""), opts);
