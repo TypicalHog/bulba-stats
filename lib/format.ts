@@ -98,7 +98,8 @@ export function arrow(n: number | null | undefined): string {
  * title-casing them would misrepresent the name.
  */
 export function itemLabel(v: Pick<VariantFields, "itemName" | "variantName">): string {
-  const base = (v.itemName ?? "unknown")
+  const raw = typeof v.itemName === "string" ? v.itemName : "unknown";
+  const base = raw
     .split("_")
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(" ");
@@ -118,7 +119,8 @@ export function nbtLabel(nbt: NbtEntry[] | undefined): string {
   if (!nbt?.length) return "";
   return nbt
     .map((e) => {
-      const name = e.name
+      const raw = typeof e.name === "string" ? e.name : "";
+      const name = raw
         .split("_")
         .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
         .join(" ");
