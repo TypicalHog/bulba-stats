@@ -346,6 +346,7 @@ async function main() {
   // Depth needs one request per listing — there is no bulk depth endpoint.
   const books = new Map();
   if (WITH_DEPTH) {
+    let depthStopped = false;
     for (const summary of summaries) {
       // The one loop long enough to run away — stop it explicitly rather than
       // letting 118 already-doomed calls each log their own failure.
@@ -353,14 +354,27 @@ async function main() {
         errors.push(
           `depth: time budget exhausted after ${books.size}/${summaries.length} listings`,
         );
+        depthStopped = true;
         break;
       }
       const detail = await get(`/orderbook/${summary.listingId}`);
       if (detail?.orderBook) books.set(summary.listingId, detail.orderBook);
     }
+    // A single missing book nulls all four market-wide depth totals for the
+    // hour (see `marketRow`), so the shortfall is recorded here rather than
+    // left to be read off a null column. `get` is silent about the ways a
+    // listing can go missing without failing — a 404 because it was delisted
+    // mid-walk, or an answer carrying no `orderBook` — and those are exactly
+    // the ones that would otherwise null the series under a green run.
+    if (!depthStopped && books.size < summaries.length) {
+      errors.push(`depth: ${summaries.length - books.size}/${summaries.length} books missing`);
+    }
   }
 
+  // Likewise: "answered, but with nothing" is the same outcome here as a
+  // failure — series `treasury` is null either way.
   const treasury = await get("/treasury");
+  if (!treasury) errors.push("/treasury: no data");
 
   const roster = await loadRoster();
   const { usernames, truncated } = await discoverPlayers(roster);
@@ -515,9 +529,9 @@ async function main() {
 
   await writeBranchMeta();
 
-  // Every entry in `errors` is an endpoint that failed three attempts in a row;
-  // a 404 answers and returns before the catch, so it never lands here. That is
-  // rare enough to be worth a red run rather than a threshold to tune.
+  // Every entry in `errors` is an endpoint that failed three attempts in a row,
+  // or a call that answered without the data the capture needed. Both are rare
+  // enough to be worth a red run rather than a threshold to tune.
   if (errors.length) {
     // Listed in full here, not just counted: the summary above is printed
     // before the files are written, so anything that goes wrong during the
