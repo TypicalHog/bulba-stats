@@ -73,6 +73,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${firaSans.variable} ${firaCode.variable} h-full`}
     >
       <body className="flex min-h-full flex-col bg-bg text-ink antialiased">
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded focus:bg-panel focus:px-3 focus:py-2 focus:text-accent"
+        >
+          Skip to content
+        </a>
         {/*
           Any icon that fails to load falls back to the Bulba mark.
 
@@ -110,7 +116,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           }
         />
         <WatchAlerts />
-        <main className="mx-auto w-full max-w-[1600px] flex-1 px-3 py-4 sm:px-5 sm:py-6">
+        <main
+          id="main"
+          tabIndex={-1}
+          className="mx-auto w-full max-w-[1600px] flex-1 px-3 py-4 sm:px-5 sm:py-6"
+        >
           {children}
         </main>
         <SiteFooter />
