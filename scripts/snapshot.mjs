@@ -818,7 +818,11 @@ async function appendSeries(day, row) {
 async function writeOnce(path, contents) {
   try {
     await readFile(path, "utf8");
-  } catch {
+  } catch (err) {
+    if (err.code !== "ENOENT") {
+      errors.push(`${path}: unreadable (${err.message}) — left as is`);
+      return;
+    }
     await writeFile(path, contents);
   }
 }
