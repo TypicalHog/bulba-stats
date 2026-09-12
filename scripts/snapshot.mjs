@@ -334,7 +334,7 @@ async function discoverPlayers(roster) {
     : ((await get(tradePath(null))) ?? []);
   for (const trade of trades) {
     if (trade.taker?.username) roster.add(trade.taker.username);
-    for (const maker of trade.makers ?? []) roster.add(maker.username);
+    for (const maker of trade.makers ?? []) if (maker?.username) roster.add(maker.username);
   }
 
   // Accounts that deposited but never traded are invisible in the trade tape —
@@ -430,6 +430,10 @@ async function main() {
         fetched.add(username);
         const player = await get(`/players/${encodeURIComponent(username)}`);
         if (!player) continue;
+        if (typeof player.username !== "string") {
+          errors.push(`/players/${username}: no username`);
+          continue;
+        }
         const bankIds = [];
         for (const bank of player.bankAccounts ?? []) {
           bankIds.push(bank.id);
@@ -459,7 +463,7 @@ async function main() {
       queue = [...discovered];
     }
 
-    players.sort((a, b) => a.username.localeCompare(b.username));
+    players.sort((a, b) => String(a.username).localeCompare(String(b.username)));
   } catch (err) {
     // Degrade the way the exhausted time budget already does: write what was
     // gathered, list the failure, exit 2. Printed as well as recorded, because
