@@ -352,6 +352,18 @@ Four properties are deliberate:
   discovery, taking the bank-only accounts with it.
   A capture that crashed part way through is the third case: what that run
   reached is not the roster.
+
+  **The profile walk re-reads the whole roster every run, on purpose.** It is
+  not just how new accounts are discovered: balances and bank membership are
+  exposed *only* through `/players/:username` — `/banks/:id` is documented but
+  not deployed (§1.1) — so re-fetching a known account is the only way its
+  bank's balance reaches that hour's snapshot. Seeding the walk from newly
+  discovered accounts alone would cost less and quietly break "balances for
+  every bank account" above. The price is that this leg grows linearly with
+  the roster: ~26 of ~148 requests today, and at hundreds of accounts it would
+  start to crowd the 15-minute budget. The remedy then is a stated staleness
+  window for balances, not a silent one; it has not been adopted
+  pre-emptively, for the same reason `--depth=1` has not.
 - **Missing means `null`, never `0`.** In a series row `bidValue`/`askValue`
   fall back to the totals `/orderbook` already returns for every listing in
   its first call, so they are null only if that summary was missing too;
