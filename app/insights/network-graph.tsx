@@ -236,6 +236,13 @@ export function NetworkGraph({
                     would destroy the encoding, so the hit area is decoupled
                     from it: `pointer-events: stroke` makes a transparent
                     stroke catch the pointer while drawing nothing.
+
+                    Not a tab stop: edges are drawn before nodes (so nodes
+                    paint on top), which would put every edge ahead of every
+                    node in tab order — a keyboard user wanting an account
+                    would have to pass all of them first. The relationship
+                    this line opens is reachable from the keyboard instead via
+                    the partner list in the pinned detail card below.
                   */}
                   <line
                     x1={pa.x}
@@ -247,30 +254,9 @@ export function NetworkGraph({
                     strokeLinecap="round"
                     pointerEvents="stroke"
                     style={{ cursor: "pointer" }}
-                    /*
-                     * Same treatment the nodes get. Without a role the
-                     * aria-label on a bare <line> is not exposed at all, and
-                     * without a tab stop and a key handler the relationship
-                     * panel — net diamonds, fills, items traded — is reachable
-                     * only by mouse, and that data appears nowhere else on the
-                     * page. Focus doubles as aim, so tabbing highlights the
-                     * edge exactly as hovering does.
-                     */
-                    role="button"
-                    tabIndex={0}
-                    aria-pressed={isPair}
-                    aria-label={`Relationship between ${e.a} and ${e.b}, ${diamondsCompact(e.volume)} traded`}
                     onClick={() => setPinnedPair(isPair ? null : e)}
-                    onKeyDown={(ev) => {
-                      if (ev.key === "Enter" || ev.key === " ") {
-                        ev.preventDefault();
-                        setPinnedPair(isPair ? null : e);
-                      }
-                    }}
                     onMouseEnter={() => setHoverEdge(key)}
                     onMouseLeave={() => setHoverEdge(null)}
-                    onFocus={() => setHoverEdge(key)}
-                    onBlur={() => setHoverEdge(null)}
                   />
 
                   {/* The mark itself never intercepts the pointer. */}
@@ -437,15 +423,29 @@ export function NetworkGraph({
                   Open profile →
                 </Link>
               )}
+              {/*
+                Keyboard entry point for the relationships the edges open:
+                since edges themselves aren't tab stops (see the invisible
+                hit-target comment above), this list is how a keyboard user
+                reaches the same pair panel a mouse gets by clicking an edge.
+              */}
               <ul className="mt-1.5 flex flex-col gap-0.5">
                 {activeEdges.slice(0, 6).map((e) => {
                   const other = e.a === activeNode.username ? e.b : e.a;
+                  const isPairActive = pair?.a === e.a && pair?.b === e.b;
                   return (
-                    <li key={other} className="flex gap-3">
-                      <span className="text-ink-2">{other}</span>
-                      <span className="ml-auto font-mono text-ink-3">
-                        {diamonds(e.volume)}
-                      </span>
+                    <li key={other}>
+                      <button
+                        type="button"
+                        aria-pressed={isPairActive}
+                        onClick={() => setPinnedPair(isPairActive ? null : e)}
+                        className="flex w-full cursor-pointer gap-3 text-left hover:text-accent"
+                      >
+                        <span className="text-ink-2">{other}</span>
+                        <span className="ml-auto font-mono text-ink-3">
+                          {diamonds(e.volume)}
+                        </span>
+                      </button>
                     </li>
                   );
                 })}
