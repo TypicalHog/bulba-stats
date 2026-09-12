@@ -134,7 +134,7 @@ async function PlayersBody() {
     registrations,
     bankOps,
     legs,
-    openOrders,
+    [...openOrders, ...closedOrders],
   );
 
   const rows: PlayerRow[] = [...stats.values()].map((s) => {

@@ -62,7 +62,7 @@ export function population(
   players: readonly Registration[],
   bankOps: readonly Fill[],
   legs: readonly TradeLeg[],
-  openOrders: readonly LimitOrder[],
+  orders: readonly LimitOrder[],
   { activeWindowMs = ACTIVE_WINDOW_MS }: { activeWindowMs?: number } = {},
 ): { accounts: Account[]; funnel: FunnelStep[]; anchor: number } {
   const funded = new Set<string>();
@@ -75,7 +75,7 @@ export function population(
     // A maker leg is proof the account had an order resting on the book.
     if (leg.isMaker) quoted.add(leg.username);
   }
-  for (const order of openOrders) {
+  for (const order of orders) {
     if (order.player?.username) quoted.add(order.player.username);
   }
 
