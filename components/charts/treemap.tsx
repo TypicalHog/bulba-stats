@@ -167,15 +167,17 @@ export function Treemap({
           {rects.map((rect) => {
             const value = rect.node.values[metric] ?? 0;
             const showLabel = rect.w > 60 && rect.h > 26;
+            const name = `${rect.node.label} — ${
+              active?.format === "diamonds"
+                ? diamondsCompact(value)
+                : `${num(value)} units`
+            }`;
             return (
               <Link
                 key={rect.node.key}
                 href={rect.node.href}
-                title={`${rect.node.label} — ${
-                  active?.format === "diamonds"
-                    ? diamondsCompact(value)
-                    : `${num(value)} units`
-                }`}
+                title={name}
+                aria-label={name}
                 className="absolute overflow-hidden rounded-[2px] transition-opacity hover:opacity-80"
                 style={{
                   left: `${(rect.x / WIDTH) * 100}%`,
