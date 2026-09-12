@@ -23,6 +23,7 @@ import {
   MARKET_MAKER,
   dateOnly,
   dateTime,
+  CURRENCY,
   diamonds,
   diamondsCompact,
   num,
@@ -330,7 +331,9 @@ async function TreasuryBody() {
                 <div className="flex items-baseline justify-between gap-2">
                   <span className="text-[12px] text-ink">{pool.name}</span>
                   <span className="font-mono text-[12px] text-ink">
-                    {diamonds(pool.balance)}
+                    {pool.balance > 0 && pool.balance < 0.0001
+                      ? `<0.0001${CURRENCY}`
+                      : diamonds(pool.balance)}
                   </span>
                 </div>
                 <div className="mt-1">
