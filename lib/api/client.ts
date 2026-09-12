@@ -218,10 +218,14 @@ export async function crawl<T>(
   let pages = 0;
 
   while (pages < maxPages) {
-    const page: { data: T[]; meta?: Record<string, unknown> } = await apiGet<T[]>(
-      withVersion(buildPath(before), version),
-      opts,
-    );
+    let page: { data: T[]; meta?: Record<string, unknown> };
+    try {
+      page = await apiGet<T[]>(withVersion(buildPath(before), version), opts);
+    } catch {
+      // A page failed after some already succeeded — return what was fetched
+      // rather than discarding it along with the exception.
+      return { rows, complete: false, pages };
+    }
     pages++;
     const { data, meta } = page;
     if (!data.length) return { rows, complete: true, pages };
@@ -253,10 +257,14 @@ async function crawlForward<T>(
   let pages = 0;
 
   while (pages < maxPages) {
-    const page: { data: T[]; meta?: Record<string, unknown> } = await apiGet<T[]>(
-      withVersion(buildPath(after), version),
-      opts,
-    );
+    let page: { data: T[]; meta?: Record<string, unknown> };
+    try {
+      page = await apiGet<T[]>(withVersion(buildPath(after), version), opts);
+    } catch {
+      // A page failed after some already succeeded — return what was fetched
+      // rather than discarding it along with the exception.
+      return { rows, complete: false, pages };
+    }
     pages++;
     const { data, meta } = page;
     if (!data.length) return { rows, complete: true, pages };
