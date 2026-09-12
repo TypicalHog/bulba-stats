@@ -486,7 +486,7 @@ const CLOSED_STATUS = "filled,cancelled,expired";
 export const getOrderSummary = cache(
   async (status: string = OPEN_STATUS): Promise<OrderSummaryGroup[] | null> =>
     apiGetSoft<OrderSummaryGroup[]>(`/orders/summary?status=${status}`, {
-      revalidate: TTL.aggregate,
+      revalidate: TTL.heavy,
       tags: ["order-summary"],
     }),
 );
