@@ -2,9 +2,10 @@
 /**
  * Hourly market snapshot capture.
  *
- * The upstream API exposes the order book only as it stands right now, so
- * anything time-varying about book structure — spread, depth, quote lifetime,
- * wealth over time — is unrecoverable after the fact. This script records it.
+ * Upstream's own book-history endpoints only reach back 90 days and don't
+ * cover balances or wealth, so anything time-varying about book structure —
+ * spread, depth, quote lifetime — older than that, and wealth over time at
+ * any age, is unrecoverable after the fact. This script records it.
  *
  * It is deliberately dependency-free and does not import from `lib/`: that code
  * is `server-only` TypeScript built around Next's fetch cache, neither of which
@@ -809,9 +810,9 @@ async function writeBranchMeta() {
       "it is produced hourly by `.github/workflows/snapshot.yml` running",
       "`scripts/snapshot.mjs` from `main`.",
       "",
-      "The upstream API exposes the order book only as it stands right now, so spread,",
-      "depth and balances over time cannot be recovered after the fact. This branch is",
-      "that history.",
+      "Upstream's own book-history endpoints only reach back 90 days and don't cover",
+      "balances, so spread and depth beyond that window, and balances over time at any",
+      "age, cannot be recovered after the fact. This branch is that history.",
       "",
       "## Layout",
       "",

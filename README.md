@@ -106,9 +106,10 @@ duplicates. See [SPEC.md §1.3](SPEC.md#13-caching).
 
 Charts are hand-rolled SVG — no charting dependency.
 
-One thing is recorded rather than derived. The API exposes the order book only
-as it stands *right now*, so spread and depth over time cannot be recovered
-after the fact. A GitHub Action runs `npm run snapshot` hourly and commits the
+One thing is recorded rather than derived. Upstream's own order-book history
+endpoints only reach back 90 days and don't cover balances, so spread and
+depth beyond that window, and balances over time at any age, cannot be
+recovered after the fact. A GitHub Action runs `npm run snapshot` hourly and commits the
 result to a separate **`data` branch** — roughly 25 KiB per snapshot covering
 every book, the treasury, and every bank balance, plus a compact per-day series
 the site reads back in one request per day.

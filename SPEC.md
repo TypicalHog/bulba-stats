@@ -293,10 +293,13 @@ The hourly capture job (§1.5) is the one sustained load. It paces itself to
 
 ### 1.5 Captured history
 
-The API exposes the order book only **as it stands right now**. Spread, depth,
-balances and quote lifetime over time are therefore unrecoverable after the
+Upstream's own book-history endpoints (`/orderbook/:id/history`,
+`/orderbook/history`) only reach back **90 days** and don't cover balances or
+quote lifetime. Spread, depth and book structure older than that, and balances
+and quote lifetime over time at any age, are therefore unrecoverable after the
 fact: no amount of later crawling reconstructs what the book looked like last
-Tuesday. The only way that history comes to exist is to record it as it happens.
+year. The only way that history comes to exist beyond upstream's window is to
+record it as it happens.
 
 `scripts/snapshot.mjs`, run hourly by `.github/workflows/snapshot.yml`, does
 that. Output lands on a dedicated **`data` branch** — never on `main`, and with
@@ -781,9 +784,9 @@ than just hiding rows:
 
 **Trends are shown only where history exists.** Stat tiles derived from the
 trade record carry a sparkline and a change against the prior period. The
-book-structure tiles (two-sided books, median spread) have no history in the
-API — it exposes the order book only as it stands right now — so they carry a
-sparkline **only** once the hourly capture (§1.5) has accrued enough captures
+book-structure tiles (two-sided books, median spread) draw on the hourly
+capture (§1.5) rather than upstream's own 90-day-capped history endpoints, so
+they carry a sparkline **only** once the hourly capture has accrued enough captures
 to have a shape worth drawing, and look exactly as they always did until then.
 A single point is not a line. Share deltas are
 expressed in **percentage points**, since a share moving 40% → 43% has risen
@@ -1124,4 +1127,5 @@ Two boundary rules fall out of that split:
   which lives on a git branch rather than in a datastore, is written by CI
   rather than by the app, and is read at runtime by `lib/api/snapshots.ts`
   (§1.5) for the book-history panel and sparklines. It exists because book
-  history cannot be recovered any other way.
+  history beyond upstream's 90-day window, and balance/treasury history at any
+  age, cannot be recovered any other way.

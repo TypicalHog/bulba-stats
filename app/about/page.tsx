@@ -163,12 +163,13 @@ export default function AboutPage() {
             realistically hit from a market maker&apos;s ladder.
           </Method>
 
-          <Method title="Trends, and where they're missing">
+          <Method title="Trends, and where they’re missing">
             Stat tiles built from the trade record carry a sparkline and a
             change against the prior period. The book-structure tiles —
-            two-sided books, median spread — have no such history to draw on:
-            the API exposes the order book only as it stands right now, so a
-            trend over it can only come from the hourly capture. They stay
+            two-sided books, median spread — draw on the hourly capture instead:
+            upstream’s own book-history endpoints only reach back 90 days, so
+            the capture is what carries a trend older than that, plus the
+            per-player and treasury history those endpoints do not cover. They stay
             blank until enough snapshots exist to make a line meaningful, and a
             capture that could not reach the depth endpoint records{" "}
             <strong>null rather than zero</strong>, so those points are dropped

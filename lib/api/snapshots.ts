@@ -6,9 +6,10 @@ import { UPSTREAM_TAG } from "./constants";
 /**
  * Reader for the captured history on the `data` branch.
  *
- * The upstream API exposes the order book only as it stands right now, so
- * everything time-varying about book *structure* comes from here instead —
- * see SPEC §1.5 and `scripts/snapshot.mjs`.
+ * Upstream's own book-history endpoints only reach back 90 days and don't
+ * cover balances or treasury, so everything time-varying about book
+ * *structure* beyond that window — and all of it for balances/treasury —
+ * comes from here instead — see SPEC §1.5 and `scripts/snapshot.mjs`.
  *
  * Two properties shape this module:
  *
