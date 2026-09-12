@@ -228,8 +228,8 @@ export type CounterpartyEdge = {
 /**
  * Who trades with whom, weighted by volume.
  *
- * Only taker legs are walked, and each is paired with its makers, so an edge is
- * counted once per match rather than once per side.
+ * Only maker legs are walked, since each names its taker unambiguously, so an
+ * edge is counted once per match rather than once per side.
  */
 export function counterpartyEdges(legs: TradeLeg[]): CounterpartyEdge[] {
   const uuids = uuidIndex(legs);

@@ -22,7 +22,7 @@ export type AutomationVerdict = {
   orders: number;
   /** Median seconds between consecutive order placements. */
   medianGapMs: number | null;
-  /** Spread of those gaps relative to their median. Low means clockwork. */
+  /** Spread of those gaps relative to their mean (coefficient of variation). Low means clockwork. */
   variability: number | null;
   /** Share of gaps under one second. */
   subSecondShare: number;
