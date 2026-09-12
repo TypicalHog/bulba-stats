@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { INK, SURFACE, seriesColor } from "@/lib/design";
-import { compact, diamondsCompact, num } from "@/lib/format";
+import { compact, diamondsCompact, num, percent } from "@/lib/format";
 import {
   CHART_MIN_WIDTH,
   CHART_PAD,
@@ -28,12 +28,13 @@ export type TimePoint = {
  * can't hand a closure to a Client Component, and a token keeps the boundary
  * serializable.
  */
-export type ValueFormat = "compact" | "diamonds" | "count";
+export type ValueFormat = "compact" | "diamonds" | "count" | "percent";
 
 const FORMATTERS: Record<ValueFormat, (n: number) => string> = {
   compact: (n) => compact(n),
   diamonds: (n) => diamondsCompact(n),
   count: (n) => num(n),
+  percent: (n) => percent(n, n < 10 ? 2 : 1),
 };
 
 /**

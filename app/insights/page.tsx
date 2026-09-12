@@ -216,7 +216,7 @@ async function BookHistory() {
               { key: "spread", label: "Median spread %", color: SERIES[0] },
             ]}
             height={180}
-            format="count"
+            format="percent"
           />
           <Caveat>
             {spreadDelta != null && (

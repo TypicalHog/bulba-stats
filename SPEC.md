@@ -992,8 +992,8 @@ filtering, chart hover, and the live feed. No global state library.
 Two boundary rules fall out of that split:
 
 - **Nothing crossing to a Client Component may be a function.** Chart value
-  formatters are named tokens (`"compact"`, `"diamonds"`, `"count"`) resolved on
-  the client, not closures passed as props.
+  formatters are named tokens (`"compact"`, `"diamonds"`, `"count"`, `"percent"`)
+  resolved on the client, not closures passed as props.
 - **A helper called on the server may not live in a `"use client"` module.**
   Next permits a client export to be *rendered* or *passed as a prop*, never
   called, and the failure is a silent fall back to client rendering with a 200
