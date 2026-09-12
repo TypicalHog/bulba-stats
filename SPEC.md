@@ -143,11 +143,12 @@ for per-order ages and lifecycle statistics, because grouped rows carry only a
 fold-level `oldestCreatedAt`/`newestCreatedAt` range, not per-order timestamps
 or `expiresAt`/`completedAt`.
 
-`booksFromLevels` builds the books from those rows and `organicBooksFromLevels`
-strips the house from them, both interchangeable with the crawl-based pair.
-Equivalence was checked at full depth, not just at the touch: across all 9,219
-price levels the two agree on every quantity **and** on every per-player amount
-behind each level.
+`booksFromLevels` builds the books from those rows, and the same fold with the
+house filtered out would be interchangeable with the crawl-based organic book —
+checked at full depth, not just at the touch: across all 9,219 price levels the
+two agree on every quantity **and** on every per-player amount behind each
+level. Nothing wires it up yet: the attributed `groupBy` request does not carry
+`player`, so the organic book on `/orders` still crawls.
 
 `/recipes` reads the grouped rows and no longer crawls at all — it prices every
 recipe by sweeping books it gets for one request. It asks for the unattributed
@@ -456,8 +457,9 @@ meaning. Everything below is computed in `lib/analytics/`.
   `OrderBook`, so depth curves, metrics, slippage and participants work on it
   unchanged. It also produces the **organic book**: the same aggregation with
   house-posted orders removed — something the plain `/orderbook` endpoint
-  cannot express because it aggregates levels before anyone sees them, though
-  `groupBy=listing,side,player,price` (§1.2) can, via `organicBooksFromLevels`.
+  cannot express because it aggregates levels before anyone sees them, and
+  `groupBy=listing,side,player,price` (§1.2) is not yet wired up to replace
+  the crawl here.
 - **Organic book**: best bid and ask written by anyone other than the house,
   beside the published quote. The house writes 92.6% of resting orders but not
   most of the coverage — 115 of 118 books carry a non-house order and 106 are

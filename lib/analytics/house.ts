@@ -1,4 +1,4 @@
-import type { BankAccount, LimitOrder, Player } from "../api/types";
+import type { Player } from "../api/types";
 import { MARKET_MAKER } from "../format";
 
 /**
@@ -143,15 +143,4 @@ export function affiliations(players: readonly Player[]): Affiliations {
       (a, b) => b.banks.length - a.banks.length || a.username.localeCompare(b.username),
     ),
   };
-}
-
-/** Members of a bank, for the rare case a caller has the raw account. */
-export function bankMembers(bank: BankAccount): string[] {
-  return (bank.members ?? []).map((m) => m.username);
-}
-
-/** Convenience for order collections that still key off the operating account. */
-export function houseOrderShare(orders: readonly LimitOrder[]): number {
-  if (!orders.length) return 0;
-  return partitionByHouse(orders).house.length / orders.length;
 }

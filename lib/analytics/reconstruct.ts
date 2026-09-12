@@ -4,7 +4,6 @@ import type {
   BookOrder,
   LimitOrder,
   OrderBook,
-  OrderLevel,
   OrderbookSummary,
 } from "../api/types";
 import { isHouseOrder } from "./house";
@@ -192,25 +191,6 @@ export function booksFromLevels(
   }
 
   return books;
-}
-
-/**
- * The grouped books with house-posted liquidity removed.
- *
- * Attribution is by player, because grouped rows carry no bank relation —
- * `isHouseOrder` prefers the bank and only falls back to the operating account.
- * Checked against the crawl over all 9,384 resting orders: the two agree on
- * every row, because every trader posts from their own bank and only
- * `BulbaStore` posts from `market_maker`. It would diverge if a human ever
- * quoted from a house bank, which `crossCheck` would not catch — it guards the
- * book, not the split.
- */
-export function organicBooksFromLevels(
-  levels: readonly OrderLevel[],
-): Map<number, ReconstructedBook> {
-  return booksFromLevels(
-    levels.filter((row) => !isHouseOrder({ player: row.player })),
-  );
 }
 
 /**
