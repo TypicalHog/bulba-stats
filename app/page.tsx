@@ -17,7 +17,7 @@ import {
 import { toLegs } from "@/lib/analytics/legs";
 import { buildTape, venueStats } from "@/lib/analytics/tape";
 import { playerStats } from "@/lib/analytics/players";
-import { Panel, Caveat } from "@/components/ui/panel";
+import { Panel, Caveat, EmptyState } from "@/components/ui/panel";
 import { HeroStat, Stat } from "@/components/ui/stat";
 import { RankedBars } from "@/components/charts/bars";
 import { DataTable, Rank, Td, Th, Tr } from "@/components/ui/table";
@@ -398,6 +398,9 @@ async function TopItems() {
       }
       bodyClassName=""
     >
+      {!ranked.length ? (
+        <EmptyState>Nothing to show.</EmptyState>
+      ) : (
       <DataTable>
         <thead>
           <tr>
@@ -451,6 +454,7 @@ async function TopItems() {
           })}
         </tbody>
       </DataTable>
+      )}
     </Panel>
   );
 }

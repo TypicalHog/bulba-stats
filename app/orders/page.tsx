@@ -524,8 +524,8 @@ async function RestingBook() {
         />
         <Stat
           label="Median order age"
-          value={duration(medianAge)}
-          hint={`90th pct ${duration(p90Age)}`}
+          value={ages.length ? duration(medianAge) : "—"}
+          hint={ages.length ? `90th pct ${duration(p90Age)}` : "no open orders"}
         />
         <Stat
           label="Partially filled"

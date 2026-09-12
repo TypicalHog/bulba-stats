@@ -701,7 +701,8 @@ async function Rhythm() {
   const hourTotals = Array.from({ length: 24 }, (_, h) =>
     grid.reduce((a, row) => a + row[h], 0),
   );
-  const peakHour = hourTotals.indexOf(Math.max(...hourTotals));
+  const maxHourTotal = Math.max(...hourTotals);
+  const peakHour = maxHourTotal > 0 ? hourTotals.indexOf(maxHourTotal) : null;
 
   const dayTotals = grid.map((row) => row.reduce((a, b) => a + b, 0));
   const DAY_NAMES = [
@@ -713,7 +714,8 @@ async function Rhythm() {
     "Friday",
     "Saturday",
   ];
-  const peakDay = dayTotals.indexOf(Math.max(...dayTotals));
+  const maxDayTotal = Math.max(...dayTotals);
+  const peakDay = maxDayTotal > 0 ? dayTotals.indexOf(maxDayTotal) : null;
 
   const activeDays = days.filter((d) => d.trades > 0).length;
   const quietDays = days.length - activeDays;
@@ -734,13 +736,15 @@ async function Rhythm() {
             <div>
               <p className="text-ink-3">Busiest hour</p>
               <p className="font-mono text-[15px] text-ink">
-                {String(peakHour).padStart(2, "0")}:00
+                {peakHour != null
+                  ? `${String(peakHour).padStart(2, "0")}:00`
+                  : "—"}
               </p>
             </div>
             <div>
               <p className="text-ink-3">Busiest weekday</p>
               <p className="font-mono text-[15px] text-ink">
-                {DAY_NAMES[peakDay]}
+                {peakDay != null ? DAY_NAMES[peakDay] : "—"}
               </p>
             </div>
             <div>
