@@ -445,9 +445,12 @@ async function crawlForward<T>(
  * The assumption is that rows below the anchor never change. Transactions are
  * append-only, and the one mutation that exists — a `pending` row reaching
  * `success`, which makes it appear under the default `status=success` filter —
- * was measured settling in ~50 ms, while the anchor trails the head by up to a
- * thousand ids (days, at observed rates). A row that stayed pending that long
- * would be missed until the anchor next moves; `TTL.frozen` bounds it further.
+ * was measured settling in ~50 ms. The anchor usually trails the head by
+ * hundreds of ids, but at the instant it steps to a new multiple it trails by
+ * none, so the caller holds it back from the newest id it has seen (see
+ * `ANCHOR_LAG`) rather than letting an in-flight row fall into the frozen half.
+ * A row that stayed pending longer than that would be missed until the anchor
+ * next moves; `TTL.frozen` bounds it further.
  *
  * Returns newest-first, matching `crawl`.
  */

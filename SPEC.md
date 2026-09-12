@@ -210,8 +210,11 @@ past whose pages stay cached until the anchor moves (roughly every three days at
 observed rates), and everything above is fetched forward with `after`, which is
 at most a couple of pages. One shared probe finds the anchor for all three
 transaction crawls. It rests on transactions being append-only; the one mutation
-that exists, a `pending` row reaching `success`, was measured settling in ~50 ms
-against an anchor that trails by days.
+that exists, a `pending` row reaching `success`, was measured settling in ~50 ms.
+The anchor usually trails the newest id by hundreds, but at the instant it steps
+to a new multiple it trails by none, so it is held back fifty ids — about three
+hours of them — rather than letting a row still in flight fall into the frozen
+half and go missing until the hour lapses.
 
 **Order crawls are content-addressed.** `/orders/summary` returns the whole
 resting book folded to 326 rows in one request. Digesting its `count`,

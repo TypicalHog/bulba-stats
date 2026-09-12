@@ -62,6 +62,21 @@ import {
  */
 const ANCHOR_STEP = 1000;
 
+/**
+ * Ids the anchor keeps behind the newest one it has seen.
+ *
+ * Quantizing alone leaves one bad instant. The step the anchor takes to a new
+ * multiple can land it just above a row that is still `pending`: history is
+ * frozen at `before=anchor` while that row is invisible to the default
+ * `status=success` filter, the head starts at `after=anchor - 1` and never
+ * covers it, and it is missing from every lifetime total until `TTL.frozen`
+ * lapses an hour later. Holding the anchor back fifty ids — about three hours
+ * at the observed ~340 a day — means nothing below it can still be in flight,
+ * against a pending window measured in milliseconds. The head absorbs the
+ * difference and stays far inside its page budget.
+ */
+const ANCHOR_LAG = 50;
+
 const ALL_TRANSACTION_TYPES = [...TRADE_TYPES, ...BANK_TYPES].join(",");
 
 /**
@@ -82,7 +97,7 @@ const getTransactionAnchor = cache(async (): Promise<number | null> => {
   );
   const newest = data?.[0]?.id;
   if (typeof newest !== "number") return null;
-  const anchor = Math.floor(newest / ANCHOR_STEP) * ANCHOR_STEP;
+  const anchor = Math.floor((newest - ANCHOR_LAG) / ANCHOR_STEP) * ANCHOR_STEP;
   // A market younger than one step has no history worth freezing.
   return anchor > 0 ? anchor : null;
 });
