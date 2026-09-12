@@ -18,6 +18,7 @@ import { ItemLink } from "@/components/ui/entity";
 import { StackedBars } from "@/components/charts/timeseries";
 import { SplitBar } from "@/components/charts/bars";
 import { SERIES } from "@/lib/design";
+import { anchorNow } from "@/lib/time";
 import {
   MARKET_MAKER,
   dateOnly,
@@ -190,6 +191,17 @@ async function TreasuryBody() {
     else if (op.type === "withdraw") currencyOut += op.amount;
   }
 
+  // Anchored to the newest trade rather than the wall clock, so the same
+  // cached data reads the same way for every visitor: is the distribution
+  // schedule's next run already in the past?
+  const lastTradeAt = trades.length
+    ? Math.max(...trades.map((t) => Date.parse(t.createdAt)))
+    : null;
+  const now = anchorNow(lastTradeAt);
+  const scheduleOverdue =
+    treasury.schedule?.nextRunAt != null &&
+    Date.parse(treasury.schedule.nextRunAt) < now;
+
   return (
     <div className="flex flex-col gap-5">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
@@ -212,7 +224,9 @@ async function TreasuryBody() {
           label="Next distribution"
           value={
             treasury.schedule?.nextRunAt
-              ? dateOnly(treasury.schedule.nextRunAt)
+              ? scheduleOverdue
+                ? `Overdue since ${dateOnly(treasury.schedule.nextRunAt)}`
+                : dateOnly(treasury.schedule.nextRunAt)
               : "—"
           }
           hint={
@@ -220,6 +234,7 @@ async function TreasuryBody() {
               ? `every ${treasury.schedule.intervalHours}h`
               : undefined
           }
+          tone={scheduleOverdue ? "down" : "neutral"}
         />
         <Stat
           label="Shares outstanding"
@@ -326,8 +341,10 @@ async function TreasuryBody() {
                 </span>
               </p>
               <p className="mt-0.5 text-ink-3">
-                Next run{" "}
-                <span className="font-mono text-ink-2">
+                {scheduleOverdue ? "Overdue since" : "Next run"}{" "}
+                <span
+                  className={`font-mono ${scheduleOverdue ? "text-down" : "text-ink-2"}`}
+                >
                   {dateTime(treasury.schedule.nextRunAt)}
                 </span>
               </p>
