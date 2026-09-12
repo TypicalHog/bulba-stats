@@ -449,36 +449,34 @@ async function UpstreamDocs() {
         bodyClassName="p-0"
       >
         {commands ? (
-          <div className="scroll-y max-h-[300px]">
-            <DataTable>
-              <thead>
-                <tr>
-                  <Th>Command</Th>
-                  <Th>Description</Th>
-                  <Th align="right">Access</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {commands.commands.map((c) => (
-                  <Tr key={c.name}>
-                    <Td mono className="text-ink">
-                      /{c.name}
-                    </Td>
-                    <Td className="whitespace-normal text-ink-3">
-                      {c.description}
-                    </Td>
-                    <Td align="right">
-                      <Badge
-                        tone={c.accessLevel === "info" ? "neutral" : "accent"}
-                      >
-                        {c.accessLevel}
-                      </Badge>
-                    </Td>
-                  </Tr>
-                ))}
-              </tbody>
-            </DataTable>
-          </div>
+          <DataTable maxHeight={300}>
+            <thead>
+              <tr>
+                <Th>Command</Th>
+                <Th>Description</Th>
+                <Th align="right">Access</Th>
+              </tr>
+            </thead>
+            <tbody>
+              {commands.commands.map((c) => (
+                <Tr key={c.name}>
+                  <Td mono className="text-ink">
+                    /{c.name}
+                  </Td>
+                  <Td className="whitespace-normal text-ink-3">
+                    {c.description}
+                  </Td>
+                  <Td align="right">
+                    <Badge
+                      tone={c.accessLevel === "info" ? "neutral" : "accent"}
+                    >
+                      {c.accessLevel}
+                    </Badge>
+                  </Td>
+                </Tr>
+              ))}
+            </tbody>
+          </DataTable>
         ) : (
           <p className="px-4 py-6 text-center text-[12px] text-ink-3">
             The commands endpoint didn&apos;t respond.
