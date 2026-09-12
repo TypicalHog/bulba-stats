@@ -35,6 +35,7 @@ auth. BulbaStats never writes.
 | `GET /transactions?view=fills` | One row per transaction record, incl. bank operations |
 | `GET /orders` | Limit orders, all statuses, cursor-paginated |
 | `GET /orders/summary` | Resting orders folded per (side, listing, bank); `groupBy=listing,side[,player],price` returns the whole price-level book in one call |
+| `GET /players` | Paged index of every registered account; `includeBanks` / `includeBalances` |
 | `GET /players/:username` | Profile, banks, per-variant balances |
 | `GET /treasury` | Pools, distribution schedule, stock (shares outstanding / holders) |
 | `GET /treasury/revenue?days=N` | Daily fee revenue split by `physical_fees` / `storage_fees` |
@@ -231,8 +232,9 @@ figure.
 
 What remains is mostly the thing neither mechanism can help with. Of those 80
 requests, 44 are the 22 profile fetches behind the player directory, because
-there is no accounts index upstream (§1.1) and a profile has no cheap change
-signal. History crawling is down to a shared anchor probe plus five head pages.
+balances and full bank membership appear nowhere but a profile and a profile has
+no cheap change signal. Finding the accounts no longer costs any of them: the
+`/players` index (§1.1) hands over the whole population in four requests. History crawling is down to a shared anchor probe plus five head pages.
 
 Sustained worst case falls from ~102 req/min to ~47 against the 120 allowance
 (§1.4) while the book is still, and rises toward the old figure when it is
@@ -828,10 +830,13 @@ each appears:
   order. They stay in every total, because they are real fills that moved real
   inventory and because silently differing from the upstream's own volume
   figures would be worse. Nothing on the site implies intent.
-- **The account roster is a floor, not a census.** There is no players index
-  upstream, so accounts are discovered from the trade record, from anyone who
-  has moved funds, and then transitively through shared-bank membership. An
-  account that has done none of those three is unreachable and uncounted.
+- **The account count is a census; the balance figures are not.** Registration
+  counts and cohorts come from the `/players` index, so they cover every account
+  upstream knows about. Balances, bank membership and the wealth distribution
+  still come from per-account profiles, and those are fetched only for accounts
+  reachable from the trade record, from fund movements, or transitively through
+  shared-bank membership — so net worth and concentration describe that subset,
+  and say so where they appear.
 
 ---
 

@@ -314,12 +314,40 @@ export const getAllBankOps = cache(
   async (): Promise<Fill[]> => (await getBankOps()).rows,
 );
 
+/** What an index row carries without `includeBanks`. */
+type PlayerIndexRow = Pick<
+  Player,
+  "id" | "uuid" | "username" | "createdAt" | "lastSeenAt"
+>;
+
+/**
+ * Every registered account, newest first — the whole population.
+ *
+ * ~783 rows in four requests of the light projection, so the account count and
+ * the registration cohorts are a census rather than a sample of whoever the
+ * feeds happen to mention. `includeBanks` is deliberately off: nothing that
+ * reads this needs balances, and it doubles the payload.
+ *
+ * Ten pages is 2,000 accounts against 783 today, and the crawl stops at the
+ * first short page, so the ceiling costs nothing until it is needed.
+ */
+export const getPlayerIndex = cache(async (): Promise<PlayerIndexRow[]> => {
+  const { rows } = await crawl<PlayerIndexRow>(
+    (before) => `/players?limit=200${before ? `&before=${before}` : ""}`,
+    { maxPages: 10, revalidate: TTL.aggregate, tags: ["players"] },
+  );
+  return rows;
+});
+
 /**
  * Every account the public data mentions, with its banks.
  *
- * There is no players index upstream, so the roster is assembled: taker and
- * maker names from the trade record, plus anyone who has moved funds — accounts
- * that deposited and never traded exist, and are invisible in the trade tape.
+ * Not the roster — `getPlayerIndex` is that. This is the subset whose balances
+ * and bank membership are known, which still has to be assembled a profile at a
+ * time: the index carries neither without `includeBalances`, and a profile is
+ * the only place the full bank record appears. Taker and maker names from the
+ * trade record, plus anyone who has moved funds — accounts that deposited and
+ * never traded exist, and are invisible in the trade tape.
  *
  * Shared-bank membership is then followed transitively, because an account can
  * belong to a bank while appearing in no feed at all. `ayayabot` is only

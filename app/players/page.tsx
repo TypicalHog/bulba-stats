@@ -7,6 +7,7 @@ import {
   getListings,
   getOrderbookSummary,
   getPlayerDirectory,
+  getPlayerIndex,
 } from "@/lib/api/endpoints";
 import { toLegs } from "@/lib/analytics/legs";
 import { population } from "@/lib/analytics/population";
@@ -109,6 +110,7 @@ function SectionSkeleton({ className }: { className: string }) {
 async function PlayersBody() {
   const [
     trades,
+    registrations,
     directory,
     { rows: bankOps, complete: bankOpsComplete },
     { rows: openOrders },
@@ -118,6 +120,7 @@ async function PlayersBody() {
   ] =
     await Promise.all([
       getAllTrades(),
+      getPlayerIndex(),
       getPlayerDirectory(),
       getBankOps(),
       getAllOpenOrders(),
@@ -127,7 +130,12 @@ async function PlayersBody() {
     ]);
   const legs = toLegs(trades);
   const stats = playerStats(legs);
-  const { accounts, funnel } = population(directory, bankOps, legs, openOrders);
+  const { accounts, funnel } = population(
+    registrations,
+    bankOps,
+    legs,
+    openOrders,
+  );
 
   const rows: PlayerRow[] = [...stats.values()].map((s) => {
     /* Classified once — the label, the reason and the badge tone all come
@@ -164,7 +172,7 @@ async function PlayersBody() {
    * in `stats`. They rank last on every metric because every metric is zero —
    * that is the point of showing them.
    */
-  for (const account of accounts) {
+  for (const account of directory) {
     if (stats.has(account.username)) continue;
     rows.push({
       username: account.username,
@@ -210,10 +218,11 @@ async function PlayersBody() {
   const automation = automationVerdicts([...openOrders, ...closedOrders]);
 
   /*
-   * Registration cohorts, by the week each account was created. Included as
-   * asked and reported literally: nearly everyone arrived in the market's
-   * opening week, so this is close to a single bar, and that flatness is the
-   * observation rather than a fault in the chart.
+   * Registration cohorts, by the week each account was created — over the whole
+   * account index, so these are arrivals rather than arrivals-who-traded. The
+   * opening week is an order of magnitude above every week since, and the
+   * `traded` figure beside it is the real observation: the conversion from
+   * registering to trading is a couple of percent.
    */
   const cohortMap = new Map<string, { joined: number; traded: number }>();
   for (const account of accounts) {
@@ -278,7 +287,11 @@ async function PlayersBody() {
   return (
     <div className="flex flex-col gap-5">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Stat label="Accounts" value={num(rows.length)} hint="known to exist" />
+        <Stat
+          label="Accounts"
+          value={num(accounts.length)}
+          hint="registered upstream"
+        />
         <Stat
           label="Have traded"
           value={num(humans.length)}
@@ -320,13 +333,13 @@ async function PlayersBody() {
             }))}
           />
           <Caveat>
-            Accounts are discovered from the trade record, from anyone who has
-            moved funds, and then through shared-bank membership — an account
-            can belong to a bank while appearing in no feed at all. Registration
-            counts everyone reachable that way, so it is a floor, not a census.
-            &ldquo;Active lately&rdquo; is measured against the dataset&apos;s
-            last event rather than the clock, so a cached figure doesn&apos;t
-            drift.
+            Registration is the upstream account index, so the first step is a
+            census rather than a sample. Every step after it is read from the
+            trade, bank-movement and order crawls, so an account whose only
+            activity predates a crawl&apos;s page cap can sit one rung lower
+            than it belongs. &ldquo;Active lately&rdquo; is measured against the
+            dataset&apos;s last event rather than the clock, so a cached figure
+            doesn&apos;t drift.
             {!bankOpsComplete &&
               " The bank-movement crawl hit its page cap, so accounts whose only activity predates the crawled window are missing from the count."}
           </Caveat>
@@ -443,11 +456,11 @@ async function PlayersBody() {
             }))}
           />
           <Caveat>
-            Reported literally, and the shape is the finding: the exchange
-            opened to an existing community, so almost everyone registered in
-            the first week and there is little cohort structure to compare. A
-            retention curve needs arrivals spread over time, which this market
-            has not had yet.
+            Every registered account, not just the ones that show up in the
+            trade record. The exchange opened to an existing community, so the
+            opening week dwarfs every week since — but arrivals have not
+            stopped, and the gap between joined and traded is the finding:
+            almost nobody who registers goes on to place a trade.
           </Caveat>
         </Panel>
       </div>

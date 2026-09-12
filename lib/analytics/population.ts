@@ -43,6 +43,15 @@ export type FunnelStep = {
 const ACTIVE_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
 /**
+ * What the funnel needs of an account. Narrower than `Player` so the upstream
+ * account index — which carries no banks — can be passed straight in.
+ */
+type Registration = Pick<
+  Player,
+  "username" | "uuid" | "createdAt" | "lastSeenAt"
+>;
+
+/**
  * Classify every known account.
  *
  * `anchor` is the dataset's last event rather than the wall clock, matching how
@@ -50,7 +59,7 @@ const ACTIVE_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
  * the same figure however old the cache is.
  */
 export function population(
-  players: readonly Player[],
+  players: readonly Registration[],
   bankOps: readonly Fill[],
   legs: readonly TradeLeg[],
   openOrders: readonly LimitOrder[],
