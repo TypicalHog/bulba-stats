@@ -314,7 +314,10 @@ Minecraft username (3–16 of `[A-Za-z0-9_]`). An id or a name that cannot exist
 one entry at a time.
 
 The hourly capture job (§1.5) is the one sustained load. It paces itself to
-60 req/min — a fifth of the allowance — and so spends ~160 s per run.
+60 req/min — a fifth of the allowance — and so spends ~160 s per run. A 429 is
+paced rather than backed off from: upstream's `Retry-After` is fed back into
+that same cursor, capped at a minute, so one wait holds every caller instead of
+a local sleep stacking on top of the global one.
 
 ### 1.5 Captured history
 

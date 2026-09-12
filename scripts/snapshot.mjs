@@ -152,15 +152,44 @@ const cleanMessage = (s) => String(s).replace(/[\r\n]+/g, " ").slice(0, 200);
 function rateLimiter(perMinute) {
   const interval = 60_000 / perMinute;
   let next = 0;
-  return async () => {
+  const wait = async () => {
     const now = Date.now();
     const at = Math.max(now, next);
     next = at + interval;
     if (at > now) await new Promise((r) => setTimeout(r, at - now));
   };
+  /** Hold every caller off until `ms` from now. */
+  wait.holdFor = (ms) => {
+    next = Math.max(next, Date.now() + ms);
+  };
+  return wait;
 }
 
 const throttle = rateLimiter(RATE_PER_MIN);
+
+/**
+ * A 429 is the one failure upstream tells you how to handle: Retry-After says
+ * when to come back. That belongs in the limiter, not in a local sleep — the
+ * pacing cursor is what every caller already obeys, whereas a local sleep
+ * leaves the limiter free to fire the instant it ends and stacks one wait on
+ * top of another. The returned error says it has already been paced so the
+ * retry loop skips its own backoff.
+ */
+function rateLimited(res) {
+  const raw = res.headers.get("retry-after");
+  const seconds = Number(raw);
+  const ms = !raw
+    ? 0
+    : Number.isFinite(seconds)
+      ? seconds * 1000
+      : Date.parse(raw) - Date.now();
+  // Capped: a nonsense or hostile header must not park the capture for the
+  // rest of its budget.
+  throttle.holdFor(Number.isFinite(ms) ? Math.min(Math.max(ms, 0), 60_000) : 0);
+  const err = new Error("HTTP 429");
+  err.paced = true;
+  return err;
+}
 
 /**
  * GET and unwrap the `{ data, meta }` envelope.
@@ -185,6 +214,7 @@ async function get(path, { attempts = 3 } = {}) {
         signal: AbortSignal.timeout(Math.min(30_000, Math.max(1_000, budgetLeft()))),
       });
       if (res.status === 404) return null;
+      if (res.status === 429) throw rateLimited(res);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const body = await res.json();
       return body && typeof body === "object" && "data" in body ? body.data : body;
@@ -193,7 +223,7 @@ async function get(path, { attempts = 3 } = {}) {
         errors.push(`${path}: ${cleanMessage(err.message)}`);
         return null;
       }
-      await new Promise((r) => setTimeout(r, 1000 * attempt));
+      if (!err.paced) await new Promise((r) => setTimeout(r, 1000 * attempt));
     }
   }
 }
@@ -231,6 +261,7 @@ async function crawl(buildPath, { maxPages = 20, limit = 200, attempts = 3 } = {
           errors.push(`${path}: HTTP 404`);
           return { rows, complete: false, reason: "stopped early: HTTP 404" };
         }
+        if (res.status === 429) throw rateLimited(res);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         body = await res.json();
         break;
@@ -239,7 +270,7 @@ async function crawl(buildPath, { maxPages = 20, limit = 200, attempts = 3 } = {
           errors.push(`${path}: ${cleanMessage(err.message)}`);
           return { rows, complete: false, reason: `stopped early: ${cleanMessage(err.message)}` };
         }
-        await new Promise((r) => setTimeout(r, 1000 * attempt));
+        if (!err.paced) await new Promise((r) => setTimeout(r, 1000 * attempt));
       }
     }
     const data = body?.data ?? [];
