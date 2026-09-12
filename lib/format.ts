@@ -19,8 +19,12 @@ export function compact(n: number, digits?: number): string {
    * through the thousands, one above.
    */
   const d = digits ?? (abs < 1e4 ? 2 : 1);
-  if (abs < 1e6) return `${trimZeros((n / 1e3).toFixed(d))}K`;
-  if (abs < 1e9) return `${trimZeros((n / 1e6).toFixed(d))}M`;
+  // Rounding within a bucket can carry the scaled value up to 1000 (e.g.
+  // 999,980 -> "1000.0"), which belongs to the next unit up.
+  const k = (n / 1e3).toFixed(d);
+  if (abs < 1e6 && Math.abs(Number(k)) < 1000) return `${trimZeros(k)}K`;
+  const m = (n / 1e6).toFixed(d);
+  if (abs < 1e9 && Math.abs(Number(m)) < 1000) return `${trimZeros(m)}M`;
   return `${trimZeros((n / 1e9).toFixed(d))}B`;
 }
 
