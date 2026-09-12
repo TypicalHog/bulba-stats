@@ -1,7 +1,6 @@
 import "server-only";
 import { cache } from "react";
-import { TTL, resolveBase } from "./client";
-import { UPSTREAM_TAG } from "./constants";
+import { TTL, resolveBase, taggedFetch } from "./client";
 
 /**
  * Reader for the captured history on the `data` branch.
@@ -56,9 +55,10 @@ let branchMissUntil = 0;
 async function branchExists(): Promise<boolean> {
   if (Date.now() < branchMissUntil) return false;
   try {
-    const res = await fetch(`${DATA_BASE}/latest.json`, {
-      signal: AbortSignal.timeout(10_000),
-      next: { revalidate: TTL.aggregate, tags: [UPSTREAM_TAG, "snapshots"] },
+    const res = await taggedFetch(`${DATA_BASE}/latest.json`, {
+      timeoutMs: 10_000,
+      revalidate: TTL.aggregate,
+      tags: ["snapshots"],
     });
     if (!res.ok) {
       branchMissUntil = Date.now() + TTL.aggregate * 1000;
@@ -73,18 +73,16 @@ async function branchExists(): Promise<boolean> {
 
 async function fetchDay(day: string, isToday: boolean): Promise<MarketSample[]> {
   try {
-    const res = await fetch(`${DATA_BASE}/series/${day}.json`, {
+    const res = await taggedFetch(`${DATA_BASE}/series/${day}.json`, {
       // Never wait past 10s for a single file — these are small JSON series.
-      signal: AbortSignal.timeout(10_000),
+      timeoutMs: 10_000,
       // Today's file is still being appended to; older ones never change, so
       // only today's needs the short aggregate TTL. The raw.githubusercontent
       // CDN itself adds Cache-Control: max-age=300, so today's series can lag
       // up to ~6.5 minutes behind a capture push even though we revalidate
       // every 90s.
-      next: {
-        revalidate: isToday ? TTL.aggregate : TTL.frozen,
-        tags: [UPSTREAM_TAG, "snapshots"],
-      },
+      revalidate: isToday ? TTL.aggregate : TTL.frozen,
+      tags: ["snapshots"],
     });
     if (!res.ok) return [];
     const parsed = await res.json();

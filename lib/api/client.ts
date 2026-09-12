@@ -110,6 +110,34 @@ export const TTL = {
   frozen: 3600,
 } as const;
 
+type TaggedFetchOptions = {
+  revalidate?: number;
+  tags?: string[];
+  headers?: HeadersInit;
+  timeoutMs?: number;
+};
+
+/**
+ * The one place a request leaves this process, so every upstream fetch —
+ * including the raw-file reads in snapshots.ts — carries UPSTREAM_TAG
+ * structurally rather than by each call site remembering to add it.
+ */
+export function taggedFetch(
+  url: string,
+  {
+    revalidate = TTL.near,
+    tags,
+    headers,
+    timeoutMs = UPSTREAM_TIMEOUT_MS,
+  }: TaggedFetchOptions = {},
+): Promise<Response> {
+  return fetch(url, {
+    headers,
+    signal: AbortSignal.timeout(timeoutMs),
+    next: { revalidate, tags: [UPSTREAM_TAG, ...(tags ?? [])] },
+  });
+}
+
 /** Upstream returned a non-2xx. Carries the machine-readable `error.code`. */
 export class ApiError extends Error {
   constructor(
@@ -148,13 +176,10 @@ export async function apiGet<T>(
   { revalidate = TTL.near, tags }: GetOptions = {},
 ): Promise<{ data: T; meta?: Record<string, unknown> }> {
   const url = `${API_BASE}${path}`;
-  const res = await fetch(url, {
+  const res = await taggedFetch(url, {
+    revalidate,
+    tags,
     headers: { accept: "application/json" },
-    // Never wait past UPSTREAM_TIMEOUT_MS for a single response.
-    signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
-    // Every read carries UPSTREAM_TAG so one action can expire the lot — see
-    // the note on the constant.
-    next: { revalidate, tags: [UPSTREAM_TAG, ...(tags ?? [])] },
   });
 
   const text = await res.text();
