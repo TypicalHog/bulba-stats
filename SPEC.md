@@ -400,10 +400,11 @@ Four properties are deliberate:
 branch over `raw.githubusercontent.com`, overridable with `BULBA_DATA_BASE`.
 One request per day rather than per snapshot: the per-snapshot files hold far
 more, but a fortnight of them would be hundreds of requests, which is why the
-capture also writes the compact series. That file is the one thing on the
-branch that *is* rewritten in place — at ~240 bytes a row a day stays a few
-kilobytes, so twenty-four rewrites cost a trivial amount of git object storage
-against the requests they save every reader.
+capture also writes the compact series. That file is the largest of the few
+files on the branch that *are* rewritten in place (alongside `latest.json` and
+`roster.json`) — at ~240 bytes a row a day stays a few kilobytes, so
+twenty-four rewrites cost a trivial amount of git object storage against the
+requests they save every reader.
 
 **The schedule needs keeping alive.** GitHub disables scheduled workflows in a
 public repository after 60 days with "no repository activity", a term it never

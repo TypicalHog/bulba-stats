@@ -776,7 +776,7 @@ function marketRow(capturedAt, snapshot) {
  * Append a row to the day's series file.
  *
  * Rewritten on each capture, unlike the snapshots themselves. That is a
- * deliberate exception to the immutability rule: at roughly 80 bytes a row a
+ * deliberate exception to the immutability rule: at roughly 240 bytes a row a
  * day's file stays a couple of kilobytes, so twenty-four rewrites cost a few
  * tens of kilobytes of git objects — nothing, against the hundreds of requests
  * it saves every reader.
