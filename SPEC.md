@@ -352,8 +352,11 @@ Four properties are deliberate:
   discovery, taking the bank-only accounts with it.
   A capture that crashed part way through is the third case: what that run
   reached is not the roster.
-- **Missing means `null`, never `0`.** In a series row the depth totals are
-  null unless *every* listing's book was fetched, and `treasury` is null when
+- **Missing means `null`, never `0`.** In a series row `bidValue`/`askValue`
+  fall back to the totals `/orderbook` already returns for every listing in
+  its first call, so they are null only if that summary was missing too;
+  `bidValueNearMid`/`askValueNearMid` need the individual levels and stay null
+  unless *every* listing's book was fetched. `treasury` is null when
   `/treasury` did not answer. A market-wide total computed from a subset is not
   a smaller total — it is a different quantity wearing the same label, and
   publishing one draws a liquidity withdrawal that never happened. Readers must

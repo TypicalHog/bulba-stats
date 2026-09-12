@@ -239,6 +239,11 @@ function listingRow(summary, book) {
   const [bidUnits, bidValue] = sideDepth(bids, mid, null);
   const [askUnits, askValue] = sideDepth(asks, mid, null);
 
+  // `/orderbook` (the summary) already carries the six *total* depth columns
+  // for every listing in one call — the per-book fan-out only adds the bands,
+  // which genuinely need the individual levels. So a missing book falls back
+  // to the summary's totals rather than nulling figures that were never in
+  // doubt; only the band columns are unrecoverable without the book.
   return [
     summary.listingId,
     summary.listingName,
@@ -247,19 +252,19 @@ function listingRow(summary, book) {
     r(summary.bestBid),
     r(summary.bestAsk),
     r(summary.spread),
-    r(bids[0]?.tick ?? asks[0]?.tick ?? null),
-    book ? bidUnits : null,
-    book ? askUnits : null,
-    book ? bidValue : null,
-    book ? askValue : null,
+    r(summary.tick ?? bids[0]?.tick ?? asks[0]?.tick ?? null),
+    book ? bidUnits : (summary.bidUnits ?? null),
+    book ? askUnits : (summary.askUnits ?? null),
+    book ? bidValue : r(summary.bidValue),
+    book ? askValue : r(summary.askValue),
     ...BANDS.flatMap((band) => {
       if (!book) return [null, null, null, null];
       const [bu, bv] = sideDepth(bids, mid, band);
       const [au, av] = sideDepth(asks, mid, band);
       return [bu, au, bv, av];
     }),
-    book ? bids.length : null,
-    book ? asks.length : null,
+    book ? bids.length : (summary.bidLevels ?? null),
+    book ? asks.length : (summary.askLevels ?? null),
   ];
 }
 
@@ -397,12 +402,12 @@ async function main() {
         const detail = await get(`/orderbook/${summary.listingId}`);
         if (detail?.orderBook) books.set(summary.listingId, detail.orderBook);
       }
-      // A single missing book nulls all four market-wide depth totals for the
-      // hour (see `marketRow`), so the shortfall is recorded here rather than
-      // left to be read off a null column. `get` is silent about the ways a
-      // listing can go missing without failing — a 404 because it was delisted
+      // A missing book still nulls that listing's band columns (see
+      // `listingRow`), so the shortfall is recorded here rather than left to
+      // be read off a null column. `get` is silent about the ways a listing
+      // can go missing without failing — a 404 because it was delisted
       // mid-walk, or an answer carrying no `orderBook` — and those are exactly
-      // the ones that would otherwise null the series under a green run.
+      // the ones that would otherwise null the bands under a green run.
       if (!depthStopped && books.size < summaries.length) {
         errors.push(`depth: ${summaries.length - books.size}/${summaries.length} books missing`);
       }
@@ -474,12 +479,17 @@ async function main() {
   }
 
   const snapshot = {
-    version: 1,
+    version: 2,
     capturedAt,
     meta: {
       durationMs: Date.now() - startedAt,
       requests: requestCount,
       depth: WITH_DEPTH,
+      // Listings whose total depth columns came from the `/orderbook` summary
+      // rather than the per-listing fan-out, because that listing's book was
+      // never fetched (missing, or --no-depth). The two sources agree in
+      // practice, but this says when a total is standing in for the other.
+      depthFromSummary: summaries.length - books.size,
       errors,
     },
     listings: {
@@ -615,7 +625,8 @@ function marketRow(capturedAt, snapshot) {
   let askValue = 0;
   let bidNear = 0;
   let askNear = 0;
-  let missingDepth = 0;
+  let missingTotal = 0;
+  let missingBand = 0;
 
   for (const row of rows) {
     if (row[mid] != null) quoted++;
@@ -625,18 +636,24 @@ function marketRow(capturedAt, snapshot) {
         spreads.push((row[spread] / row[mid]) * 100);
       }
     }
-    // A null here means the book was never fetched, not that it was empty —
-    // `listingRow` writes 0 for a genuinely empty side and null only when the
-    // request failed or --no-depth was passed. Counting it as 0 would silently
+    // A null here means neither the book nor the `/orderbook` summary had a
+    // value — `listingRow` writes 0 for a genuinely empty side and null only
+    // when both sources came back empty. Counting it as 0 would silently
     // publish an understated market total.
     if (row[bv] == null) {
-      missingDepth++;
-      continue;
+      missingTotal++;
+    } else {
+      bidValue += row[bv];
+      askValue += row[av];
     }
-    bidValue += row[bv];
-    askValue += row[av];
-    bidNear += row[bv5];
-    askNear += row[av5];
+    // The band columns need the individual levels, so they stay null whenever
+    // the book itself was not fetched, unlike the totals above.
+    if (row[bv5] == null) {
+      missingBand++;
+    } else {
+      bidNear += row[bv5];
+      askNear += row[av5];
+    }
   }
 
   // These are market-wide totals, so a partial sum is not a smaller total —
@@ -644,7 +661,8 @@ function marketRow(capturedAt, snapshot) {
   // liquidity withdrawal that never happened and then "recovers" an hour later.
   // The per-snapshot file keeps the real per-listing nulls either way, so the
   // series can be rebuilt by hand if a run is ever worth salvaging.
-  const depthComplete = missingDepth === 0;
+  const totalsComplete = missingTotal === 0;
+  const bandsComplete = missingBand === 0;
 
   spreads.sort((a, b) => a - b);
 
@@ -656,10 +674,10 @@ function marketRow(capturedAt, snapshot) {
     // True median — the mean of the two middle values on an even count. The
     // app's `median` does the same; this script cannot import it.
     medianSpreadPct: spreads.length ? r(medianOf(spreads)) : null,
-    bidValue: depthComplete ? r(bidValue) : null,
-    askValue: depthComplete ? r(askValue) : null,
-    bidValueNearMid: depthComplete ? r(bidNear) : null,
-    askValueNearMid: depthComplete ? r(askNear) : null,
+    bidValue: totalsComplete ? r(bidValue) : null,
+    askValue: totalsComplete ? r(askValue) : null,
+    bidValueNearMid: bandsComplete ? r(bidNear) : null,
+    askValueNearMid: bandsComplete ? r(askNear) : null,
     // Likewise: a failed /treasury is not an empty treasury. Recording 0 drew
     // the pool draining and refilling inside one hour.
     treasury: snapshot.treasury
