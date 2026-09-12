@@ -268,6 +268,18 @@ const LISTING_COLUMNS = [
   "askLevels",
 ];
 
+/**
+ * Minecraft usernames are 1-16 chars of [A-Za-z0-9_]. Upstream player/bank/trade
+ * payloads are otherwise treated as trusted, but a username is the one field
+ * that flows straight back into the roster the next run reads and re-fetches
+ * from, so a malformed or oversized one here would persist and compound.
+ */
+const isValidUsername = (u) => typeof u === "string" && /^[A-Za-z0-9_]{1,16}$/.test(u);
+
+/** Cap on new bank members discovered per run — a genuinely huge shared bank
+ * is swept across multiple hourly runs instead of draining one run's budget. */
+const MAX_NEW_MEMBERS_PER_RUN = 100;
+
 /** Median of an already-sorted array; averages the two middles on even counts. */
 function medianOf(sorted) {
   const i = Math.floor(sorted.length / 2);
@@ -392,8 +404,10 @@ async function discoverPlayers(roster) {
     ? await sweep("trades", tradePath, 25)
     : ((await get(tradePath(null))) ?? []);
   for (const trade of trades) {
-    if (trade.taker?.username) roster.add(trade.taker.username);
-    for (const maker of trade.makers ?? []) if (maker?.username) roster.add(maker.username);
+    if (isValidUsername(trade.taker?.username)) roster.add(trade.taker.username);
+    for (const maker of trade.makers ?? []) {
+      if (isValidUsername(maker?.username)) roster.add(maker.username);
+    }
   }
 
   // Accounts that deposited but never traded are invisible in the trade tape —
@@ -403,7 +417,7 @@ async function discoverPlayers(roster) {
   const ops = cold
     ? await sweep("bank movements", bankPath, 40)
     : ((await get(bankPath(null))) ?? []);
-  for (const op of ops) if (op.player?.username) roster.add(op.player.username);
+  for (const op of ops) if (isValidUsername(op.player?.username)) roster.add(op.player.username);
 
   return { usernames: [...roster].sort(), truncated };
 }
@@ -482,6 +496,7 @@ async function main() {
     // to a bank while never trading and never moving funds itself, so it appears
     // in no other feed. Each pass may reveal members the previous one missed.
     queue = usernames;
+    let newMembersThisRun = 0;
     for (let pass = 0; pass < 3 && queue.length; pass++) {
       const discovered = new Set();
       for (const username of queue) {
@@ -497,7 +512,10 @@ async function main() {
         for (const bank of player.bankAccounts ?? []) {
           bankIds.push(bank.id);
           for (const member of bank.members ?? []) {
-            if (!fetched.has(member.username)) discovered.add(member.username);
+            if (!isValidUsername(member.username) || fetched.has(member.username)) continue;
+            if (newMembersThisRun >= MAX_NEW_MEMBERS_PER_RUN) continue;
+            if (!discovered.has(member.username)) newMembersThisRun++;
+            discovered.add(member.username);
           }
           if (banks.has(bank.id)) continue;
           banks.set(bank.id, {
@@ -520,6 +538,11 @@ async function main() {
         });
       }
       queue = [...discovered];
+    }
+    if (newMembersThisRun >= MAX_NEW_MEMBERS_PER_RUN) {
+      errors.push(
+        `bank members: capped discovery at ${MAX_NEW_MEMBERS_PER_RUN} new — remainder picked up next run`,
+      );
     }
 
     players.sort((a, b) => String(a.username).localeCompare(String(b.username)));
