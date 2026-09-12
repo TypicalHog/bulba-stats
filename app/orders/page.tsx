@@ -105,12 +105,15 @@ export default function OrdersPage() {
  * carries the owner of every order, so the same rows rebuild both books.
  */
 async function Organic() {
-  const [{ rows: orders, complete }, summary] = await Promise.all([
+  const [{ rows: orders, complete }, summary, now] = await Promise.all([
     getAllOpenOrders(),
     getOrderbookSummary(),
+    requestTime(),
   ]);
 
-  const full = reconstructBooks(orders);
+  // Same request time the rest of the page anchors to: the expiry sweep would
+  // otherwise read the wall clock and drift between panels within one render.
+  const full = reconstructBooks(orders, { now });
   const organic = reconstructOrganicBooks(orders);
   const meta = new Map(summary.map((s) => [s.listingId, s]));
 
@@ -210,13 +213,14 @@ const LADDER_MAX_SLIP_PCT = 50;
  * `/orderbook/:id` per listing, would be 118 against a 300/min budget.
  */
 async function Liquidity() {
-  const [{ rows: orders, complete }, summary, trades] = await Promise.all([
+  const [{ rows: orders, complete }, summary, trades, now] = await Promise.all([
     getAllOpenOrders(),
     getOrderbookSummary(),
     getAllTrades(),
+    requestTime(),
   ]);
 
-  const books = reconstructBooks(orders);
+  const books = reconstructBooks(orders, { now });
   const check = crossCheck(books, summary);
   const nameById = new Map(summary.map((s) => [s.listingId, s]));
 
