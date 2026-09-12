@@ -139,8 +139,9 @@ function isEnvelope<T>(body: unknown): body is Envelope<T> {
  * GET an endpoint and unwrap the `{ data, meta }` envelope.
  *
  * Endpoints that are documented but not deployed on the live host (`/health`,
- * `/ledger*`, `/banks/:id`) answer with a bare `{ error: "Not found" }` and no
- * envelope, which surfaces here as an ApiError with status 404.
+ * `/ledger*`, `/banks/:id`) answer with the same `{ error: { code, message } }`
+ * object as every other error, just with no `data`/`meta`, which surfaces here
+ * as an ApiError with status 404.
  */
 export async function apiGet<T>(
   path: string,
