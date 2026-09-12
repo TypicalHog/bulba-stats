@@ -20,7 +20,15 @@ const securityHeaders = [
       "default-src 'self'",
       "img-src 'self' https://webstore.bulbastore.uk https://mc-heads.net",
       "connect-src 'self' https://webstore.bulbastore.uk wss://webstore.bulbastore.uk https://va.vercel-scripts.com",
-      "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com",
+      /*
+       * `unsafe-eval` in development only. React's dev build calls `eval()` to
+       * rebuild callstacks across the server/client boundary, so without it
+       * `next dev` logs a CSP violation on every page and loses those stacks.
+       * The production bundle never calls it.
+       */
+      `script-src 'self' 'unsafe-inline'${
+        process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""
+      } https://va.vercel-scripts.com`,
       "style-src 'self' 'unsafe-inline'",
       "font-src 'self'",
       "object-src 'none'",
