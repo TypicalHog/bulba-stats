@@ -59,7 +59,14 @@ async function fetchDay(day: string): Promise<MarketSample[]> {
     });
     if (!res.ok) return [];
     const parsed = await res.json();
-    return Array.isArray(parsed) ? (parsed as MarketSample[]) : [];
+    return Array.isArray(parsed)
+      ? parsed.filter(
+          (r): r is MarketSample =>
+            !!r &&
+            typeof r === "object" &&
+            typeof (r as Record<string, unknown>).at === "string",
+        )
+      : [];
   } catch {
     // No branch yet, no network, rate limited — all mean "no history".
     return [];
