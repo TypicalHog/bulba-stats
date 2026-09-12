@@ -95,11 +95,14 @@ export function SortableTable<T>({
     return [...rows].sort((a, b) => {
       const va = get(a);
       const vb = get(b);
-      // Nulls always sink, regardless of direction — "no data" isn't a value
-      // that should win a ranking just because the sort flipped.
-      if (va == null && vb == null) return 0;
-      if (va == null) return 1;
-      if (vb == null) return -1;
+      // Nulls (and NaN, e.g. a 0/0 ratio) always sink, regardless of
+      // direction — "no data" isn't a value that should win a ranking just
+      // because the sort flipped.
+      const aBad = va == null || Number.isNaN(va);
+      const bBad = vb == null || Number.isNaN(vb);
+      if (aBad && bBad) return 0;
+      if (aBad) return 1;
+      if (bBad) return -1;
       const cmp =
         typeof va === "string" || typeof vb === "string"
           ? String(va).localeCompare(String(vb))
