@@ -138,11 +138,10 @@ export function WatchAlerts() {
     };
   }, [watching]);
 
-  if (!alerts.length) return null;
-
   return (
     <div
       aria-live="polite"
+      role="status"
       className="pointer-events-none fixed bottom-4 right-4 z-40 flex flex-col gap-2"
     >
       {alerts.map((alert) => (
