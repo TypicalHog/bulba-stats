@@ -338,82 +338,93 @@ export function MarketTable({
 
   return (
     <div>
-      <div className="flex flex-wrap items-center gap-2 border-b border-line px-3 py-2.5">
-        <label className="relative">
-          <span className="sr-only">Search items</span>
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search items…"
-            className="w-52 rounded border border-ink-3/50 bg-panel-2 px-2.5 py-1.5 text-[12px] text-ink placeholder:text-ink-3 focus:border-accent/50 focus:outline-none"
-          />
-        </label>
-
-        <Toggle
-          checked={onlyQuoted}
-          onChange={setOnlyQuoted}
-          label="Quoted only"
-          hint="Hide listings with no resting orders"
-        />
-        <Toggle
-          checked={onlyTraded}
-          onChange={setOnlyTraded}
-          label="Traded only"
-          hint="Hide listings that have never traded"
-        />
-        <Toggle
-          checked={showNiche}
-          onChange={setShowNiche}
-          label={`Show niche (${nicheCount})`}
-          hint="Low-demand variants, hidden by default upstream"
-        />
-        {(watched.length > 0 || onlyWatched) && (
-          <Toggle
-            checked={onlyWatched}
-            onChange={setOnlyWatched}
-            label={`Watchlist (${watched.length})`}
-            hint="Only the listings you have starred. Kept in this browser, and alerts fire only while a tab is open."
-          />
-        )}
-
-        {/*
-          Quote prices per item, per stack, or per shulker box. The multiplier
-          is per row because stack size is an item property — 64 for most
-          blocks, 16 for eggs and pearls, 1 for tools.
-        */}
-        <div
-          className="flex items-center gap-0.5 rounded border border-line p-0.5"
-          role="group"
-          aria-label="Price unit"
-        >
-          {(
-            [
-              ["single", "Single", "Price per item"],
-              ["stack", "Stack", "Price per stack (64, 16 or 1 items)"],
-              ["shulker", "Shulker", "Price per shulker box (27 stacks)"],
-            ] as [PriceUnit, string, string][]
-          ).map(([value, label, hint]) => (
-            <button
-              key={value}
-              type="button"
-              title={hint}
-              aria-pressed={unit === value}
-              onClick={() => setUnit(value)}
-              className={`cursor-pointer rounded px-2 py-1 text-[12px] transition-colors duration-150 ${
-                unit === value
-                  ? "bg-accent/15 text-accent"
-                  : "text-ink-3 hover:bg-panel-2 hover:text-ink-2"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
+      {/*
+        Two rows below `md`, one at `md` and up — never more. Free wrapping put
+        the search box, five toggles and the unit picker on as many rows as the
+        viewport forced, so this bar's height varied continuously with width and
+        the skeleton below could only guess at it. The controls now ride in one
+        non-wrapping strip that scrolls instead, which is the same affordance the
+        nav uses, and makes the reservation in `MarketBodySkeleton` exact.
+      */}
+      <div className="flex flex-col gap-2 border-b border-line px-3 py-2.5 md:flex-row md:items-center">
+        <div className="flex items-center gap-2 md:contents">
+          <label className="relative">
+            <span className="sr-only">Search items</span>
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search items…"
+              className="w-52 rounded border border-ink-3/50 bg-panel-2 px-2.5 py-1.5 text-[12px] text-ink placeholder:text-ink-3 focus:border-accent/50 focus:outline-none"
+            />
+          </label>
+          <span className="ml-auto font-mono text-[12px] text-ink-3 md:order-last">
+            {num(filtered.length)} / {num(rows.length)}
+          </span>
         </div>
 
-        <span className="ml-auto font-mono text-[12px] text-ink-3">
-          {num(filtered.length)} / {num(rows.length)}
-        </span>
+        <div className="scroll-x flex items-center gap-2 [&>*]:shrink-0">
+          <Toggle
+            checked={onlyQuoted}
+            onChange={setOnlyQuoted}
+            label="Quoted only"
+            hint="Hide listings with no resting orders"
+          />
+          <Toggle
+            checked={onlyTraded}
+            onChange={setOnlyTraded}
+            label="Traded only"
+            hint="Hide listings that have never traded"
+          />
+          <Toggle
+            checked={showNiche}
+            onChange={setShowNiche}
+            label={`Show niche (${nicheCount})`}
+            hint="Low-demand variants, hidden by default upstream"
+          />
+          {(watched.length > 0 || onlyWatched) && (
+            <Toggle
+              checked={onlyWatched}
+              onChange={setOnlyWatched}
+              label={`Watchlist (${watched.length})`}
+              hint="Only the listings you have starred. Kept in this browser, and alerts fire only while a tab is open."
+            />
+          )}
+
+          {/*
+            Quote prices per item, per stack, or per shulker box. The multiplier
+            is per row because stack size is an item property — 64 for most
+            blocks, 16 for eggs and pearls, 1 for tools.
+          */}
+          <div
+            className="flex items-center gap-0.5 rounded border border-line p-0.5"
+            role="group"
+            aria-label="Price unit"
+          >
+            {(
+              [
+                ["single", "Single", "Price per item"],
+                ["stack", "Stack", "Price per stack (64, 16 or 1 items)"],
+                ["shulker", "Shulker", "Price per shulker box (27 stacks)"],
+              ] as [PriceUnit, string, string][]
+            ).map(([value, label, hint]) => (
+              <button
+                key={value}
+                type="button"
+                title={hint}
+                aria-pressed={unit === value}
+                onClick={() => setUnit(value)}
+                className={`cursor-pointer rounded px-2 py-1 text-[12px] transition-colors duration-150 ${
+                  unit === value
+                    ? "bg-accent/15 text-accent"
+                    : "text-ink-3 hover:bg-panel-2 hover:text-ink-2"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       <SortableTable

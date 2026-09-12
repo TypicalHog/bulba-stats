@@ -82,15 +82,19 @@ export default function MarketPage() {
  * The flat 600px this replaced was shorter than the table's own scroll cap
  * (`maxHeight={900}`, market-table.tsx), which the ~180-listing catalog always
  * fills — so the panel below jumped the better part of 500px on every visit.
- * The panel height is that cap plus the CSV export row and the filter bar,
- * which wraps to more rows the narrower the viewport gets.
+ * The panel height is that cap plus the CSV export row and the filter bar.
+ *
+ * The narrow figure used to be 1130px because the filter bar wrapped to as many
+ * rows as the viewport forced — roughly four more than at `md`, and no fixed
+ * number. That bar is now two rows below `md` and one at `md` and up, so the
+ * difference is exactly one 30px control row plus its 8px gap.
  */
 function MarketBodySkeleton() {
   return (
     <div className="flex flex-col gap-4">
       <TileRowSkeleton count={4} cols="md:grid-cols-4" />
       <PanelSkeleton
-        className="h-[1130px] md:h-[985px]"
+        className="h-[1023px] md:h-[985px]"
         label="Loading market…"
       />
     </div>
