@@ -224,6 +224,13 @@ async function crawl(buildPath, { maxPages = 20, limit = 200, attempts = 3 } = {
           headers: { accept: "application/json" },
           signal: AbortSignal.timeout(Math.min(30_000, Math.max(1_000, budgetLeft()))),
         });
+        // A 404 is an answer, not a hiccup — the same reading `get` takes of
+        // it. Throwing here would spend three attempts on a settled question
+        // and then report a definitive reply as a transient failure.
+        if (res.status === 404) {
+          errors.push(`${path}: HTTP 404`);
+          return { rows, complete: false, reason: "stopped early: HTTP 404" };
+        }
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         body = await res.json();
         break;
