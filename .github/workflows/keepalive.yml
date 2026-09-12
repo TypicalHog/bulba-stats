@@ -19,7 +19,7 @@ name: Keep-alive
 
 on:
   schedule:
-    # 1st and 15th, offset from the hour like the capture.
+    # 1st and 15th, offset from the hour (the capture itself runs on it).
     - cron: "23 4 1,15 * *"
   workflow_dispatch:
 
