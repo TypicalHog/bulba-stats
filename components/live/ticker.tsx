@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
  * The runtime `io` is imported inside the effect — see below.
  */
 import type { Socket } from "socket.io-client";
-import { SITE_ORIGIN, WS_PATH } from "@/lib/api/constants";
+import { acquireLiveSocket, releaseLiveSocket } from "@/components/live/socket";
 import { ItemLink, SideTag } from "@/components/ui/entity";
 import { diamonds, num, price } from "@/lib/format";
 
@@ -54,6 +54,18 @@ export function LiveTicker({ seed }: { seed: TickerRow[] }) {
   useEffect(() => {
     let socket: Socket | null = null;
     let cancelled = false;
+    let detach: (() => void) | undefined;
+    // Tracks whether this effect run actually acquired the shared socket
+    // (the timer below may be cleared before it fires, in React's dev
+    // double-mount) and guards against releasing it twice — the async
+    // callback and the cleanup below can both reach a release call.
+    let acquired = false;
+    let released = false;
+    const release = () => {
+      if (!acquired || released) return;
+      released = true;
+      releaseLiveSocket();
+    };
 
     /*
      * Connect on the next tick rather than synchronously.
@@ -69,31 +81,17 @@ export function LiveTicker({ seed }: { seed: TickerRow[] }) {
       if (cancelled) return;
 
       /*
-       * Loaded here rather than at module scope. The client is ~44 KB and this
-       * panel is seeded server-side, so nothing on screen waits for it — but a
-       * static import puts it in the entry bundle, where it is parsed and
-       * evaluated during hydration on every route (`WatchAlerts` lives in the
-       * shell). Fetching it after mount takes that off the critical path; the
-       * tape simply goes live a moment later.
+       * `WatchAlerts` lives in the shell and wants the same connection, so the
+       * socket itself is acquired from a shared, refcounted module rather than
+       * opened here — see components/live/socket.ts for why. This is still an
+       * await point, so the effect may have torn down across it.
        */
-      const { io } = await import("socket.io-client");
-      // The import is a await point — the effect may have torn down across it.
-      if (cancelled) return;
-
-      socket = io(SITE_ORIGIN, {
-        path: WS_PATH,
-        /*
-         * WebSocket first for latency, polling kept as a fallback. Pinning to
-         * websocket alone means a blocked upgrade — a proxy, a restrictive
-         * network — kills the feed outright instead of degrading to
-         * long-polling, which this upstream also serves.
-         */
-        transports: ["websocket", "polling"],
-        // A read-only tape: a failed connection degrades to the seeded rows
-        // rather than retrying forever.
-        reconnectionAttempts: 5,
-        reconnectionDelay: 2000,
-      });
+      acquired = true;
+      socket = await acquireLiveSocket();
+      if (cancelled) {
+        release();
+        return;
+      }
       socketRef.current = socket;
 
       const subscribe = () => {
@@ -101,13 +99,9 @@ export function LiveTicker({ seed }: { seed: TickerRow[] }) {
         // Subscriptions are per-connection and must be re-sent on reconnect.
         socket?.emit("subscribe", { type: "Trade" });
       };
-
-      socket.on("connect", subscribe);
-      socket.io.on("reconnect", subscribe);
-      socket.on("disconnect", () => setStatus("offline"));
-      socket.on("connect_error", () => setStatus("offline"));
-
-      socket.on("broadcast", (msg: BroadcastMsg) => {
+      const onDisconnect = () => setStatus("offline");
+      const onConnectError = () => setStatus("offline");
+      const onBroadcast = (msg: BroadcastMsg) => {
         if (msg.model !== "Trade" || !msg.data) return;
         const row = toRow(msg.data);
         if (!row) return;
@@ -117,16 +111,32 @@ export function LiveTicker({ seed }: { seed: TickerRow[] }) {
             : [row, ...prev].slice(0, MAX_ROWS),
         );
         setFlash(row.id);
-      });
+      };
+
+      socket.on("connect", subscribe);
+      socket.io.on("reconnect", subscribe);
+      socket.on("disconnect", onDisconnect);
+      socket.on("connect_error", onConnectError);
+      socket.on("broadcast", onBroadcast);
+      // The shared socket may already be connected — via WatchAlerts, or a
+      // prior mount — in which case "connect" has already fired and won't
+      // fire again for this listener.
+      if (socket.connected) subscribe();
+
+      detach = () => {
+        socket?.off("connect", subscribe);
+        socket?.io.off("reconnect", subscribe);
+        socket?.off("disconnect", onDisconnect);
+        socket?.off("connect_error", onConnectError);
+        socket?.off("broadcast", onBroadcast);
+      };
     }, 0);
 
     return () => {
       cancelled = true;
       clearTimeout(timer);
-      // Listeners go first so a teardown can't set state on an unmounted tree.
-      socket?.removeAllListeners();
-      socket?.io.removeAllListeners();
-      socket?.disconnect();
+      detach?.();
+      release();
       socketRef.current = null;
     };
   }, []);

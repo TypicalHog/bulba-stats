@@ -1067,6 +1067,12 @@ Two boundary rules fall out of that split:
   inside an effect, so the runtime `io` is an `await import()` there and only
   the types are imported at the top. It lands in its own chunk, off the
   critical path.
+- **The live feed is one shared connection, not two.** `WatchAlerts` and
+  `LiveTicker` talk to the same origin, path and default namespace, and
+  socket.io-client does not multiplex a repeat request for that combination
+  onto the existing Manager — it opens a second, independent connection.
+  `components/live/socket.ts` acquires the socket once behind a refcount so
+  both components share it, releasing it only when the last consumer unmounts.
 - **Anything arriving after first paint reserves its space.** Two ways to get
   this wrong, both of which cost real layout shift:
   - *Suspense fallbacks.* A `PanelSkeleton` height is the panel's **measured**

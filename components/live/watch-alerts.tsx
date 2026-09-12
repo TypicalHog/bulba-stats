@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 /* Type-only — the runtime `io` is imported inside the effect, as in the ticker. */
 import type { Socket } from "socket.io-client";
-import { SITE_ORIGIN, WS_PATH } from "@/lib/api/constants";
+import { acquireLiveSocket, releaseLiveSocket } from "@/components/live/socket";
 import { useWatchlist } from "@/components/ui/watchlist";
 import { ItemIcon } from "@/components/ui/entity";
 import { diamonds, num } from "@/lib/format";
@@ -74,6 +74,18 @@ export function WatchAlerts() {
 
     let socket: Socket | null = null;
     let cancelled = false;
+    let detach: (() => void) | undefined;
+    // Tracks whether this effect run actually acquired the shared socket
+    // (the timer below may be cleared before it fires, in React's dev
+    // double-mount) and guards against releasing it twice — the async
+    // callback and the cleanup below can both reach a release call.
+    let acquired = false;
+    let released = false;
+    const release = () => {
+      if (!acquired || released) return;
+      released = true;
+      releaseLiveSocket();
+    };
     /*
      * Each alert schedules its own dismissal. Those timers have to be tracked
      * to be cancelled: unstarring everything, or navigating away, tears the
@@ -93,21 +105,21 @@ export function WatchAlerts() {
        * This component sits in the shell, so a static import would put the
        * ~44 KB client in the entry bundle for every route — including the many
        * visitors who watch nothing and never open a socket at all.
+       *
+       * The socket itself is acquired from a shared, refcounted module rather
+       * than opened here, since `LiveTicker` wants the same connection — see
+       * components/live/socket.ts. This is still an await point, so the
+       * effect may have torn down across it.
        */
-      const { io } = await import("socket.io-client");
-      if (cancelled) return;
-      socket = io(SITE_ORIGIN, {
-        path: WS_PATH,
-        transports: ["websocket", "polling"],
-        reconnectionAttempts: 5,
-        reconnectionDelay: 2000,
-      });
+      acquired = true;
+      socket = await acquireLiveSocket();
+      if (cancelled) {
+        release();
+        return;
+      }
 
       const subscribe = () => socket?.emit("subscribe", { type: "Trade" });
-      socket.on("connect", subscribe);
-      socket.io.on("reconnect", subscribe);
-
-      socket.on("broadcast", (msg: BroadcastMsg) => {
+      const onBroadcast = (msg: BroadcastMsg) => {
         if (msg.model !== "Trade" || !msg.data) return;
         // Read the watchlist through a ref: the socket handler is registered
         // once, and closing over `ids` would pin it to the starred set as it
@@ -124,7 +136,21 @@ export function WatchAlerts() {
           setAlerts((prev) => prev.filter((a) => a.id !== alert.id));
         }, LINGER_MS);
         lingerTimers.add(linger);
-      });
+      };
+
+      socket.on("connect", subscribe);
+      socket.io.on("reconnect", subscribe);
+      socket.on("broadcast", onBroadcast);
+      // The shared socket may already be connected — via LiveTicker, or a
+      // prior mount — in which case "connect" has already fired and won't
+      // fire again for this listener.
+      if (socket.connected) subscribe();
+
+      detach = () => {
+        socket?.off("connect", subscribe);
+        socket?.io.off("reconnect", subscribe);
+        socket?.off("broadcast", onBroadcast);
+      };
     }, 0);
 
     return () => {
@@ -132,9 +158,8 @@ export function WatchAlerts() {
       clearTimeout(timer);
       for (const t of lingerTimers) clearTimeout(t);
       lingerTimers.clear();
-      socket?.removeAllListeners();
-      socket?.io.removeAllListeners();
-      socket?.disconnect();
+      detach?.();
+      release();
     };
   }, [watching]);
 
