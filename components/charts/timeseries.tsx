@@ -64,7 +64,11 @@ export function StackedBars({
    * because converting viewBox units to container pixels needs the SVG's live
    * screen transform — see viewBoxXToLocalPx.
    */
-  const [hover, setHover] = useState<{ i: number; leftPx: number } | null>(null);
+  const [hover, setHover] = useState<{
+    i: number;
+    leftPx: number;
+    rightPx: number;
+  } | null>(null);
   const valueFormat = FORMATTERS[format];
 
   const W = 800;
@@ -139,12 +143,11 @@ export function StackedBars({
               return;
             }
             const centre = CHART_PAD.left + geom.slot * i + geom.slot / 2;
-            const leftPx = viewBoxXToLocalPx(
-              svgRef.current,
-              wrapRef.current,
-              centre,
-            );
-            setHover({ i, leftPx: leftPx ?? 0 });
+            const leftPx =
+              viewBoxXToLocalPx(svgRef.current, wrapRef.current, centre) ?? 0;
+            const containerWidth =
+              wrapRef.current?.getBoundingClientRect().width ?? 0;
+            setHover({ i, leftPx, rightPx: containerWidth - leftPx });
           }}
         >
           {ticks.map((t) => (
@@ -257,14 +260,11 @@ export function StackedBars({
         {hover != null && (
           <div
             className="pointer-events-none absolute z-10 rounded border border-line bg-panel-2 px-2 py-1.5 text-[10px] shadow-lg"
-            style={{
-              top: 8,
-              left: hover.leftPx,
-              transform:
-                hover.i > points.length / 2
-                  ? "translateX(-105%)"
-                  : "translateX(5%)",
-            }}
+            style={
+              hover.i > points.length / 2
+                ? { top: 8, right: hover.rightPx + 8 }
+                : { top: 8, left: hover.leftPx + 8 }
+            }
           >
             <div className="font-mono text-ink-2">{points[hover.i].label}</div>
             {series.map((s, i) => (

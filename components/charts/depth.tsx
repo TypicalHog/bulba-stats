@@ -32,6 +32,7 @@ export function DepthChart({
   const [hover, setHover] = useState<{
     x: number;
     leftPx: number;
+    rightPx: number;
     price: number;
   } | null>(null);
 
@@ -203,14 +204,15 @@ export function DepthChart({
               return;
             }
             const frac = (xInView - CHART_PAD.left) / plotW;
-            const leftPx = viewBoxXToLocalPx(
-              svgRef.current,
-              wrapRef.current,
-              xInView,
-            );
+            const leftPx =
+              viewBoxXToLocalPx(svgRef.current, wrapRef.current, xInView) ??
+              0;
+            const containerWidth =
+              wrapRef.current?.getBoundingClientRect().width ?? 0;
             setHover({
               x: xInView,
-              leftPx: leftPx ?? 0,
+              leftPx,
+              rightPx: containerWidth - leftPx,
               price: geom.xMin + frac * (geom.xMax - geom.xMin),
             });
           }}
@@ -303,11 +305,11 @@ export function DepthChart({
         {hover && info && (
           <div
             className="pointer-events-none absolute top-8 z-10 rounded border border-line bg-panel-2 px-2 py-1.5 font-mono text-[10px] shadow-lg"
-            style={{
-              left: hover.leftPx,
-              transform:
-                hover.x > W / 2 ? "translateX(-105%)" : "translateX(5%)",
-            }}
+            style={
+              hover.x > W / 2
+                ? { right: hover.rightPx + 8 }
+                : { left: hover.leftPx + 8 }
+            }
           >
             <div className={info.side === "bid" ? "text-up" : "text-down"}>
               {info.side === "bid" ? "BIDS" : "ASKS"} to {price(hover.price)}
