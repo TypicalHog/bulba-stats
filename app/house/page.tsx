@@ -59,7 +59,8 @@ async function HouseBody() {
     ]);
 
   const legs = toLegs(trades);
-  const stats = playerStats(legs).get(MARKET_MAKER) ?? null;
+  const allStats = playerStats(legs);
+  const stats = allStats.get(MARKET_MAKER) ?? null;
 
   const midByListing = new Map(summary.map((s) => [s.listingId, s.mid]));
   const midByVariant = new Map<number, number | null>();
@@ -114,7 +115,7 @@ async function HouseBody() {
 
   const houseVolumeShare =
     stats && legs.length
-      ? stats.volume / sum([...playerStats(legs).values()], (s) => s.volume)
+      ? stats.volume / sum([...allStats.values()], (s) => s.volume)
       : null;
 
   return (
