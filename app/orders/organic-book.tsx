@@ -28,6 +28,9 @@ export type OrganicRow = {
  * produce, because it aggregates price levels before anyone sees who wrote
  * them.
  *
+ * Each row carries the published quote beside the organic one, so the gap is
+ * readable as prices rather than only as a difference between two spreads.
+ *
  * The coverage turns out to be near-complete — a handful of accounts ladder
  * across almost the whole catalog — so the interesting column is `quoters`
  * rather than presence. Most books have exactly one non-house participant,
@@ -92,6 +95,32 @@ export function OrganicBook({ rows }: { rows: OrganicRow[] }) {
       ),
       sort: (r) => r.organicSpreadPct,
       descFirst: false,
+    },
+    {
+      key: "fbid",
+      header: "Published bid",
+      title: "Best bid including house liquidity — what the API reports",
+      align: "right",
+      mono: true,
+      cell: (r) => (
+        <span className="text-ink-3">
+          {r.fullBid != null ? diamonds(r.fullBid) : "—"}
+        </span>
+      ),
+      sort: (r) => r.fullBid,
+    },
+    {
+      key: "fask",
+      header: "Published ask",
+      title: "Best ask including house liquidity — what the API reports",
+      align: "right",
+      mono: true,
+      cell: (r) => (
+        <span className="text-ink-3">
+          {r.fullAsk != null ? diamonds(r.fullAsk) : "—"}
+        </span>
+      ),
+      sort: (r) => r.fullAsk,
     },
     {
       key: "fspread",
