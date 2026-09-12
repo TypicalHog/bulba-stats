@@ -84,7 +84,7 @@ the Socket.IO live feed. Results are cached with Next.js `revalidate` tiers
 nothing. Every cached read also carries a shared tag, which is what **Refresh**
 expires.
 
-The two expensive reads are not paced by the clock at all, because a timer
+The two expensive reads are not paced primarily by the clock, because a timer
 cannot tell *time passed* from *something changed* — and the order book measurably
 sits still for hours. Instead:
 
@@ -138,7 +138,8 @@ database. Two settings are non-default and worth understanding:
   quicker. 60 s is the Hobby-tier ceiling, so it is safe on any
   plan. Warm requests return from cache immediately — and stay warm across a
   revalidation now that the crawl is keyed by the book's content rather than by
-  a timer, so paying that cold cost twice in a row takes a change in the book.
+  a timer, so paying that cold cost twice in a row takes a change in the book
+  or the hourly `TTL.frozen` backstop expiring.
 
 - **The capture will switch itself off unless you stop it.** GitHub disables
   scheduled workflows in a public repository "when no repository activity has
