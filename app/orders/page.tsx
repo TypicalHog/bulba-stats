@@ -30,7 +30,7 @@ import { RankedBars, SplitBar } from "@/components/charts/bars";
 import { SERIES } from "@/lib/design";
 import { dateOnly, diamondsCompact, duration, num, percent } from "@/lib/format";
 import { isHouseOrder, partitionByHouse } from "@/lib/analytics/house";
-import { anchorNow, DAY_MS, requestTime } from "@/lib/time";
+import { anchorNow, DAY_MS, renderTime } from "@/lib/time";
 import { r } from "@/lib/round";
 import { DeepestBooks } from "./deepest-books";
 import { BANDS, bandKey } from "./bands";
@@ -108,16 +108,16 @@ export default function OrdersPage() {
  * carries the owner of every order, so the same rows rebuild both books.
  */
 async function Organic() {
-  const [{ rows: orders, complete }, summary, now] = await Promise.all([
+  const [{ rows: orders, complete }, summary] = await Promise.all([
     getAllOpenOrders(),
     getOrderbookSummary(),
-    requestTime(),
   ]);
 
-  // Same request time the rest of the page anchors to: the expiry sweep would
-  // otherwise read the wall clock and drift between panels within one render.
+  // One clock for both books: the expiry sweep would otherwise read the wall
+  // clock once per book and drift between them within a single render.
+  const now = renderTime();
   const full = reconstructBooks(orders, { now });
-  const organic = reconstructOrganicBooks(orders);
+  const organic = reconstructOrganicBooks(orders, { now });
   const meta = new Map(summary.map((s) => [s.listingId, s]));
 
   const spread = (bid: number | null, ask: number | null) =>
@@ -405,11 +405,11 @@ async function Liquidity() {
 /* ------------------------------------------------------------- resting */
 
 async function RestingBook() {
-  const [{ rows: allOrders, complete }, summary, now] = await Promise.all([
+  const [{ rows: allOrders, complete }, summary] = await Promise.all([
     getAllOpenOrders(),
     getOrderbookSummary(),
-    requestTime(),
   ]);
+  const now = renderTime();
 
   // Match reconstructBooks' notion of "resting" so this panel's headline
   // counts agree with the books built from the same crawl elsewhere on the

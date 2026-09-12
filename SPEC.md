@@ -807,7 +807,8 @@ as the search palette, and soft-fails to the fixed routes if upstream is down.
 render instantly on the common cache-hit path. Anything expensive (full-history
 aggregates, the open-order crawl, the counterparty graph) sits behind its own
 `<Suspense>` boundary — on the dynamic routes that streams in at request time;
-on the static ISR routes (`/`, `/market`, `/players`, `/house`) every boundary
+on the static ISR routes (`/`, `/market`, `/orders`, `/players`, `/house`)
+every boundary
 is already resolved when the cached HTML is served, so a cold cache entry pays
 the full cost as one blocking regeneration instead.
 
@@ -899,8 +900,11 @@ each appears:
   stated wherever it applies, not a modelling choice.
 - **Windowed statistics are anchored to the dataset's last event**, not the wall
   clock, so a cached aggregate yields the same figure however old the cache is.
-  Order age and book staleness do use request time, since those are genuinely
-  live quantities.
+  Order age is the one figure that reads a clock at all, and it reads it at
+  render — regeneration time on an ISR route. Deferring the whole page to a real
+  request with `connection()` would re-run every panel for every visitor to
+  move that one figure by the few seconds the shortest tier behind the page
+  allows.
 - **Niche variants** (odd enchant combinations) are hidden by default, per the
   upstream `niche` flag, with a toggle to reveal them.
 - **`makerMid` is a reference price of unknown provenance.** The upstream docs
