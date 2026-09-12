@@ -24,6 +24,7 @@
 
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
+import { pathToFileURL } from "node:url";
 
 /**
  * `??` alone treats an empty env var (the natural way an operator "unsets" a
@@ -256,7 +257,7 @@ async function crawl(buildPath, { maxPages = 20, limit = 200, attempts = 3 } = {
  */
 const r = (n) => (typeof n === "number" && Number.isFinite(n) ? Number(n.toFixed(8)) : null);
 
-const LISTING_COLUMNS = [
+export const LISTING_COLUMNS = [
   "id",
   "name",
   "mid",
@@ -718,7 +719,7 @@ async function main() {
  * a dozen numbers, so a chart of spread or depth over time costs one request
  * per day rather than one per hour.
  */
-function marketRow(capturedAt, snapshot) {
+export function marketRow(capturedAt, snapshot) {
   const col = (name) => snapshot.listings.columns.indexOf(name);
   const [mid, bid, ask, spread] = ["mid", "bid", "ask", "spread"].map(col);
   const [bv, av, bv5, av5] = ["bidValue", "askValue", "bidValue5", "askValue5"].map(col);
@@ -891,4 +892,11 @@ async function writeBranchMeta() {
   );
 }
 
-await main();
+/*
+ * Only when run as the script. `snapshot.test.ts` imports `marketRow` and
+ * `LISTING_COLUMNS` from here, and without this guard that import would run an
+ * hourly capture against the live API.
+ */
+if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) {
+  await main();
+}
