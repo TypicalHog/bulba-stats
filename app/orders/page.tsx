@@ -9,6 +9,7 @@ import { groupBy, sum, toLegs } from "@/lib/analytics/legs";
 import { orderAges, orderFlow, slippageCurve } from "@/lib/analytics/book";
 import {
   crossCheck,
+  isRestingOrder,
   reconstructBooks,
   reconstructOrganicBooks,
 } from "@/lib/analytics/reconstruct";
@@ -404,11 +405,16 @@ async function Liquidity() {
 /* ------------------------------------------------------------- resting */
 
 async function RestingBook() {
-  const [{ rows: orders, complete }, summary, now] = await Promise.all([
+  const [{ rows: allOrders, complete }, summary, now] = await Promise.all([
     getAllOpenOrders(),
     getOrderbookSummary(),
     requestTime(),
   ]);
+
+  // Match reconstructBooks' notion of "resting" so this panel's headline
+  // counts agree with the books built from the same crawl elsewhere on the
+  // page, instead of also counting filled-out or past-expiry rows.
+  const orders = allOrders.filter((o) => isRestingOrder(o, now));
 
   const midByListing = new Map(
     summary.filter((s) => s.mid != null).map((s) => [s.listingId, s.mid!]),

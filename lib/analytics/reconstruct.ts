@@ -42,6 +42,20 @@ export type ReconstructedBook = OrderBook & {
 
 type LevelAcc = { price: number; quantity: number; orders: BookOrder[] };
 
+/**
+ * Whether a crawled order still belongs on the book: it has resting quantity
+ * left and hasn't passed its expiry (the crawl asks for pending and
+ * partially_filled, but an order can carry a past expiry and still be
+ * reported as pending until it is swept). Shared with callers that need to
+ * agree with `reconstructBooks` on what counts as "resting" without going
+ * through book reconstruction themselves.
+ */
+export function isRestingOrder(order: LimitOrder, now: number): boolean {
+  if (order.remainingAmount <= 0) return false;
+  if (order.expiresAt && new Date(order.expiresAt).getTime() < now) return false;
+  return true;
+}
+
 function toLevels(acc: Map<number, LevelAcc>, side: "bid" | "ask"): BookLevel[] {
   return [...acc.values()]
     .map((level) => ({
@@ -70,10 +84,7 @@ export function reconstructBooks(
 
   for (const order of orders) {
     const listingId = order.listing?.id;
-    if (!listingId || order.remainingAmount <= 0) continue;
-    // The crawl asks for pending and partially_filled, but an order can carry a
-    // past expiry and still be reported as pending until it is swept.
-    if (order.expiresAt && new Date(order.expiresAt).getTime() < now) continue;
+    if (!listingId || !isRestingOrder(order, now)) continue;
 
     let book = acc.get(listingId);
     if (!book) {
