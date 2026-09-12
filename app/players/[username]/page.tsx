@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import {
   getAllTrades,
   getOrderbookSummary,
@@ -80,6 +80,19 @@ export default async function PlayerPage({
   if (!isUsername(username)) notFound();
 
   const profile = await getPlayer(username);
+
+  /*
+   * The exchange resolves usernames case-insensitively, so a mis-cased URL
+   * still finds a profile. Every other lookup on this page (trade stats,
+   * counterparties, orders) is keyed by the exact casing in the URL, so
+   * without this the page renders with a profile but "no trading history"
+   * for an account that has traded heavily. Redirecting to the canonical
+   * casing fixes every downstream lookup at once and collapses the cache
+   * key / crawlable URL per casing into one.
+   */
+  if (profile && profile.username !== username) {
+    permanentRedirect(`/players/${encodeURIComponent(profile.username)}`);
+  }
 
   /*
    * A player may exist on the exchange without ever having traded, and a
