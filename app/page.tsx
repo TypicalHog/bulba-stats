@@ -112,17 +112,26 @@ export default function OverviewPage() {
 /* ---------------------------------------------------------------- header */
 
 async function MarketHeader() {
-  const [trades, summary, listings, history] = await Promise.all([
+  const [trades, summary, listings] = await Promise.all([
     getAllTrades(),
     getOrderbookSummary(),
     getListings(),
-    getMarketHistory(14),
   ]);
+
+  const totals = marketTotals(trades);
+
+  /*
+   * Windows are anchored to the market's most recent trade rather than the
+   * wall clock, so the same cached aggregate always yields the same figure —
+   * see lib/time.ts. getMarketHistory defaults to Date.now(), so it needs the
+   * same anchor passed explicitly or its 14-day window drifts across ISR
+   * regenerations with no new data.
+   */
+  const now = anchorNow(totals.lastTradeAt);
+  const history = await getMarketHistory(14, now);
 
   /* Captured history exists only once the snapshot workflow has been running. */
   const trend = hasTrend(history);
-
-  const totals = marketTotals(trades);
 
   /*
    * How long an in-person trade takes to settle. The only place in this
@@ -184,12 +193,6 @@ async function MarketHeader() {
     });
   };
 
-  /*
-   * Windows are anchored to the market's most recent trade rather than the
-   * wall clock, so the same cached aggregate always yields the same figure —
-   * see lib/time.ts.
-   */
-  const now = anchorNow(totals.lastTradeAt);
   const activeTraders7 = new Set(
     toLegs(trades)
       .filter((l) => l.at >= now - 7 * DAY_MS)

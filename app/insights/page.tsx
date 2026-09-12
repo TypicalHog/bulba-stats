@@ -126,7 +126,17 @@ export default function InsightsPage() {
  * instead of drawing an empty chart.
  */
 async function BookHistory() {
-  const history = await getMarketHistory(14);
+  /*
+   * getMarketHistory defaults to Date.now(), which would bake this panel's
+   * 14-day window to whatever moment ISR happens to regenerate it. Anchor to
+   * the market's most recent trade instead, matching every other windowed
+   * stat on this page, so the same cached data always yields the same window.
+   */
+  const trades = await getAllTrades();
+  const history = await getMarketHistory(
+    14,
+    anchorNow(marketTotals(trades).lastTradeAt),
+  );
 
   if (!hasTrend(history)) {
     return (
