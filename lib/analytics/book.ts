@@ -99,6 +99,14 @@ export type Participant = {
   askUnits: number;
   bidValue: number;
   askValue: number;
+  /**
+   * Count of BookOrder rows attributed to this player, i.e. the number of
+   * (price level, side) pairs they quote. On a book from `reconstructBooks`
+   * that is one row per order, so it reads as an order count. On a grouped
+   * book from `booksFromLevels` each row is already folded across orders at
+   * that price, so this instead reads as "price levels this player quotes",
+   * not their order count.
+   */
   orders: number;
   /** Share of this book's total resting value, 0..1. */
   share: number;
@@ -108,7 +116,8 @@ export type Participant = {
  * Who is providing liquidity in one book.
  *
  * Requires `includePlayers=true`; without per-order owners the level array
- * carries no attribution and this returns empty.
+ * carries no attribution and this returns empty. See the `orders` field's
+ * doc for how its meaning shifts on a grouped (`booksFromLevels`) book.
  */
 export function participants(book: OrderBook): Participant[] {
   const rows = new Map<string, Participant>();
