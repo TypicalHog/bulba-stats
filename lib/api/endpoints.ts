@@ -145,7 +145,10 @@ export const getListings = cache(async (): Promise<Listing[]> => {
 export const getListing = cache(async (id: number): Promise<Listing | null> => {
   const catalog = await getListings().catch(() => null);
   if (catalog) return catalog.find((listing) => listing.id === id) ?? null;
-  return apiGetOrNull<Listing>(`/listings/${id}`, { revalidate: TTL.near });
+  return apiGetOrNull<Listing>(`/listings/${id}`, {
+    revalidate: TTL.near,
+    tags: ["listings"],
+  });
 });
 
 /** Best bid/ask/mid/spread for every active listing — one request. */
