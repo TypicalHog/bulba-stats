@@ -1276,11 +1276,11 @@ async function Network() {
    */
   const legsByPair = groupBy(
     legs.filter((l) => l.isMaker && l.counterparty),
-    (l) => [l.username, l.counterparty!].sort().join(" "),
+    (l) => [l.username, l.counterparty!].sort().join("\0"),
   );
 
   const graphEdges = edges.map((e) => {
-    const pairLegs = legsByPair.get([e.a, e.b].sort().join(" ")) ?? [];
+    const pairLegs = legsByPair.get([e.a, e.b].sort().join("\0")) ?? [];
     const byItem = new Map<string, { itemName: string | null; variantName: string | null; volume: number }>();
     for (const leg of pairLegs) {
       const key = `${leg.itemName}:${leg.variantName}`;
