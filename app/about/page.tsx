@@ -332,39 +332,53 @@ export default function AboutPage() {
   );
 }
 
+const s = (n: number) => `${n}s`;
+
 const SOURCES = [
-  { path: "GET /listings", use: "Item catalog", ttl: "60s" },
+  { path: "GET /listings", use: "Item catalog", ttl: s(TTL.near) },
   {
     path: "GET /orderbook",
     use: "Quotes for every listing in one call",
-    ttl: "15s",
+    ttl: s(TTL.live),
   },
   {
     path: "GET /orderbook/:id",
     use: "Depth, ladder, participants",
-    ttl: "15s",
+    ttl: s(TTL.live),
   },
   {
     path: "GET /orderbook/:id/view",
     use: "Listing + book + fills in one trip",
-    ttl: "15s",
+    ttl: s(TTL.live),
   },
-  { path: "GET /orderbook/:id/candles", use: "Price history", ttl: "60s" },
+  { path: "GET /orderbook/:id/candles", use: "Price history", ttl: s(TTL.near) },
   {
     path: "GET /transactions?view=trades",
     use: "Complete trade history",
-    ttl: "300s",
+    ttl: s(TTL.aggregate),
   },
-  { path: "GET /transactions?view=fills", use: "Bank movements", ttl: "300s" },
-  { path: "GET /orders", use: "Resting and closed orders", ttl: "900s" },
+  {
+    path: "GET /transactions?view=fills",
+    use: "Bank movements",
+    ttl: s(TTL.aggregate),
+  },
+  {
+    path: "GET /orders",
+    use: "Resting and closed orders",
+    ttl: `keyed to book digest (${s(TTL.heavy)} unpinned, ${s(TTL.frozen)} pinned)`,
+  },
   {
     path: "GET /players/:username",
     use: "Profile, banks, balances",
-    ttl: "60s",
+    ttl: s(TTL.aggregate),
   },
-  { path: "GET /treasury*", use: "Pools, revenue, distributions", ttl: "300s" },
-  { path: "GET /commands", use: "Bot command reference", ttl: "1h" },
-  { path: "GET /docs/:slug", use: "This reference", ttl: "1h" },
+  {
+    path: "GET /treasury*",
+    use: "Pools, revenue, distributions",
+    ttl: s(TTL.aggregate),
+  },
+  { path: "GET /commands", use: "Bot command reference", ttl: s(TTL.static) },
+  { path: "GET /docs/:slug", use: "This reference", ttl: s(TTL.static) },
   { path: "WS /api/ws", use: "Live trade tape", ttl: "live" },
 ];
 
