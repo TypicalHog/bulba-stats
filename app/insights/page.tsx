@@ -336,7 +336,7 @@ async function Tape() {
                     {v.venue === "physical" ? "In person" : "Bank to bank"}
                   </span>
                   <span className="font-mono text-ink-3">
-                    {num(v.trades)} priced trades
+                    {num(v.pricedTrades)} priced trades
                   </span>
                 </div>
                 <div className="mt-1 grid grid-cols-2 gap-2 text-[12px]">

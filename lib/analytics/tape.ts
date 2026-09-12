@@ -117,7 +117,8 @@ export function fresh(rows: readonly TapeRow[]): TapeRow[] {
 
 export type VenueStats = {
   venue: "physical" | "storage";
-  trades: number;
+  /** Trades with a non-stale reference price — not the venue's total trade count. */
+  pricedTrades: number;
   /** Mean premium over the previous print, in percent. */
   meanPremiumPct: number | null;
   medianSettlementMs: number | null;
@@ -142,7 +143,7 @@ export function venueStats(rows: readonly TapeRow[]): VenueStats[] {
 
     return {
       venue,
-      trades: priced.length,
+      pricedTrades: priced.length,
       meanPremiumPct: priced.length
         ? priced.reduce((a, r) => a + (r.premiumPct ?? 0), 0) / priced.length
         : null,
