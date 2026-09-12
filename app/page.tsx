@@ -475,7 +475,10 @@ async function TopItems() {
 /* ---------------------------------------------------------------- live */
 
 async function LiveTradesPanel() {
-  const recent = await getRecentTrades(12);
+  // Soft: this is a seed for a panel that streams its own updates and
+  // reconnects on its own, so a blip on the 5-second tier should cost the
+  // ticker its first dozen rows, not take the whole overview to error.tsx.
+  const recent = await getRecentTrades(12).catch(() => []);
 
   const seed = recent.map((t) => ({
     id: t.id,
