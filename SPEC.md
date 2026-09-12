@@ -390,7 +390,10 @@ Four properties are deliberate:
   that exists but cannot be read is left alone for the same reason: only a
   genuinely absent file means "first run ever", and anything else — a truncated
   write, a bad hand edit — would otherwise be overwritten with one hour's
-  discovery, taking the bank-only accounts with it.
+  discovery, taking the bank-only accounts with it. Every file the capture
+  writes goes out through a temp file and a rename, so an interrupted write
+  leaves the previous one intact rather than creating that truncation in the
+  first place.
   A capture that crashed part way through is the third case: what that run
   reached is not the roster.
 

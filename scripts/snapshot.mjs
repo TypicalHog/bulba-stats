@@ -22,7 +22,7 @@
  *   node scripts/snapshot.mjs --out /tmp/x --budget-ms 60000  # cap the wall clock
  */
 
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -704,7 +704,7 @@ async function main() {
   }
 
   await mkdir(dirname(join(OUT, relative)), { recursive: true });
-  await writeFile(join(OUT, relative), json);
+  await writeAtomic(join(OUT, relative), json);
 
   // A per-day index so a consumer can read one day without listing the tree
   // over the GitHub API. Small, and rewritten at most 24 times a day.
@@ -717,10 +717,10 @@ async function main() {
   }
   if (!index.includes(`${stamp}.json`)) index.push(`${stamp}.json`);
   index.sort();
-  await writeFile(indexPath, `${JSON.stringify(index, null, 2)}\n`);
+  await writeAtomic(indexPath, `${JSON.stringify(index, null, 2)}\n`);
 
   // Fixed URL for "current", so consumers have one thing to poll.
-  await writeFile(
+  await writeAtomic(
     join(OUT, "latest.json"),
     `${JSON.stringify({ capturedAt, path: relative }, null, 2)}\n`,
   );
@@ -750,7 +750,7 @@ async function main() {
   if (truncated) {
     errors.push("roster.json left unwritten so the next run sweeps again");
   } else if (!rosterUnreadable && !aborted) {
-    await writeFile(
+    await writeAtomic(
       join(OUT, "roster.json"),
       `${JSON.stringify({ usernames: [...known].sort() }, null, 2)}\n`,
     );
@@ -856,6 +856,23 @@ export function marketRow(capturedAt, snapshot) {
 }
 
 /**
+ * Write through a temp file and a rename, so an interrupted write leaves the
+ * previous file intact instead of a truncated one.
+ *
+ * roster.json, the day's series file and the day's index are all read back by
+ * a later run, and each treats an unreadable file as "rows exist that I cannot
+ * see" — correctly, but at the cost of that run. A plain `writeFile` can leave
+ * a half-written file behind for the ordinary reasons: a full disk, or an
+ * `npm run snapshot` interrupted at the keyboard. The rename makes the
+ * replacement all-or-nothing instead.
+ */
+async function writeAtomic(path, contents) {
+  const tmp = `${path}.tmp`;
+  await writeFile(tmp, contents);
+  await rename(tmp, path);
+}
+
+/**
  * Append a row to the day's series file.
  *
  * Rewritten on each capture, unlike the snapshots themselves. That is a
@@ -894,7 +911,7 @@ async function appendSeries(day, row) {
 
   if (!rows.some((existing) => existing.at === row.at)) rows.push(row);
   rows.sort((a, b) => String(a.at).localeCompare(String(b.at)));
-  await writeFile(path, `${JSON.stringify(rows)}\n`);
+  await writeAtomic(path, `${JSON.stringify(rows)}\n`);
 }
 
 /** Write only if absent, so hand edits on the data branch survive. */
@@ -906,7 +923,7 @@ async function writeOnce(path, contents) {
       errors.push(`${path}: unreadable (${err.message}) — left as is`);
       return;
     }
-    await writeFile(path, contents);
+    await writeAtomic(path, contents);
   }
 }
 
