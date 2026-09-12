@@ -9,7 +9,7 @@
 
 /** An enchant or effect that defines an item variant. */
 export type NbtEntry = {
-  type: "enchant" | "effect";
+  type: "enchant" | "effect" | "firework" | (string & {});
   name: string;
   level: number;
 };
