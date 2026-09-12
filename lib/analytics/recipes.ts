@@ -117,7 +117,6 @@ const bookKey = (listing: Listing | undefined) => listing?.id ?? -1;
 function enchantRecipes(listings: readonly Listing[]): {
   recipe: Recipe;
   nbt: NbtEntry[];
-  base: Listing | undefined;
 }[] {
   const plain = new Map<string, Listing>();
   const books = new Map<string, Listing>();
@@ -132,7 +131,7 @@ function enchantRecipes(listings: readonly Listing[]): {
     if (!nbt.length && !plain.has(listing.itemName)) plain.set(listing.itemName, listing);
   }
 
-  const out: { recipe: Recipe; nbt: NbtEntry[]; base: Listing | undefined }[] = [];
+  const out: { recipe: Recipe; nbt: NbtEntry[] }[] = [];
 
   for (const listing of listings) {
     const nbt = listing.nbt ?? [];
@@ -145,7 +144,9 @@ function enchantRecipes(listings: readonly Listing[]): {
 
     const base = plain.get(listing.itemName);
     const inputs = [
-      ...(base ? [{ listing: base.listingName!, amount: 1 }] : []),
+      // Even when the plain base isn't currently listed, keep its leg so the
+      // gap lands in `missing` and gets named instead of silently vanishing.
+      { listing: base ? base.listingName! : listing.itemName, amount: 1 },
       ...nbt.map((entry) => ({
         listing:
           books.get(`${entry.name}:${entry.level}`)?.listingName ??
@@ -155,7 +156,6 @@ function enchantRecipes(listings: readonly Listing[]): {
     ];
 
     out.push({
-      base,
       nbt,
       recipe: {
         id: `enchant:${listing.listingName}`,
@@ -193,7 +193,6 @@ export function priceRecipes(
     recipe: Recipe,
     kind: "craft" | "enchant",
     nbt: NbtEntry[] | null,
-    base: Listing | undefined,
   ): PricedRecipe => {
     const outputListing = byName.get(recipe.output.listing);
     const missing: string[] = [];
@@ -213,11 +212,10 @@ export function priceRecipes(
     });
 
     // The base tool is separated from the books so it can be toggled off — most
-    // players already own the tool and are only buying enchantments.
-    const baseLeg =
-      kind === "enchant" && base
-        ? legs.find((l) => l.listingId === base.id)
-        : undefined;
+    // players already own the tool and are only buying enchantments. It's
+    // always the first leg (enchantRecipes puts it there), even when the
+    // plain base isn't currently listed and the leg is unpriceable.
+    const baseLeg = kind === "enchant" ? legs[0] : undefined;
     const materialLegs = baseLeg ? legs.filter((l) => l !== baseLeg) : legs;
 
     const inputCost = materialLegs.some((l) => l.cost == null)
@@ -256,9 +254,9 @@ export function priceRecipes(
     };
   };
 
-  const crafted = RECIPES.map((recipe) => price(recipe, "craft", null, undefined));
-  const enchanted = enchantRecipes(listings).map(({ recipe, nbt, base }) =>
-    price(recipe, "enchant", nbt, base),
+  const crafted = RECIPES.map((recipe) => price(recipe, "craft", null));
+  const enchanted = enchantRecipes(listings).map(({ recipe, nbt }) =>
+    price(recipe, "enchant", nbt),
   );
 
   return [...crafted, ...enchanted];
