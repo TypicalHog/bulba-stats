@@ -14,7 +14,6 @@ import {
   itemIconUrl,
   dateTime,
   dateOnly,
-  relativeTime,
 } from "@/lib/format";
 
 test("num() renders — for null/undefined/non-finite", () => {
@@ -111,15 +110,4 @@ test("dateTime()/dateOnly() render a valid ISO timestamp in UTC", () => {
   assert.equal(dateOnly("2026-03-04T09:05:00Z"), "04 Mar");
 });
 
-test("relativeTime() falls back to — for a missing/bad timestamp", () => {
-  assert.equal(relativeTime(null), "—");
-  assert.equal(relativeTime("not-a-date"), "—");
-});
 
-test("relativeTime() buckets by minutes/hours/days given a fixed now", () => {
-  const now = Date.parse("2026-03-04T12:00:00Z");
-  assert.equal(relativeTime("2026-03-04T11:59:30Z", now), "30 seconds ago");
-  assert.equal(relativeTime("2026-03-04T11:30:00Z", now), "30 minutes ago");
-  assert.equal(relativeTime("2026-03-04T09:00:00Z", now), "3 hours ago");
-  assert.equal(relativeTime("2026-03-02T12:00:00Z", now), "2 days ago");
-});

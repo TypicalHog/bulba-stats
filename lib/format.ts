@@ -96,12 +96,6 @@ export function signedPercent(
   return `${v > 0 ? "+" : ""}${v.toFixed(decimals)}%`;
 }
 
-export function signed(n: number | null | undefined, decimals = 2): string {
-  if (n == null || !Number.isFinite(n)) return "—";
-  const v = snapZero(n, decimals);
-  return `${v > 0 ? "+" : ""}${num(v, decimals)}`;
-}
-
 /** Direction as a glyph, so direction never rides on color alone. */
 export function arrow(n: number | null | undefined, decimals = 1): string {
   if (n == null || !Number.isFinite(n) || snapZero(n, decimals) === 0) return "→";
@@ -195,22 +189,6 @@ export function itemIconUrl(itemName: string | null | undefined): string {
 export function avatarUrl(uuid: string | null | undefined, size = 32): string {
   if (!uuid) return BULBA_ICON;
   return `https://mc-heads.net/avatar/${uuid}/${Math.min(size * 2, 128)}`;
-}
-
-const RELATIVE = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
-
-/** "3 minutes ago". Deterministic given `now` so it can be server-rendered. */
-export function relativeTime(iso: string | null | undefined, now = Date.now()): string {
-  if (!iso) return "—";
-  const then = new Date(iso).getTime();
-  if (!Number.isFinite(then)) return "—";
-  const seconds = Math.round((then - now) / 1000);
-  const abs = Math.abs(seconds);
-  if (abs < 60) return RELATIVE.format(Math.round(seconds), "second");
-  if (abs < 3600) return RELATIVE.format(Math.round(seconds / 60), "minute");
-  if (abs < 86400) return RELATIVE.format(Math.round(seconds / 3600), "hour");
-  if (abs < 2592000) return RELATIVE.format(Math.round(seconds / 86400), "day");
-  return RELATIVE.format(Math.round(seconds / 2592000), "month");
 }
 
 // Fixed month table instead of Intl's { month: "short" }: en-GB's short form for
