@@ -42,6 +42,16 @@ export function RankedBars({
 }) {
   const ceiling = max ?? Math.max(...rows.map((r) => r.value), 1);
 
+  if (
+    process.env.NODE_ENV !== "production" &&
+    (!legend || legend.length === 0) &&
+    rows.some((r) => (r.parts?.filter((p) => p.value > 0).length ?? 0) > 1)
+  ) {
+    console.warn(
+      "RankedBars: rows carry multiple parts but no legend was passed — the segments have no labelled identity."
+    );
+  }
+
   return (
     <div>
       {legend && legend.length > 0 && (
@@ -131,6 +141,16 @@ export function SplitBar({
   const total = segments.reduce((a, s) => a + s.value, 0);
   if (total <= 0) {
     return <div className="text-[12px] text-ink-3">No data.</div>;
+  }
+
+  if (
+    process.env.NODE_ENV !== "production" &&
+    !showLegend &&
+    segments.filter((s) => s.value > 0).length > 1
+  ) {
+    console.warn(
+      "SplitBar: showLegend is false with multiple segments — the bar becomes the only way to tell parts apart."
+    );
   }
 
   return (
