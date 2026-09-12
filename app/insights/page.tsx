@@ -1284,7 +1284,11 @@ async function Network() {
   });
 
   const mmVolume = stats.get(MARKET_MAKER)?.volume ?? 0;
-  const totalVolume = sum(traders, (t) => t.volume);
+  /*
+   * Market volume is one-sided — summing every leg would count both sides and
+   * cap a pure maker's share near 50%.
+   */
+  const marketVolume = sum(legs, (l) => (l.isMaker ? 0 : l.value));
 
   return (
     <div>
@@ -1334,9 +1338,9 @@ async function Network() {
             </div>
           </div>
           <p className="mt-3 text-[12px] leading-relaxed text-ink-2">
-            The market maker is a counterparty to{" "}
+            The market maker is on one side of{" "}
             <span className="font-mono text-ink">
-              {percent(totalVolume > 0 ? (mmVolume / totalVolume) * 100 : 0)}
+              {percent(marketVolume > 0 ? (mmVolume / marketVolume) * 100 : 0)}
             </span>{" "}
             of all traded value. Take it away and{" "}
             {humanEdges.length === 0
