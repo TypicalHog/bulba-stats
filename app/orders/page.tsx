@@ -339,8 +339,9 @@ async function Liquidity() {
       >
         <SlippageMatrix rows={rows} sizes={SWEEP_SIZES} />
         <Caveat>
-          Computed from the resting orders on this page rather than from 118
-          separate book requests. The reconstruction reproduces the official
+          Computed from the resting orders on this page rather than from{" "}
+          {num(check.checked)} separate book requests. The reconstruction
+          reproduces the official
           best bid, ask and depth on {num(check.matched)} of {num(check.checked)}{" "}
           listings
           {check.mismatches.length > 0 && (
