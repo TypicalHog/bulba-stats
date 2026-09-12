@@ -213,28 +213,33 @@ export function relativeTime(iso: string | null | undefined, now = Date.now()): 
   return RELATIVE.format(Math.round(seconds / 2592000), "month");
 }
 
+// Fixed month table instead of Intl's { month: "short" }: en-GB's short form for
+// September changed from "Sep" to "Sept" between ICU versions, so a browser's
+// built-in formatter can render a different string than the server's Node/ICU
+// for the same date. A hardcoded table makes the output ICU-independent.
+const MONTHS_SHORT = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sept", "Oct", "Nov", "Dec",
+];
+
 export function dateTime(iso: string | null | undefined): string {
   if (!iso) return "—";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "UTC",
-  });
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  const month = MONTHS_SHORT[d.getUTCMonth()];
+  const hour = String(d.getUTCHours()).padStart(2, "0");
+  const minute = String(d.getUTCMinutes()).padStart(2, "0");
+  return `${day} ${month}, ${hour}:${minute}`;
 }
 
 export function dateOnly(iso: string | null | undefined): string {
   if (!iso) return "—";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    timeZone: "UTC",
-  });
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  const month = MONTHS_SHORT[d.getUTCMonth()];
+  return `${day} ${month}`;
 }
 
 /** "2d 4h" — for order age and time-to-fill. */
