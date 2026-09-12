@@ -1032,7 +1032,8 @@ Two boundary rules fall out of that split:
   called. Calling it throws a synchronous `Error` at render time ("Attempted to
   call X() from the server but X is on the client..."), caught by the nearest
   `error.tsx` if one wraps the route — loud, not silent. Pure helpers both
-  sides need live in `lib/`.
+  sides need live in `lib/`, or another plain, directive-free module when the
+  helper is scoped to a single route (e.g. `app/orders/bands.ts`).
 - **Panels set `min-width: 0`.** They are always grid or flex children, and the
   `min-width: auto` default made any panel wrapping a wide table push its track
   past the viewport and scroll the whole page sideways.
