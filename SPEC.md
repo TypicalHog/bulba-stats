@@ -315,7 +315,9 @@ Four properties are deliberate:
   movement, is found at all. The roster only ever grows: a profile fetch that
   fails is not evidence the account is gone, and an account that has stopped
   trading appears in no other feed, so dropping it would end its balance
-  history permanently.
+  history permanently. A cold sweep that ends short — page cap, upstream
+  failure or spent budget — leaves `roster.json` unwritten, so the next run is
+  still cold and sweeps again rather than inheriting the gap.
 - **Missing means `null`, never `0`.** In a series row the depth totals are
   null unless *every* listing's book was fetched, and `treasury` is null when
   `/treasury` did not answer. A market-wide total computed from a subset is not

@@ -134,28 +134,42 @@ async function get(path, { attempts = 3 } = {}) {
   }
 }
 
-/** Walk a cursor-paginated endpoint. Capped so a growing dataset can't spiral. */
-async function crawl(buildPath, { maxPages = 20, limit = 200 } = {}) {
+/**
+ * Walk a cursor-paginated endpoint. Capped so a growing dataset can't spiral.
+ *
+ * Each page gets the same three attempts as `get`: an unretried page is worse
+ * here than for a single call, because giving up on page 11 discards every page
+ * after it too. `reason` says which of the three ways a crawl can end short it
+ * took — they call for different responses.
+ */
+async function crawl(buildPath, { maxPages = 20, limit = 200, attempts = 3 } = {}) {
   const rows = [];
   let before = null;
   for (let page = 0; page < maxPages; page++) {
-    if (budgetLeft() <= 0) {
-      errors.push(`${buildPath(before)}: time budget exhausted`);
-      return { rows, complete: false };
-    }
-    await throttle();
-    requestCount++;
+    const path = buildPath(before);
     let body;
-    try {
-      const res = await fetch(`${API_BASE}${buildPath(before)}`, {
-        headers: { accept: "application/json" },
-        signal: AbortSignal.timeout(Math.min(30_000, Math.max(1_000, budgetLeft()))),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      body = await res.json();
-    } catch (err) {
-      errors.push(`${buildPath(before)}: ${err.message}`);
-      return { rows, complete: false };
+    for (let attempt = 1; ; attempt++) {
+      if (budgetLeft() <= 0) {
+        errors.push(`${path}: time budget exhausted`);
+        return { rows, complete: false, reason: "ran out of time budget" };
+      }
+      await throttle();
+      requestCount++;
+      try {
+        const res = await fetch(`${API_BASE}${path}`, {
+          headers: { accept: "application/json" },
+          signal: AbortSignal.timeout(Math.min(30_000, Math.max(1_000, budgetLeft()))),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        body = await res.json();
+        break;
+      } catch (err) {
+        if (attempt >= attempts) {
+          errors.push(`${path}: ${err.message}`);
+          return { rows, complete: false, reason: `stopped early: ${err.message}` };
+        }
+        await new Promise((r) => setTimeout(r, 1000 * attempt));
+      }
     }
     const data = body?.data ?? [];
     rows.push(...data);
@@ -165,7 +179,7 @@ async function crawl(buildPath, { maxPages = 20, limit = 200 } = {}) {
     }
     before = next;
   }
-  return { rows, complete: false };
+  return { rows, complete: false, reason: `hit the ${maxPages}-page cap` };
 }
 
 // ---------------------------------------------------------------------------
@@ -276,19 +290,22 @@ async function discoverPlayers(roster) {
   const cold = roster.size === 0;
 
   /*
-   * A cold sweep that stops at its page cap is a silent, permanent hole: every
-   * account whose only activity predates the cutoff is never discovered, and
-   * because the roster is warm from then on, no later run goes looking again.
-   * So record it rather than discarding `complete`.
+   * A cold sweep that stops short is a silent, permanent hole: every account
+   * whose only activity predates the cutoff is never discovered, and because
+   * the roster is warm from then on, no later run goes looking again. So it is
+   * reported back to `main`, which then leaves the roster cold for next time
+   * rather than freezing the gap in.
    *
    * The caps match the app's own crawls (getAllTrades 25, getAllBankOps 40) —
    * they were 10 and 25, which meant the branch could be rebuilt from a
    * shallower history than the site itself reads.
    */
+  let truncated = false;
   const sweep = async (label, buildPath, maxPages) => {
-    const { rows, complete } = await crawl(buildPath, { maxPages });
+    const { rows, complete, reason } = await crawl(buildPath, { maxPages });
     if (!complete) {
-      errors.push(`${label}: cold sweep hit the ${maxPages}-page cap — roster may be incomplete`);
+      truncated = true;
+      errors.push(`${label}: cold sweep ${reason} — roster may be incomplete`);
     }
     return rows;
   };
@@ -312,7 +329,7 @@ async function discoverPlayers(roster) {
     : ((await get(bankPath(null))) ?? []);
   for (const op of ops) if (op.player?.username) roster.add(op.player.username);
 
-  return [...roster].sort();
+  return { usernames: [...roster].sort(), truncated };
 }
 
 async function main() {
@@ -346,7 +363,7 @@ async function main() {
   const treasury = await get("/treasury");
 
   const roster = await loadRoster();
-  const usernames = await discoverPlayers(roster);
+  const { usernames, truncated } = await discoverPlayers(roster);
 
   // Shared banks appear identically on every member's profile, so they are
   // keyed by bank id and stored once. Summing per-player would multiply
@@ -481,11 +498,20 @@ async function main() {
   // other feed, so no later run rediscovers them and their balance history just
   // stops. Accumulating instead means a deleted account lingers as one wasted
   // request per run, which is the cheaper mistake by a wide margin.
+  //
+  // A cold sweep that stopped short is the exception: `cold` is
+  // `roster.size === 0`, so writing a partial roster would mark it warm and
+  // no later run would ever sweep history again. Leaving the file alone costs
+  // this hour's discovery and buys the next run another go at the full sweep.
   const known = new Set([...fetched, ...queue]);
-  await writeFile(
-    join(OUT, "roster.json"),
-    `${JSON.stringify({ usernames: [...known].sort() }, null, 2)}\n`,
-  );
+  if (truncated) {
+    errors.push("roster.json left unwritten so the next run sweeps again");
+  } else {
+    await writeFile(
+      join(OUT, "roster.json"),
+      `${JSON.stringify({ usernames: [...known].sort() }, null, 2)}\n`,
+    );
+  }
 
   await writeBranchMeta();
 
