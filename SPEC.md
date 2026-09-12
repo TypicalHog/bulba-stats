@@ -544,10 +544,14 @@ a dividend to the treasury from the treasury is circular, and counting those
 shares understates what a holder receives. The per-outstanding figure sits
 beside it so the choice is visible.
 
-Two caveats travel with every figure. `bulba_stock` **has never printed a
-trade**, so yield is shown at bid, mid *and* ask rather than implying one of
-them is the price; and distributions are growing fast, so the last period is
-not a run rate.
+Two caveats travel with every figure. `bulba_stock` has **barely** traded, and
+every fill it has printed was taken against the house's own ladder rather than
+struck between two players, so yield is shown at bid, mid *and* ask rather than
+implying one of them is the price; and distributions are growing fast, so the
+last period is not a run rate. The trade count, the traded average and who
+stood on the other side are read from trade history rather than written into
+the copy: candles are empty for this listing because every fill is weeks old,
+so the tape is the only honest source.
 
 ### 2.6 Recipe economics
 

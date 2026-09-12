@@ -7,6 +7,7 @@ import {
   getTreasuryDistributions,
   getTreasuryRevenue,
 } from "@/lib/api/endpoints";
+import { itemStats } from "@/lib/analytics/item";
 import { dailyActivity } from "@/lib/analytics/market";
 import { stockYield } from "@/lib/analytics/stock";
 import { Panel, Caveat, SectionTitle } from "@/components/ui/panel";
@@ -18,6 +19,7 @@ import { StackedBars } from "@/components/charts/timeseries";
 import { SplitBar } from "@/components/charts/bars";
 import { SERIES } from "@/lib/design";
 import {
+  MARKET_MAKER,
   dateOnly,
   dateTime,
   diamonds,
@@ -121,9 +123,24 @@ async function TreasuryBody() {
       : null;
 
   /*
-   * The stock has a bid and an ask but has never traded, so the dividend is
-   * computed against all three prices rather than implying that one of them is
-   * "the" price.
+   * Whether the stock has ever printed a trade is derived, not asserted: its
+   * candles are empty because every fill is weeks old, so trade history is the
+   * only honest source. Who stood on the other side matters as much as the
+   * price, so that is derived too rather than written into the prose.
+   */
+  const stockTape = stock ? itemStats(trades, stock.listingId) : null;
+  const stockHouseOnly =
+    stockTape != null &&
+    stockTape.trades > 0 &&
+    trades.every(
+      (t) =>
+        t.listing?.id !== stock?.listingId ||
+        t.makers.every((m) => m.username === MARKET_MAKER),
+    );
+
+  /*
+   * The book is thin and barely tested, so the dividend is computed against
+   * all three prices rather than implying that one of them is "the" price.
    */
   const yields = {
     bid: stockYield(treasury, distributions, stockQuote?.bestBid ?? null),
@@ -396,9 +413,32 @@ async function TreasuryBody() {
               <div className="px-3 pb-3">
                 <Caveat>
                   Implied cap values every share at the current mid. With a thin
-                  book, that mid can move a long way on a single order — and
-                  this one has <strong>never printed a trade</strong>, so no
-                  price here has ever been tested by a buyer meeting a seller.
+                  book, that mid can move a long way on a single order — and the
+                  tape behind it is thinner still:{" "}
+                  {stockTape?.lastTradeAt != null ? (
+                    <>
+                      {num(stockTape.units)} shares across{" "}
+                      {num(stockTape.trades)} trades, averaging{" "}
+                      {price(stockTape.vwap)}◇, the last on{" "}
+                      {dateOnly(new Date(stockTape.lastTradeAt).toISOString())}
+                      {stockHouseOnly && (
+                        <>
+                          , and{" "}
+                          <strong>
+                            every one of them was taken against the house&apos;s
+                            own ladder
+                          </strong>{" "}
+                          rather than struck between two players
+                        </>
+                      )}
+                      .
+                    </>
+                  ) : (
+                    <>
+                      it has <strong>never printed a trade</strong>, so no price
+                      here has ever been tested by a buyer meeting a seller.
+                    </>
+                  )}{" "}
                   Treat it as an indication rather than a valuation.
                 </Caveat>
               </div>
@@ -509,10 +549,13 @@ async function TreasuryBody() {
                   circular, and counting those shares would understate what a
                   holder receives. The per-outstanding figure is shown beside it
                   so the choice is visible. Every yield here divides by a share
-                  price that <strong>has never printed a trade</strong>, which is
-                  why all three of bid, mid and ask are given rather than one
-                  number. Distributions are also growing fast, so the last period
-                  is not a run rate.
+                  price from a book that has printed{" "}
+                  {stockTape && stockTape.trades > 0
+                    ? `only ${num(stockTape.trades)} trades in its life`
+                    : "no trades at all"}
+                  , which is why all three of bid, mid and ask are given rather
+                  than one number. Distributions are also growing fast, so the
+                  last period is not a run rate.
                 </Caveat>
               </Panel>
             )}

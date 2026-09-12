@@ -38,10 +38,10 @@ export type StockYield = {
 /**
  * Compute the dividend against a share price.
  *
- * `price` is deliberately a parameter rather than read from the book: the stock
- * has a bid and an ask but has never printed a trade, so the caller supplies
- * bid, mid or ask and the page shows the range instead of implying that one of
- * them is the price.
+ * `price` is deliberately a parameter rather than read from the book: the book
+ * is thin and the little that has printed went through the house's own ladder,
+ * so the caller supplies bid, mid or ask and the page shows the range instead
+ * of implying that one of them is the price.
  */
 export function stockYield(
   treasury: Treasury,
