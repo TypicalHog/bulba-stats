@@ -401,6 +401,19 @@ export async function crawlSplit<T>(
     { ...opts, maxPages, revalidate: TTL.frozen },
   );
 
+  /*
+   * Every head page shares the caller's tier, including the full ones. A full
+   * page above the anchor is as immutable as anything below it, so in principle
+   * it could be frozen like `history` is — but not by re-fetching it at
+   * `TTL.frozen` once its shape is known. Next takes the *lowest* revalidate
+   * given for one URL in a route, so the probe that reads `data.length` pins
+   * the entry to this tier and the second call is a wasted round trip.
+   *
+   * Freezing them for real means not making that probe at all on a later
+   * render, which needs cross-render memoisation of the page's URL and a
+   * staleness bound of its own. That is worth more than it costs only once the
+   * head runs to more pages than the couple it does today.
+   */
   const head = await crawlForward<T>(
     (after, limit) => buildPath(`&after=${after ?? anchor - 1}`, limit),
     { ...opts, maxPages: headPages },
