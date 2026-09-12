@@ -23,6 +23,7 @@ import {
   playerStats,
   type CounterpartyEdge,
 } from "@/lib/analytics/players";
+import { r } from "@/lib/round";
 import { Panel, Caveat, SectionTitle } from "@/components/ui/panel";
 import { Stat } from "@/components/ui/stat";
 import { PanelSkeleton, TileRowSkeleton } from "@/components/ui/skeleton";
@@ -149,16 +150,16 @@ async function PlayersBody() {
       archetype: verdict.label,
       archetypeWhy: verdict.because,
       archetypeKey: verdict.archetype,
-      volume: s.volume,
-      buyVolume: s.buyVolume,
-      sellVolume: s.sellVolume,
+      volume: r(s.volume) ?? 0,
+      buyVolume: r(s.buyVolume) ?? 0,
+      sellVolume: r(s.sellVolume) ?? 0,
       trades: s.trades,
       units: s.units,
-      feesPaid: s.feesPaid,
-      makerShare: s.makerShare,
-      netFlow: s.netFlow,
-      realizedPnl: s.realizedPnl,
-      unbackedUnits: s.unbackedUnits,
+      feesPaid: r(s.feesPaid) ?? 0,
+      makerShare: r(s.makerShare) ?? 0,
+      netFlow: r(s.netFlow) ?? 0,
+      realizedPnl: r(s.realizedPnl) ?? 0,
+      unbackedUnits: r(s.unbackedUnits) ?? 0,
       uniqueItems: s.uniqueItems,
       uniqueCounterparties: s.uniqueCounterparties,
       firstTradeAt: s.firstTradeAt,
@@ -238,7 +239,12 @@ async function PlayersBody() {
     .map(([week, v]) => ({ week, ...v }))
     .sort((a, b) => a.week.localeCompare(b.week));
 
-  const holderRows = holders(directory, midByVariant);
+  const holderRows = holders(directory, midByVariant).map((h) => ({
+    ...h,
+    currency: r(h.currency) ?? 0,
+    goodsValue: r(h.goodsValue) ?? 0,
+    total: r(h.total) ?? 0,
+  }));
   const giniAll = gini(holderRows.map((h) => h.total));
   const giniHumans = gini(
     holderRows.filter((h) => !h.isHouse).map((h) => h.total),
@@ -254,6 +260,7 @@ async function PlayersBody() {
     .map((c) => ({
       ...c,
       listingId: listingIdByVariant.get(c.variantId) ?? null,
+      topShare: r(c.topShare) ?? 0,
     }));
 
   const humans = rows.filter((r) => !r.isMarketMaker && !r.isNonTrading);

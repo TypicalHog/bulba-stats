@@ -472,7 +472,7 @@ async function RestingBook() {
               );
         byBand[bandKey(band)] = {
           orders: inBand.length,
-          value: sum(inBand, (o) => o.limitPrice * o.remainingAmount),
+          value: r(sum(inBand, (o) => o.limitPrice * o.remainingAmount)) ?? 0,
         };
       }
 
@@ -480,7 +480,7 @@ async function RestingBook() {
         listingId,
         itemName: rows[0].listing?.itemName ?? null,
         variantName: rows[0].listing?.variantName ?? null,
-        mid,
+        mid: r(mid, 6),
         writers: new Set(rows.map((o) => o.player?.username)).size,
         byBand,
       };
