@@ -1256,7 +1256,7 @@ async function Network() {
    * the pair actually traded rather than only how much.
    */
   const legsByPair = groupBy(
-    legs.filter((l) => l.counterparty),
+    legs.filter((l) => l.isMaker && l.counterparty),
     (l) => [l.username, l.counterparty!].sort().join(" "),
   );
 
