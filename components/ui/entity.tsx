@@ -204,26 +204,3 @@ export function SideTag({ side }: { side: "buy" | "sell" | "bid" | "ask" }) {
     </span>
   );
 }
-
-/** A signed delta with glyph + sign + color. Never color alone. */
-export function Delta({
-  value,
-  format,
-}: {
-  value: number | null | undefined;
-  format: (n: number) => string;
-}) {
-  if (value == null || !Number.isFinite(value)) {
-    return <span className="text-ink-3">—</span>;
-  }
-  const tone =
-    value === 0 ? "text-ink-3" : value > 0 ? "text-up" : "text-down";
-  const glyph = value === 0 ? "" : value > 0 ? "▲ " : "▼ ";
-  return (
-    <span className={`font-mono ${tone}`}>
-      <span aria-hidden>{glyph}</span>
-      {value > 0 ? "+" : ""}
-      {format(value)}
-    </span>
-  );
-}
