@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import { unstable_isUnrecognizedActionError } from "next/navigation";
 import { refreshUpstream } from "@/app/actions";
 
 /**
@@ -17,6 +18,7 @@ import { refreshUpstream } from "@/app/actions";
 export function RefreshButton() {
   const [pending, startTransition] = useTransition();
   const [doneAt, setDoneAt] = useState<number | null>(null);
+  const [failed, setFailed] = useState(false);
 
   /* Clear the confirmation on a timer that is cancelled on unmount. */
   useEffect(() => {
@@ -25,7 +27,20 @@ export function RefreshButton() {
     return () => clearTimeout(timer);
   }, [doneAt]);
 
-  const label = pending ? "Refreshing…" : doneAt !== null ? "Updated" : "Refresh";
+  /* Clear the failure on the same timer as the confirmation. */
+  useEffect(() => {
+    if (!failed) return;
+    const timer = setTimeout(() => setFailed(false), 2500);
+    return () => clearTimeout(timer);
+  }, [failed]);
+
+  const label = pending
+    ? "Refreshing…"
+    : failed
+      ? "Refresh failed"
+      : doneAt !== null
+        ? "Updated"
+        : "Refresh";
 
   return (
     <button
@@ -33,8 +48,23 @@ export function RefreshButton() {
       disabled={pending}
       onClick={() =>
         startTransition(async () => {
-          await refreshUpstream();
-          setDoneAt(Date.now());
+          try {
+            await refreshUpstream();
+            setDoneAt(Date.now());
+          } catch (error) {
+            /*
+             * A stale action id after a deploy is unrecoverable client-side —
+             * reload to pick up the new bundle. Anything else (a network blip,
+             * a proxy 5xx) is likely transient, so surface it and let the
+             * reader click again instead of letting it escape the transition
+             * and tear down the whole page.
+             */
+            if (unstable_isUnrecognizedActionError(error)) {
+              window.location.reload();
+              return;
+            }
+            setFailed(true);
+          }
         })
       }
       title="Discard the cached data and refetch this page from BulbaStore"
