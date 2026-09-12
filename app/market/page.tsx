@@ -50,7 +50,7 @@ export default function MarketPage() {
       </Suspense>
 
       {/*
-        Depth ownership needs the full ~20k-row resting-order crawl. It gets its
+        Depth ownership needs the full ~9,400-row resting-order crawl. It gets its
         own boundary for prerender ordering and code isolation, not for
         request-time streaming — this route is static ISR, so every boundary is
         already resolved by the time a cache hit serves the page.
