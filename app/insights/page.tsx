@@ -432,7 +432,13 @@ async function Tape() {
                   />
                   <span className="text-ink-3">{e.detail}</span>
                   <span className="ml-auto font-mono text-[12px] text-ink-3">
-                    {dateOnly(new Date(e.row.at).toISOString())}
+                    {/* `toISOString` throws on an invalid date, which would take
+                        the whole page down rather than blanking one cell. */}
+                    {dateOnly(
+                      Number.isFinite(e.row.at)
+                        ? new Date(e.row.at).toISOString()
+                        : null,
+                    )}
                   </span>
                 </li>
               ))}
