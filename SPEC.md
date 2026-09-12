@@ -440,8 +440,9 @@ meaning. Everything below is computed in `lib/analytics/`.
   reconstruction is only as good as the crawl behind it. The result satisfies
   `OrderBook`, so depth curves, metrics, slippage and participants work on it
   unchanged. It also produces the **organic book**: the same aggregation with
-  house-posted orders removed, which the API cannot express because it
-  aggregates levels before anyone sees them.
+  house-posted orders removed — something the plain `/orderbook` endpoint
+  cannot express because it aggregates levels before anyone sees them, though
+  `groupBy=listing,side,player,price` (§1.2) can, via `organicBooksFromLevels`.
 - **Organic book**: best bid and ask written by anyone other than the house,
   beside the published quote. The house writes 92.6% of resting orders but not
   most of the coverage — 115 of 118 books carry a non-house order and 106 are
