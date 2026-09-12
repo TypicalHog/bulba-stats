@@ -148,6 +148,9 @@ export function DepthChart({
   }
 
   const yTicks = niceTicks(0, geom.maxUnits, 4);
+  // Small books can pick a fractional step (e.g. 0, 0.5, 1) — a 0-decimal
+  // label would then print "1" twice. Show a decimal whenever one is needed.
+  const yDecimals = yTicks.some((t) => !Number.isInteger(t)) ? 1 : 0;
   const xTicks = niceTicks(geom.xMin, geom.xMax, 5);
 
   const atPrice = (p: number) => {
@@ -236,7 +239,7 @@ export function DepthChart({
                 fill={INK.muted}
                 fontFamily="var(--font-fira-code), monospace"
               >
-                {num(t)}
+                {num(t, yDecimals)}
               </text>
             </g>
           ))}
