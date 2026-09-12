@@ -160,6 +160,13 @@ export function WatchAlerts() {
       lingerTimers.clear();
       detach?.();
       release();
+      /*
+       * Unstarring the last listing tears this effect down while a toast may
+       * still be lingering. Its dismissal timer has just been cancelled above,
+       * so without this the toast would stay pinned forever, pointing at a
+       * listing the reader no longer watches.
+       */
+      setAlerts([]);
     };
   }, [watching]);
 
