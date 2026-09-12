@@ -112,7 +112,12 @@ export function WatchAlerts() {
        * effect may have torn down across it.
        */
       acquired = true;
-      socket = await acquireLiveSocket();
+      try {
+        socket = await acquireLiveSocket();
+      } catch {
+        release();
+        return;
+      }
       if (cancelled) {
         release();
         return;

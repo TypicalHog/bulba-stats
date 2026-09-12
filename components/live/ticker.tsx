@@ -87,7 +87,13 @@ export function LiveTicker({ seed }: { seed: TickerRow[] }) {
        * await point, so the effect may have torn down across it.
        */
       acquired = true;
-      socket = await acquireLiveSocket();
+      try {
+        socket = await acquireLiveSocket();
+      } catch {
+        release();
+        if (!cancelled) setStatus("offline");
+        return;
+      }
       if (cancelled) {
         release();
         return;
