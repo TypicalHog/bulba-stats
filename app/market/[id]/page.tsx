@@ -33,6 +33,7 @@ import { DepthChart } from "@/components/charts/depth";
 import { IntervalPicker } from "./interval-picker";
 import { OrderLadder } from "./ladder";
 import { DAY_MS } from "@/lib/time";
+import { parseListingId } from "@/lib/listing-id";
 import {
   dateTime,
   diamonds,
@@ -45,24 +46,6 @@ import {
 } from "@/lib/format";
 
 const INTERVALS: CandleInterval[] = ["1m", "5m", "15m", "1h", "4h", "1d"];
-
-/**
- * Parse a listing id out of the URL segment.
- *
- * `Number()` is far too loose for a path segment: it accepts `2.0`, `0x2`,
- * `2e0`, `+2` and ` 2`, so one item was reachable at unlimited alias URLs that
- * all rendered as the canonical page — and `IntervalPicker` then built its
- * `?i=` links off whichever alias was used. It also maps anything unparseable
- * to `NaN`, which upstream answers with a 400 rather than a 404, so
- * `apiGetOrNull` re-threw it.
- *
- * Canonical decimal digits only, no leading zero. Anything else is not an id.
- */
-function parseListingId(id: string): number | null {
-  if (!/^[1-9][0-9]*$/.test(id)) return null;
-  const n = Number(id);
-  return Number.isSafeInteger(n) ? n : null;
-}
 
 export async function generateMetadata({ params }: PageProps<"/market/[id]">) {
   const { id } = await params;

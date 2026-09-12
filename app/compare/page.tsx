@@ -11,6 +11,7 @@ import { PanelSkeleton } from "@/components/ui/skeleton";
 import { ItemLink } from "@/components/ui/entity";
 import { Sparkline } from "@/components/charts/sparkline";
 import { breakEvenMove } from "@/lib/analytics/fees";
+import { parseListingId } from "@/lib/listing-id";
 import { diamonds, num, percent, price } from "@/lib/format";
 
 export const metadata = {
@@ -38,8 +39,8 @@ export default async function ComparePage({
     ...new Set(
       (raw ?? "")
         .split(",")
-        .map((part) => Number(part.trim()))
-        .filter((id) => Number.isInteger(id) && id > 0),
+        .map((part) => parseListingId(part.trim()))
+        .filter((id): id is number => id !== null),
     ),
   ];
   const ids = parsed.slice(0, MAX_ITEMS);
