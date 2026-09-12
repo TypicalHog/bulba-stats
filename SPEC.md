@@ -951,7 +951,7 @@ rendering the pages and measuring them in a browser:
   book into a vertical line at the touch, because market makers park a few units
   very far out. The chart says so when orders fall outside the view.
 - **Numbers are rounded at the client boundary.** Upstream prices carry full
-  float noise, and `8.333333333333332` costs eighteen characters in the payload
+  float noise, and `8.333333333333332` costs seventeen characters in the payload
   where four would do. `lib/round.ts` trims them where data crosses to a Client
   Component; no displayed figure changes, since everything is formatted to far
   fewer digits than it kept. Measured effect on `/orders`: 1,019 → 985 KiB raw.
