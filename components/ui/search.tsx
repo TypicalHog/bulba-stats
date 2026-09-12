@@ -14,7 +14,7 @@ export type SearchEntry = {
 };
 
 /**
- * Jump to anything: ⌘K, or / from anywhere.
+ * Jump to anything: ⌘K/Ctrl+K, or / from anywhere.
  *
  * The whole index ships with the shell — a few hundred short rows — so matching
  * is instant and offline. A server round trip per keystroke would be slower and
@@ -113,8 +113,8 @@ export function CommandPalette({ entries }: { entries: SearchEntry[] }) {
      * Below `sm` there's no keyboard for ⌘K or "/", so the button is the only
      * way in — shown as a bare icon there instead of hidden entirely. At
      * `sm` and up it reverts to the labeled form. `aria-label="Search"`
-     * covers the icon-only state; it's a subset of the visible "Search ⌘K"
-     * text at ≥sm, so it still satisfies WCAG 2.5.3 there.
+     * covers the icon-only state; it's a subset of the visible "Search
+     * ⌘/Ctrl K" text at ≥sm, so it still satisfies WCAG 2.5.3 there.
      */
     return (
       <button
@@ -128,7 +128,7 @@ export function CommandPalette({ entries }: { entries: SearchEntry[] }) {
         </span>
         <span className="hidden sm:inline">Search</span>
         <kbd className="hidden rounded border border-line px-1 font-mono text-[9px] sm:inline">
-          ⌘K
+          ⌘/Ctrl K
         </kbd>
       </button>
     );
