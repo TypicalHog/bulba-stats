@@ -15,7 +15,7 @@ import { PanelSkeleton, TileRowSkeleton } from "@/components/ui/skeleton";
 import { MarketTable, type MarketRow } from "./market-table";
 import { Treemap } from "@/components/charts/treemap";
 import { DepthOwnership } from "./depth-ownership";
-import { diamondsCompact, itemLabel, num, percent } from "@/lib/format";
+import { dateTime, diamondsCompact, itemLabel, num, percent } from "@/lib/format";
 import { anchorNow } from "@/lib/time";
 import { r } from "@/lib/round";
 
@@ -165,6 +165,16 @@ async function MarketBody() {
 
   return (
     <div className="flex flex-col gap-4">
+      {/* This route is static ISR and can serve a stale-while-revalidate copy
+          (see MarketPage's maxDuration note), so the figures below are only as
+          fresh as the last trade in the cached crawl — not the page's serve
+          time. */}
+      <p className="text-[12px] text-ink-3">
+        Figures as of{" "}
+        {dateTime(lastEventAt ? new Date(lastEventAt).toISOString() : null)}{" "}
+        UTC
+      </p>
+
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Stat label="Active listings" value={num(rows.length)} />
         <Stat
