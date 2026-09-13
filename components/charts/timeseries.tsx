@@ -233,18 +233,13 @@ export function StackedBars({
                     const top = cursor - h;
                     const drawH = Math.max(h - gap, 0.5);
                     cursor = top;
-                    const isTop = si === lastNonZero(p, series);
                     return (
-                      <path
+                      <rect
                         key={s.key}
-                        d={barPath(
-                          x,
-                          top,
-                          geom.barW,
-                          drawH,
-                          /* 4px rounded data-end, square at the baseline. */
-                          isTop ? 4 : 0,
-                        )}
+                        x={x}
+                        y={top}
+                        width={geom.barW}
+                        height={drawH}
                         fill={s.color ?? seriesColor(si)}
                       />
                     );
@@ -327,35 +322,4 @@ export function StackedBars({
       />
     </div>
   );
-}
-
-/**
- * A bar segment, rounded on its top corners only.
- *
- * `<rect rx>` cannot do that — it rounds all four. On a tall bar the bottom
- * pair is invisible against the baseline, which is why this read as "4px
- * rounded data-end, square at the baseline" for so long. On a short segment it
- * is the whole shape: a lone ask-side column a few pixels tall came out as a
- * floating lozenge rather than a bar.
- *
- * The radius is also capped at half the segment's height, so a thin slice keeps
- * its corners instead of spending all of them on the curve.
- */
-function barPath(x: number, y: number, w: number, h: number, r: number): string {
-  const rr = Math.max(0, Math.min(r, w / 2, h / 2));
-  if (rr < 0.5) return `M${x} ${y}h${w}v${h}h${-w}Z`;
-  return (
-    `M${x} ${y + h}V${y + rr}` +
-    `A${rr} ${rr} 0 0 1 ${x + rr} ${y}` +
-    `H${x + w - rr}` +
-    `A${rr} ${rr} 0 0 1 ${x + w} ${y + rr}` +
-    `V${y + h}Z`
-  );
-}
-
-function lastNonZero(p: TimePoint, series: SeriesDef[]): number {
-  for (let i = series.length - 1; i >= 0; i--) {
-    if ((p.values[series[i].key] ?? 0) > 0) return i;
-  }
-  return -1;
 }
