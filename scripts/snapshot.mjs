@@ -430,7 +430,41 @@ async function loadRoster() {
   }
 }
 
-async function discoverPlayers(roster) {
+/**
+ * When the previous capture ran, from the `latest.json` it wrote — or null when
+ * there is none to read.
+ */
+async function lastCapturedAt() {
+  try {
+    const { capturedAt } = JSON.parse(await readFile(join(OUT, "latest.json"), "utf8"));
+    const ms = Date.parse(capturedAt);
+    return Number.isFinite(ms) ? ms : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Whether a warm page may have skipped activity since the previous capture.
+ *
+ * The warm path reads one unpaginated page — the newest 200 rows — and never
+ * follows it back. A full page is not the problem on its own: once the market
+ * has 200 rows of history, the newest 200 always fill it, however quiet the
+ * hour. What matters is whether the page reaches back to where the previous
+ * capture left off; if its oldest row is newer than that, the activity in
+ * between was never read.
+ *
+ * `since` is the previous capture's time in ms, or null when none is on record.
+ * Neither that nor a row whose timestamp does not parse can show the page
+ * covers the gap, so a full page still counts as one then.
+ */
+export function warmPageGap(rows, since) {
+  if (rows.length < 200) return false;
+  const oldest = Math.min(...rows.map((row) => Date.parse(row?.createdAt)));
+  return !(since != null && oldest <= since);
+}
+
+async function discoverPlayers(roster, since) {
   // A cold roster is swept over full history; a warm one only needs the newest
   // page to pick up arrivals. Without the cold sweep the accounts that were
   // active early and went quiet are never found at all, because the most recent
@@ -465,11 +499,12 @@ async function discoverPlayers(roster) {
   const trades = cold
     ? await sweep("trades", tradePath, 35)
     : ((await get(tradePath(null))) ?? []);
-  // A warm page this full means more history sits right behind it that the
-  // single unpaginated GET above never follows — surface that instead of
-  // silently dropping it, the same way a truncated cold sweep is surfaced.
-  if (!cold && trades.length >= 200) {
-    errors.push("trades: warm page was full (200 rows) — newer activity may be missing");
+  // A warm page that stops short of the previous capture leaves activity
+  // behind it that the single unpaginated GET above never follows — surface
+  // that instead of silently dropping it, the same way a truncated cold sweep
+  // is surfaced.
+  if (!cold && warmPageGap(trades, since)) {
+    errors.push("trades: warm page does not reach back to the last capture — activity in between may be missing");
   }
   for (const trade of trades) {
     if (isValidUsername(trade.taker?.username)) roster.add(trade.taker.username);
@@ -485,8 +520,8 @@ async function discoverPlayers(roster) {
   const ops = cold
     ? await sweep("bank movements", bankPath, 160)
     : ((await get(bankPath(null))) ?? []);
-  if (!cold && ops.length >= 200) {
-    errors.push("bank movements: warm page was full (200 rows) — newer activity may be missing");
+  if (!cold && warmPageGap(ops, since)) {
+    errors.push("bank movements: warm page does not reach back to the last capture — activity in between may be missing");
   }
   for (const op of ops) if (isValidUsername(op.player?.username)) roster.add(op.player.username);
 
@@ -568,7 +603,10 @@ async function main() {
     const { roster, unreadable } = await loadRoster();
     rosterUnreadable = unreadable;
 
-    const { usernames, truncated: rosterTruncated } = await discoverPlayers(roster);
+    // Read before anything is written: `latest.json` is replaced at the end of
+    // this run, so right now it still describes the previous one.
+    const since = await lastCapturedAt();
+    const { usernames, truncated: rosterTruncated } = await discoverPlayers(roster, since);
     truncated = rosterTruncated;
 
     // Shared-bank membership is its own discovery channel: an account can belong

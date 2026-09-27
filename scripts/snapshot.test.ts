@@ -5,7 +5,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 // The capture script is a dependency-free .mjs with no type declarations; the
 // resolver hook loads it fine at runtime.
-import { LISTING_COLUMNS, marketRow } from "@/scripts/snapshot.mjs";
+import { LISTING_COLUMNS, marketRow, warmPageGap } from "@/scripts/snapshot.mjs";
 
 /**
  * The column order, spelled out.
@@ -127,4 +127,40 @@ test("a failed treasury read is null, not an empty treasury", () => {
       .treasury,
     7,
   );
+});
+
+/** When the previous capture ran, as `latest.json` records it. */
+const LAST_CAPTURE = Date.parse("2026-09-27T08:45:16.214Z");
+
+/** A full warm page: 200 rows, newest first, a minute apart, ending at `oldest`. */
+function fullPage(oldest: string) {
+  const end = Date.parse(oldest);
+  return Array.from({ length: 200 }, (_, i) => ({
+    id: 46_130 - i,
+    createdAt: new Date(end + (199 - i) * 60_000).toISOString(),
+  }));
+}
+
+test("a full warm page that reaches back past the last capture is not a gap", () => {
+  // 06:00–09:19: it straddles the last capture, as a real page does.
+  assert.equal(warmPageGap(fullPage("2026-09-27T06:00:00.000Z"), LAST_CAPTURE), false);
+});
+
+test("a full warm page that starts after the last capture is a gap", () => {
+  assert.equal(warmPageGap(fullPage("2026-09-27T09:00:00.000Z"), LAST_CAPTURE), true);
+});
+
+test("a short warm page is the whole history, so never a gap", () => {
+  const page = fullPage("2026-09-27T09:00:00.000Z").slice(0, 3);
+  assert.equal(warmPageGap(page, LAST_CAPTURE), false);
+});
+
+test("a full warm page with no previous capture on record is a gap", () => {
+  assert.equal(warmPageGap(fullPage("2026-08-12T22:45:00.000Z"), null), true);
+});
+
+test("a full warm page with an unreadable timestamp is a gap", () => {
+  const page = fullPage("2026-08-12T22:45:00.000Z");
+  page[199] = { ...page[199], createdAt: "not a timestamp" };
+  assert.equal(warmPageGap(page, LAST_CAPTURE), true);
 });
