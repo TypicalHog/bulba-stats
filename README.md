@@ -175,6 +175,37 @@ database. Two settings are non-default and worth understanding:
   re-enabling is one click in the Actions tab; the capture resumes with a gap
   rather than losing what it already has.
 
+- **GitHub's schedule alone no longer runs the capture hourly.** Since
+  GitHub's Actions incidents on 26 August 2026 this repository's scheduled
+  runs are created hours late or not at all — two to eight captures a day
+  instead of 24 ([others report the
+  same](https://github.com/orgs/community/discussions/207346)). Manual
+  dispatch is unaffected, so the dependable trigger is an external scheduler
+  that starts the workflow every hour:
+
+  1. Create a fine-grained personal access token with access to this
+     repository only and the single permission *Actions: Read and write*. It
+     can start workflows but cannot push code. Keep it separate from
+     `DATA_PUSH_TOKEN`: this one is stored outside GitHub.
+  2. At any external cron service (cron-job.org is free), schedule this
+     request for every hour — with your fork's owner and name, if you run one:
+
+     ```
+     POST https://api.github.com/repos/TypicalHog/bulba-stats/actions/workflows/snapshot.yml/dispatches
+     Authorization: Bearer <token>
+     Accept: application/vnd.github+json
+     X-GitHub-Api-Version: 2022-11-28
+
+     {"ref":"main"}
+     ```
+
+     GitHub answers `204 No Content` once the run is queued.
+
+  The workflow's own schedule stays as a fallback. When both fire in the same
+  hour the runs queue one behind the other, both captures are kept, and the
+  charts use the later one. Give this token a long expiry too: when it lapses
+  the capture quietly drops back to the degraded schedule.
+
 - **A red snapshot run may still have committed.** If any endpoint fails every
   retry — or the capture itself crashes part way through — it writes what it
   got, the job pushes it, and *then* the run is failed on purpose. A partial hour is worth keeping — it is the only record

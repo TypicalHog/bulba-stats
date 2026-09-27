@@ -461,6 +461,17 @@ is set, and `keepalive.yml` pushes an empty `[skip ci]` commit to the default
 branch twice a month. See the README for setup; this is inference from how
 GitHub treats bot activity elsewhere, not documented behaviour.
 
+**The schedule alone is not enough, either.** Since GitHub's Actions incidents
+on 26 August 2026 its scheduler has created this repository's runs hours late
+or not at all — two to eight captures a day where the cron asks for 24 — and
+the keep-alive's off-the-hour slot is hours late too, so the contended `:00` is
+not the cause. `workflow_dispatch` is unaffected, so the hourly run is also
+triggered from outside: an external cron calls the workflow's dispatch endpoint
+with a token limited to *Actions: Read and write*, and the README has the
+request. The cron line stays as a fallback rather than being re-registered,
+since repositories that re-registered theirs after the incident report no
+scheduled runs at all.
+
 **It must degrade to nothing.** Until the workflow has been pushed and run the
 branch does not exist and every fetch 404s. That is the normal state of a fresh
 deployment, not an error: the reader resolves to an empty series, the book-history
