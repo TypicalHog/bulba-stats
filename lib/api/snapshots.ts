@@ -46,7 +46,7 @@ function dayKey(ms: number): string {
 }
 
 // Next's fetch cache only stores 200s (see fetch.md), so on a data-branch-less
-// deploy the 14-day fan-out below would 404 — and re-hit the network — on
+// deploy the per-day fan-out below would 404 — and re-hit the network — on
 // every ISR regeneration. This per-instance timestamp remembers a miss for
 // TTL.aggregate so those regenerations short-circuit instead of re-probing.
 // Lost on cold start; that's fine, it just costs one more probe.
@@ -123,6 +123,49 @@ export const getMarketHistory = cache(
       .sort((a, b) => String(a.at).localeCompare(String(b.at)));
   },
 );
+
+const HOUR_MS = 3_600_000;
+
+/** One UTC hour of the capture's schedule, and what it recorded. */
+export type HourSlot = {
+  /** Start of the hour, as an ISO timestamp. */
+  hour: string;
+  /** The capture that ran in this hour — the later one if two did — or null. */
+  sample: MarketSample | null;
+};
+
+/**
+ * The series laid out one slot per UTC hour, from the first capture's hour to
+ * the last's.
+ *
+ * The capture is scheduled hourly, but GitHub starts only some of those runs
+ * (see `.github/workflows/snapshot.yml`), so neighbouring samples can be hours
+ * apart. Drawn back to back they close those gaps up and a patchy record reads
+ * as a continuous one; a slot per hour keeps every missed hour visible as an
+ * empty slot.
+ */
+export function hourlySlots(samples: readonly MarketSample[]): HourSlot[] {
+  const byHour = new Map<number, MarketSample>();
+  for (const sample of samples) {
+    const ms = Date.parse(sample.at);
+    // One malformed timestamp would otherwise turn the whole range into NaN.
+    if (!Number.isFinite(ms)) continue;
+    const hour = Math.floor(ms / HOUR_MS) * HOUR_MS;
+    const held = byHour.get(hour);
+    if (!held || sample.at > held.at) byHour.set(hour, sample);
+  }
+
+  const hours = [...byHour.keys()];
+  const last = Math.max(...hours);
+  const slots: HourSlot[] = [];
+  for (let h = Math.min(...hours); h <= last; h += HOUR_MS) {
+    slots.push({
+      hour: new Date(h).toISOString(),
+      sample: byHour.get(h) ?? null,
+    });
+  }
+  return slots;
+}
 
 /**
  * Whether enough history exists to draw a trend.

@@ -117,7 +117,9 @@ the site reads back in one request per day.
 Spread and depth over time, and the sparklines on the two book-structure tiles,
 come from that branch and nowhere else. Until the workflow has run they simply
 aren't there: the panel says so and the tiles carry no trend, which is the
-normal state of a fresh deployment. Set `BULBA_DATA_BASE` to read a fork or a
+normal state of a fresh deployment. Once it has, the spread and depth charts
+give every hour of the last 30 days a slot, so an hour the capture missed shows
+as an empty bar instead of being closed up. Set `BULBA_DATA_BASE` to read a fork or a
 local mirror — an `http(s)` origin either way, since the reader fetches over the
 network and a `file://` path is rejected outright (`npx serve` over a checkout
 of the branch is enough). See [SPEC.md §1.5](SPEC.md#15-captured-history).

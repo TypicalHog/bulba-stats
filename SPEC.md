@@ -423,8 +423,12 @@ Four properties are deliberate:
   `/treasury` did not answer. A market-wide total computed from a subset is not
   a smaller total — it is a different quantity wearing the same label, and
   publishing one draws a liquidity withdrawal that never happened. Readers must
-  skip null samples rather than coerce them, which is why the depth and spread
-  charts drop those points instead of plotting zero. The per-snapshot file
+  never coerce a null sample to zero, which is why the depth and spread charts
+  on `/insights` draw one as an empty bar. Those charts give every UTC hour of
+  their 30-day window a slot, so an hour the capture missed altogether is
+  drawn the same way rather than closed up: GitHub starts only some of the
+  scheduled runs, and bars laid back to back would make a patchy record read
+  as a continuous one. The per-snapshot file
   always keeps the true per-listing nulls, so a degraded run can be rebuilt.
   Wealth has no per-row null to carry a shortfall — a failed profile fetch or
   a walk the budget cut short just makes `banks` and `players` shorter — so

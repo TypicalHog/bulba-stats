@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { INK, SURFACE, seriesColor } from "@/lib/design";
+import { AREA_OPACITY, INK, SURFACE, seriesColor } from "@/lib/design";
 import { compact, diamondsCompact, num, percent } from "@/lib/format";
 import {
   CHART_MIN_WIDTH,
@@ -21,7 +21,11 @@ export type SeriesDef = {
 
 export type TimePoint = {
   label: string;
-  values: Record<string, number>;
+  /**
+   * `null` means the period has no data at all. It draws as an empty column,
+   * not as zero — a zero bar would claim a value that was never recorded.
+   */
+  values: Record<string, number> | null;
 };
 
 /**
@@ -80,7 +84,7 @@ export function StackedBars({
   const geom = useMemo(() => {
     if (!points.length) return null;
     const totals = points.map((p) =>
-      series.reduce((acc, s) => acc + (p.values[s.key] ?? 0), 0),
+      series.reduce((acc, s) => acc + (p.values?.[s.key] ?? 0), 0),
     );
     const max = Math.max(...totals, 1);
     const y = linearScale([0, max], [CHART_PAD.top + plotH, CHART_PAD.top]);
@@ -103,6 +107,7 @@ export function StackedBars({
   const single = series.length === 1;
 
   const seriesLabel = series.map((s) => s.label).join(" and ");
+  const empty = points.filter((p) => p.values == null).length;
 
   /*
    * Shared by pointermove (mouse hover / touch drag) and pointerdown (a touch
@@ -165,7 +170,7 @@ export function StackedBars({
             width="100%"
             style={{ height: "auto", aspectRatio: `${W} / ${height}` }}
             role="img"
-            aria-label={`${series.map((s) => s.label).join(" and ")} over ${points.length} periods`}
+            aria-label={`${series.map((s) => s.label).join(" and ")} over ${points.length} periods${empty ? `, ${empty} without data` : ""}`}
             onPointerLeave={() => setHover(null)}
             onPointerDown={(e) => updateHover(e.clientX)}
             onPointerMove={(e) => updateHover(e.clientX)}
@@ -215,8 +220,23 @@ export function StackedBars({
                   key={`${p.label}-${i}`}
                   style={active ? { filter: "brightness(1.35)" } : undefined}
                 >
+                  {/*
+                    Full height and translucent: the column reads as a slot
+                    that exists but holds nothing, and the gridlines still show
+                    through it.
+                  */}
+                  {p.values == null && (
+                    <rect
+                      x={x}
+                      y={CHART_PAD.top}
+                      width={geom.barW}
+                      height={plotH}
+                      fill={INK.muted}
+                      fillOpacity={AREA_OPACITY}
+                    />
+                  )}
                   {series.map((s, si) => {
-                    const v = p.values[s.key] ?? 0;
+                    const v = p.values?.[s.key] ?? 0;
                     if (v <= 0) return null;
                     const h = baseline - geom.y(v);
                     /*
@@ -284,26 +304,35 @@ export function StackedBars({
               }
             >
               <div className="font-mono text-ink-2">{points[hover.i].label}</div>
-              {series.map((s, i) => (
-                <div key={s.key} className="mt-0.5 flex items-center gap-1.5">
-                  <span
-                    aria-hidden
-                    className="inline-block h-2 w-2 rounded-[2px]"
-                    style={{ background: s.color ?? seriesColor(i) }}
-                  />
-                  <span className="text-ink-3">{s.label}</span>
-                  <span className="ml-auto pl-3 font-mono text-ink">
-                    {valueFormat(points[hover.i].values[s.key] ?? 0)}
-                  </span>
-                </div>
-              ))}
+              {points[hover.i].values == null ? (
+                <div className="mt-0.5 text-ink-3">No data</div>
+              ) : (
+                series.map((s, i) => (
+                  <div key={s.key} className="mt-0.5 flex items-center gap-1.5">
+                    <span
+                      aria-hidden
+                      className="inline-block h-2 w-2 rounded-[2px]"
+                      style={{ background: s.color ?? seriesColor(i) }}
+                    />
+                    <span className="text-ink-3">{s.label}</span>
+                    <span className="ml-auto pl-3 font-mono text-ink">
+                      {valueFormat(points[hover.i].values?.[s.key] ?? 0)}
+                    </span>
+                  </div>
+                ))
+              )}
             </div>
           )}
         </div>
       </div>
 
+      {/*
+        Periods without data are left out rather than listed as dashes: on a
+        patchy hourly series they are most of the rows, and the caption still
+        says how many there were.
+      */}
       <ChartTable
-        caption={`${seriesLabel} by period, as a table`}
+        caption={`${seriesLabel} by period, as a table${empty ? ` (${num(empty)} periods without data left out)` : ""}`}
         columns={[
           { key: "period", label: "Period" },
           ...series.map((s) => ({
@@ -312,13 +341,20 @@ export function StackedBars({
             align: "right" as const,
           })),
         ]}
-        rows={points.map((p, i) => ({
-          key: `${p.label}-${i}`,
-          cells: [
-            p.label,
-            ...series.map((s) => valueFormat(p.values[s.key] ?? 0)),
-          ],
-        }))}
+        rows={points.flatMap((p, i) => {
+          const values = p.values;
+          return values == null
+            ? []
+            : [
+                {
+                  key: `${p.label}-${i}`,
+                  cells: [
+                    p.label,
+                    ...series.map((s) => valueFormat(values[s.key] ?? 0)),
+                  ],
+                },
+              ];
+        })}
       />
     </div>
   );

@@ -8,7 +8,12 @@ import {
 } from "@/lib/api/endpoints";
 import { affiliations, type BankNode } from "@/lib/analytics/house";
 import { anomalies, buildTape, fresh, venueStats } from "@/lib/analytics/tape";
-import { getMarketHistory, hasTrend } from "@/lib/api/snapshots";
+import {
+  getMarketHistory,
+  hasTrend,
+  hourlySlots,
+  type HourSlot,
+} from "@/lib/api/snapshots";
 import { StackedBars } from "@/components/charts/timeseries";
 import { groupBy, sum, toLegs } from "@/lib/analytics/legs";
 import {
@@ -128,13 +133,13 @@ export default function InsightsPage() {
 async function BookHistory() {
   /*
    * getMarketHistory defaults to Date.now(), which would bake this panel's
-   * 14-day window to whatever moment ISR happens to regenerate it. Anchor to
+   * 30-day window to whatever moment ISR happens to regenerate it. Anchor to
    * the market's most recent trade instead, matching every other windowed
    * stat on this page, so the same cached data always yields the same window.
    */
   const trades = await getAllTrades();
   const history = await getMarketHistory(
-    14,
+    30,
     anchorNow(marketTotals(trades).lastTradeAt),
   );
 
@@ -158,21 +163,29 @@ async function BookHistory() {
   }
 
   /*
-   * A capture that could not reach the depth endpoint records null, not zero.
-   * Coercing that to zero draws a bar of no liquidity — a collapse and recovery
-   * that never happened. Drop the point instead, so the gap reads as a missing
-   * capture, which is what it is.
+   * One slot per hour, so an hour the capture missed shows as an empty bar
+   * rather than the bars either side closing up over it. A capture that could
+   * not reach the depth endpoint records null, not zero, and is drawn the same
+   * way: coercing it to zero draws a bar of no liquidity — a collapse and
+   * recovery that never happened.
    */
-  const points = history.flatMap((h) =>
-    h.bidValueNearMid != null && h.askValueNearMid != null
-      ? [
-          {
-            label: h.at.slice(5, 16).replace("T", " "),
-            values: { bid: h.bidValueNearMid, ask: h.askValueNearMid },
-          },
-        ]
-      : [],
-  );
+  const slots = hourlySlots(history);
+  const label = (s: HourSlot) =>
+    (s.sample?.at ?? s.hour).slice(5, 16).replace("T", " ");
+  const depthPoints = slots.map((s) => ({
+    label: label(s),
+    values:
+      s.sample?.bidValueNearMid != null && s.sample.askValueNearMid != null
+        ? { bid: s.sample.bidValueNearMid, ask: s.sample.askValueNearMid }
+        : null,
+  }));
+  const spreadPoints = slots.map((s) => ({
+    label: label(s),
+    values:
+      s.sample?.medianSpreadPct != null
+        ? { spread: s.sample.medianSpreadPct }
+        : null,
+  }));
 
   const first = history[0];
   const last = history[history.length - 1];
@@ -194,7 +207,7 @@ async function BookHistory() {
           subtitle="Diamonds resting within ±5% of mid, bid and ask side"
         >
           <StackedBars
-            points={points}
+            points={depthPoints}
             series={[
               { key: "bid", label: "Bid side", color: SERIES[2] },
               { key: "ask", label: "Ask side", color: SERIES[1] },
@@ -213,16 +226,7 @@ async function BookHistory() {
           subtitle="Across every two-sided book, at each capture"
         >
           <StackedBars
-            points={history.flatMap((h) =>
-              h.medianSpreadPct != null
-                ? [
-                    {
-                      label: h.at.slice(5, 16).replace("T", " "),
-                      values: { spread: h.medianSpreadPct },
-                    },
-                  ]
-                : [],
-            )}
+            points={spreadPoints}
             series={[
               { key: "spread", label: "Median spread %", color: SERIES[0] },
             ]}
